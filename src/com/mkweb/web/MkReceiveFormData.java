@@ -2,6 +2,8 @@ package com.mkweb.web;
 
 import java.io.IOException;
 
+
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -12,16 +14,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.mkweb.config.MkConfigReader;
-import com.mkweb.config.MkPageConfigs;
-import com.mkweb.data.PageXmlData;
+import com.mkweb.data.PageJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
+import com.mkweb.config.MkConfigReader;
+import com.mkweb.config.MkPageConfigs;
 import com.mkweb.security.CheckPageInfo;
 
 /**
  * Servlet implementation class MkReceiveFormData
- */
+ **/
 
 @WebServlet(
 	name = "MkReceiveFormData",
@@ -32,9 +34,9 @@ public class MkReceiveFormData extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkReceiveFormData]";
-    private PageXmlData pxData = null;
+    private PageJsonData pxData = null;
     
-    private ArrayList<PageXmlData> pi = null;
+    private ArrayList<PageJsonData> pi = null;
     private boolean isPiSet = false;
 	boolean isSet = false;
 	ArrayList<String> pageStaticParams = null;
@@ -52,7 +54,7 @@ public class MkReceiveFormData extends HttpServlet {
         cpi = new CheckPageInfo();
     }
 	
-	private ArrayList<PageXmlData> getPageControl(String url) {
+	private ArrayList<PageJsonData> getPageControl(String url) {
 		String[] requestUriList = url.split("/");
 		String mkPage = requestUriList[requestUriList.length - 1];
 		
@@ -86,7 +88,7 @@ public class MkReceiveFormData extends HttpServlet {
 		}
 
 		if(!cpi.isValidPageConnection(mkPage, reqPage)) {
-			mklogger.error(TAG, " checkMethod: Invalid Page Connection. ");
+			mklogger.error(TAG, " checkMethod: Invalid Page Connection.");
 			return false;
 		}
     	
@@ -97,8 +99,8 @@ public class MkReceiveFormData extends HttpServlet {
 		
 		requestParams = cpi.getRequestPageParameterName(request, pageStaticParams, pageStaticParamsName);
 		
-		ArrayList<PageXmlData> pal = MkPageConfigs.Me().getControl(mkPage);
-		for(PageXmlData px : pal) {
+		ArrayList<PageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
+		for(PageJsonData px : pal) {
 			if(px.getParameter().equals(requestParams)) {
 				pxData = px;
 				break;
@@ -119,14 +121,14 @@ public class MkReceiveFormData extends HttpServlet {
     private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	MkDbAccessor DA = new MkDbAccessor();
 		
-		if(!cpi.comparePageValueWithRequest(pxData.getPageValue(), requestValues, pxData.getPageStaticParams(), false)) {
+		if(!cpi.comparePageValueWithRequestValue(pxData.getPageValue(), requestValues, pxData.getPageStaticParams(), false)) {
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
 			response.sendError(400);
 			return;
 		}
 		
 		String service = pxData.getServiceName();
-		String befQuery = cpi.regularQuery(service);
+		String befQuery = cpi.regularQuery(service, false);
 		String query = cpi.setQuery(befQuery);
 		
 		if(requestValues != null) {

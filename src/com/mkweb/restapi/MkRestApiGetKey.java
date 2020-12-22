@@ -8,9 +8,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.mkweb.config.MkConfigReader;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
+import com.mkweb.old.config.xml.MkConfigReader;
 
 public class MkRestApiGetKey extends MkDbAccessor {
 	private Connection dbCon = null;
@@ -25,6 +25,7 @@ public class MkRestApiGetKey extends MkDbAccessor {
 	public ArrayList<Object> GetKey(){
 		ArrayList<Object> rst = new ArrayList<Object>();
 		ResultSet rs = null;
+		
 
 		if(dbCon != null)
 		{
@@ -32,11 +33,11 @@ public class MkRestApiGetKey extends MkDbAccessor {
 			try {
 				PreparedStatement prestmt;
 				this.psmt = "SELECT * FROM " + MkConfigReader.Me().get("mkweb.restapi.key.table") + ";";
-				prestmt = dbCon.prepareStatement(this.psmt);
+				prestmt = dbCon.prepareStatement(this.psmt, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
 				rs = prestmt.executeQuery(); 
 
-				ResultSetMetaData rsmd; 
+				ResultSetMetaData rsmd;
 				int columnCount;
 				String columnNames[];
 				if(!rs.next()) {

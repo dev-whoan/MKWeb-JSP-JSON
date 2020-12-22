@@ -1,0 +1,10 @@
+{
+	"Controller":{
+		"name":"[MkLogger]",
+		"level":"debug",
+		"print_date":"yes",
+		"print_time":"yes",
+		"use_catalina":"no",
+		"log_location":"/mkweb/log/MkLogger.log"
+	}
+}

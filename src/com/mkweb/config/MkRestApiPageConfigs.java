@@ -2,58 +2,49 @@ package com.mkweb.config;
 
 import java.io.File;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.mkweb.can.MkPageConfigCan;
-import com.mkweb.data.PageXmlData;
+import com.mkweb.data.PageJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiPageConfigs extends MkPageConfigCan{
-	private HashMap<String, ArrayList<PageXmlData>> page_configs = new HashMap<String, ArrayList<PageXmlData>>();
+	private HashMap<String, ArrayList<PageJsonData>> page_configs = new HashMap<String, ArrayList<PageJsonData>>();
 	private File[] defaultFiles = null;
-	
-	private long[] lastModified = null;
-	
-	private static MkRestApiPageConfigs mrapc = null;
-	private MkLogger mklogger = MkLogger.Me();
-	
-	private String configName = "Rest Api Page";
-	private String TAG = "[MkRestApiPageConfigs]";
-	private boolean isSet = false;
 
-	public boolean isApiPageSet() {	return this.isSet;	}
-	
+	private static MkRestApiPageConfigs pc = null;
+	private long lastModified[]; 
+	private MkLogger mklogger = MkLogger.Me();
+
+	private String TAG = "[PageConfigs]";
+
 	public static MkRestApiPageConfigs Me() {
-		if(mrapc == null)
-			mrapc = new MkRestApiPageConfigs();
-		return mrapc;
+		if(pc == null)
+			pc = new MkRestApiPageConfigs();
+		return pc;
 	}
-	
 	private String[] ctr_list = {
-		"name",
-		"debug",
-		"authorized",
-		"post",
-		"get",
-		"put",
-		"delete",
-		"options",
-		"head"
+			"name",
+			"debug",
+			"dir",
+			"dir_key",
+			"page"
 	};
 	private String[] ctr_info = new String[ctr_list.length];
-	
 	private String[] svc_list = {
-		"id",
-		"obj",
-		"result",
-		"method"
+			"obj",
+			"result",
+			"method"	
 	};
 	private ArrayList<String> setPageParamToStrig(String pageParam) {
 		if(pageParam == null)
@@ -80,18 +71,15 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	@Override
 	public void setPageConfigs(File[] pageConfigs) {
-		isSet = false;
-		super.setClList(ctr_list);
-		super.setSlList(svc_list);
 		page_configs.clear();
 		defaultFiles = pageConfigs;
-		ArrayList<PageXmlData> xmlData = null;
+		ArrayList<PageJsonData> pageJsonData = null;
 		lastModified = new long[pageConfigs.length];
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
 		{
 			lastModified[lmi++] = defaultFile.lastModified();
-			mklogger.info("=*=*=*=*=*=*=* MkWeb " + this.configName + " Configs  Done*=*=*=*=*=*=*=*=");
+			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs Start*=*=*=*=*=*=*=*=");
 			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
@@ -99,162 +87,45 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				mklogger.error("Config file is not exists or null");
 				return;
 			}
-			NodeList nodeList = setNodeList(defaultFile);
-
-			if(nodeList != null) {
-				for(int i = 0; i < nodeList.getLength(); i++)
-				{
-					Node node = nodeList.item(i);
-
-					if(node.getNodeName().equals("Control"))
-					{
-						if(node.getNodeType() == Node.ELEMENT_NODE) {
-							
-							for(int cl = 0; cl < ctr_list.length; cl++) {
-								if(node.getAttributes().getNamedItem(ctr_list[cl]) != null)
-								{
-									ctr_info[cl] = node.getAttributes().getNamedItem(ctr_list[cl]).getNodeValue();
-								}
-							}
-
-							xmlData = new ArrayList<PageXmlData>();
-							Element elem = (Element) node;
-							NodeList services = elem.getElementsByTagName("Service");
-							
-							//새로 추가하는 부분
-							NodeList pageParamNodes = elem.getElementsByTagName("PageParams");
-							String pageParamsName = null;
-							ArrayList<String> pageParam = null;
-							if(pageParamNodes.item(0) != null) {
-								Node pageParamNode = pageParamNodes.item(0);
-								pageParamsName = pageParamNode.getAttributes().getNamedItem("name") != null ?
-										pageParamNode.getAttributes().getNamedItem("name").getNodeValue():
-											null;
-								pageParam = setPageParamToStrig(pageParamNode.getTextContent());
-							}else {
-								pageParam = null;
-							}
-							
-							if(services.item(0) != null) {
-								for(int j = 0; j < services.getLength(); j++) {
-									Node service = services.item(j);
-									NodeList service_param = service.getChildNodes();
-
-									if(service.getNodeType() == Node.ELEMENT_NODE)
-									{
-										String[] SQL_INFO = new String[svc_list.length];
-										String PRM_NAME = null;
-										String VAL_INFO = null;
-										String STRUCTURE = null;
-										for(int k = 0; k < service_param.getLength(); k++) {
-											Node service_info = service_param.item(k);
-
-											if(service_info.getNodeType() == Node.ELEMENT_NODE)
-											{
-												NamedNodeMap attributes = service_info.getAttributes();
-
-												switch(service_info.getNodeName()) {
-												case "Sql":
-													for(int sli = 0; sli < svc_list.length; sli++) {
-														Node tN = attributes.getNamedItem(svc_list[sli]);
-														SQL_INFO[sli] = (tN != null ? tN.getNodeValue() : null);
-													}
-													break;
-												case "returnStructure":
-													STRUCTURE = attributes.getNamedItem("value").getNodeValue();
-													break;
-												case "Parameter":
-													PRM_NAME = attributes.getNamedItem("name").getNodeValue();
-													break;
-												case "Value":
-													VAL_INFO = service_info.getTextContent();
-													VAL_INFO = VAL_INFO.trim();
-													break;
-												}
-											}
-										}
-
-										String serviceName = service.getAttributes().getNamedItem("id") != null ? service.getAttributes().getNamedItem("id").getNodeValue() : null;
-										String serviceType = service.getAttributes().getNamedItem("type").getNodeValue() + "." + SQL_INFO[0];
-
-										//RestApiPageXmlData
-										PageXmlData rapData = setPageXmlData(pageParamsName, pageParam, serviceName, serviceType, ctr_info, SQL_INFO, PRM_NAME, VAL_INFO, STRUCTURE);
-										printPageInfo(rapData, "info");
-										xmlData.add(rapData);
-										page_configs.put(ctr_info[0], xmlData);
-									}
-								}
-							}else {
-								String PRM_NAME = "No Parameter";
-								String VAL_INFO = "No Value";
-								String STRUCTURE = "No Structure";
-								
-								String[] temp_sql = new String[svc_list.length];
-								for(String s : temp_sql) {	s = "no data";	}
-								
-								ctr_info[0] = node.getAttributes().getNamedItem("name").getNodeValue();
-								
-								PageXmlData rapData = setPageXmlData(pageParamsName, pageParam, "No Service", "No Service", ctr_info, temp_sql, PRM_NAME, VAL_INFO, STRUCTURE);
-								printPageInfo(rapData, "info");
-								xmlData.add(rapData);
-								page_configs.put(ctr_info[0], xmlData);
-							}
-							
-						}
-					}
-				}
-			}else {
-				mklogger.info(TAG + " No " + this.configName + " Page Control has found. If you set Page configs, please check Page config files and web.xml.");
+			
+			try(FileReader reader = new FileReader(defaultFile)){
+				JSONParser jsonParser = new JSONParser();
+				Object curObject = jsonParser.parse(reader);
+				JSONArray currentJsonArray = (JSONArray) curObject;
+				
+				mklogger.debug(TAG, "\nJSON Array\n" + currentJsonArray);
+			} catch (FileNotFoundException e) {
+				mklogger.error(e.getMessage());
+				e.printStackTrace();
+			} catch (IOException e) {
+				mklogger.error(e.getMessage());
+				e.printStackTrace();
+			} catch (ParseException e) {
+				mklogger.error(e.getMessage());
+				e.printStackTrace();
 			}
-			isSet = true;
-			mklogger.info("=*=*=*=*=*=*=* MkWeb " + this.configName + " Configs  Done*=*=*=*=*=*=*=*=");
+			
+			
+
+			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs  Done*=*=*=*=*=*=*=*=");
 		}
-	}
-	@Override
-	protected PageXmlData setPageXmlData(String pageStaticParamName, ArrayList<String> pageStaticParam, String serviceName, String serviceType, String[] ctr_info, String[] sqlInfo, String PRM_NAME, String VAL_INFO, String STRUCTURE) {
-		PageXmlData result = new PageXmlData();
-		result.setControlName(ctr_info[0]);
-		result.setPageStaticParamName(pageStaticParamName);
-		result.setPageStaticParams(pageStaticParam);
-		result.setServiceName(serviceName);
-		result.setServiceName(serviceType);
-
-		result.setPageName(ctr_info[0]);
-		result.setDebug(ctr_info[1]);
-		
-		result.setAuthorizedRequire(ctr_info[2]);
-		result.setPost(ctr_info[3]);
-		result.setGet(ctr_info[4]);
-		result.setPut(ctr_info[5]);
-		result.setDelete(ctr_info[6]);
-		result.setOptions(ctr_info[7]);
-		result.setHead(ctr_info[8]);
-		
-		result.setSql(sqlInfo);
-		result.setParameter(PRM_NAME);
-		result.setData(VAL_INFO);
-		
-		result.setStructure(STRUCTURE);
-		
-
-		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
-		PAGE_VALUE = pageValueToHashMap(VAL_INFO);
-		result.setPageValue(PAGE_VALUE);
-		return result;
 	}
 	
 	@Override
-	public void printPageInfo(PageXmlData xmlData, String type) {
-		String controlName = xmlData.getControlName();
-		String pageParamName = xmlData.getPageStaticParamsName();
-		ArrayList<String> pageParams = xmlData.getPageStaticParams();
-		String serviceName = xmlData.getServiceName();
+	
+	public void printPageInfo(PageJsonData jsonData, String type) {
+		String controlName = jsonData.getControlName();
+		String pageParamName = jsonData.getPageStaticParamsName();
+		ArrayList<String> pageParams = jsonData.getPageStaticParams();
+		String serviceName = jsonData.getServiceName();
+		String serviceType = jsonData.getServiceType();
+		String logicalDir = jsonData.getLogicalDir();
 
-		String pageDir = xmlData.getDir();
-		String pageName = xmlData.getPageName();
-		String debugLevel = xmlData.getDebug();
+		String pageDir = jsonData.getDir();
+		String pageName = jsonData.getPageName();
+		String debugLevel = jsonData.getDebug();
 
-		String[] SQL_INFO = xmlData.getSql();
+		String[] SQL_INFO = jsonData.getSql();
 		String sql_info = "SQL:\t";
 		for(int i = 0; i < SQL_INFO.length; i++) {
 			if(i != SQL_INFO.length-1)
@@ -262,27 +133,35 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 			else
 				sql_info += SQL_INFO[i];
 		}
-		String PRM_NAME = xmlData.getParameter();
-		String VAL_INFO = xmlData.getData();
+		String PRM_NAME = jsonData.getParameter();
+		String VAL_INFO = jsonData.getData();
+		String PAGE_VAL = null;
 
-		boolean authorized = xmlData.getAuthorizedRequire();
-		boolean[] methods = {
-				xmlData.getPost(),
-				xmlData.getGet(),
-				xmlData.getPut(),
-				xmlData.getDelete(),
-				xmlData.getOptions(),
-				xmlData.getHead()
-		};
+		String valMsg = "No Page Value";
+		String[] valBuffer = null;
 		
-		String valMsg = "";
-		String[] valBuffer = VAL_INFO.split("\n");
-		for (int ab = 0; ab < valBuffer.length; ab++) {
-			String tempVal = valBuffer[ab].trim();
-			if(valMsg == "")
-				valMsg = tempVal;
-			else
-				valMsg += ("\n\t" + tempVal);
+		if(VAL_INFO != null)
+		{
+			valBuffer = VAL_INFO.split("\n");
+			PAGE_VAL = "";
+		
+			for (int ab = 0; ab < valBuffer.length; ab++) {
+				String tempVal = valBuffer[ab].trim();
+				if(valMsg == "")
+					valMsg = tempVal;
+				else
+					valMsg += ("\n\t" + tempVal);
+			}
+			LinkedHashMap<String, Boolean> pvv = jsonData.getPageValue();
+			if(pvv != null) {
+				for(int aabb = 0; aabb < pvv.size(); aabb++) {
+					PAGE_VAL += pvv.get(aabb);
+					if(aabb < pvv.size()-1) {
+						PAGE_VAL += ", ";
+					}
+				}
+			}
+			
 		}
 		String PRM = "";
 		if(pageParams != null) {
@@ -291,19 +170,19 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				if(pr < pageParams.size() - 1)
 					PRM += ", ";
 			}
+		}else {
+			PRM = null;
 		}
 		String tempMsg = "\n┌──────────────────────────Page Control  :  " + controlName + "────────────────────────────"
 				+ "\n│View Dir:\t" + pageDir + "\t\tView Page:\t" + pageName
-				+ "\n│Debug Level:\t" + debugLevel
+				+ "\n│Logical Dir:\t" + logicalDir + "\t\tDebug Level:\t" + debugLevel
 				+ "\n│Static Param Name:\t" + pageParamName + "\t\tStatic Param Value:\t" + PRM
-				+ "\n│Service Name:\t" + serviceName + "\tParameter:\t" + PRM_NAME
-				+ "\n│Authorized  :\t" + authorized + "\tPost:\t" + methods[0] + "\tGet:\t" + methods[1]
-				+ "\n│Put         :\t" + methods[2] + "\tDelete:\t" + methods[3]
-						+ "\tOptions:\t" + methods[4] + "\tHead:\t"+ methods[5];
+				+ "\n│Service Name:\t" + serviceName + "\nType:\t" + serviceType + "\tParameter:\t" + PRM_NAME;
 
 		if(type == "info") {
-			tempMsg += "\n│SQL:\t" + sql_info
+			tempMsg +="\n│SQL:\t" + sql_info
 					+ "\n│Value:\t" + valMsg
+					+ "\n│SET  :\t" + PAGE_VAL
 					+ "\n└───────────────────────────────────────────────────────────────────────────";
 		}else {
 			tempMsg += "\n└───────────────────────────────────────────────────────────────────────────";
@@ -311,16 +190,16 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		mklogger.temp(tempMsg, false);
 		mklogger.flush("info");
 	}
+
 	@Override
-	public ArrayList<PageXmlData> getControl(String k) {
-		
+	public ArrayList<PageJsonData> getControl(String k) {
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
 				setPageConfigs(defaultFiles);
-				mklogger.info("==============Reload " + this.configName + " Config files==============");
+				mklogger.info("==============Reload Page Config files==============");
 				mklogger.info("========Caused by  : different modified time========");
-				mklogger.info("==============Reload " + this.configName + " Config files==============");
+				mklogger.info("==============Reload Page Config files==============");
 				break;
 			}
 		}
@@ -336,5 +215,33 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 			return null;
 		}
 		return page_configs.get(k);
+	}
+	
+	@Override
+	protected PageJsonData setPageJsonData(String pageParamName, ArrayList<String> pageParam, String serviceName, String serviceType, String[] ctr_info, String[] sqlInfo, String PRM_NAME, String VAL_INFO, String STRUCTURE) {
+		PageJsonData result = new PageJsonData();
+		result.setPageStaticParamName(pageParamName);
+		result.setPageStaticParams(pageParam);
+		result.setControlName(ctr_info[0]);
+		result.setServiceName(serviceName);
+		result.setServiceType(serviceType);
+		result.setLogicalDir(ctr_info[3]);
+		result.setDir(ctr_info[2]);
+		
+		result.setPageName(ctr_info[4]);
+		result.setDebug(ctr_info[1]);
+
+		result.setSql(sqlInfo);
+		result.setParameter(PRM_NAME);
+		result.setData(VAL_INFO);
+
+		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
+		PAGE_VALUE = pageValueToHashMap(VAL_INFO);
+		result.setPageValue(PAGE_VALUE);
+		return result;
+	}
+	public boolean isApiPageSet() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

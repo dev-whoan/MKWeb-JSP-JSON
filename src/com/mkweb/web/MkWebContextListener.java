@@ -2,16 +2,14 @@ package com.mkweb.web;
 
 import java.io.File;
 
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkPageConfigs;
-import com.mkweb.config.MkRestApiPageConfigs;
-import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.config.MkSQLXmlConfigs;
-import com.mkweb.data.AbsXmlData;
-import com.mkweb.logger.MkLogger;
+import com.mkweb.config.MkSQLJsonConfigs;
+import com.mkweb.logger.MkLogger;;
 
 public class MkWebContextListener implements ServletContextListener {
 
@@ -50,8 +48,10 @@ public class MkWebContextListener implements ServletContextListener {
 		 * Setting SQL
 		 */
 		File mkweb_sql_config = new File(new File(event.getServletContext().getRealPath("/")), sqlConfigsUri);
-		MkSQLXmlConfigs sxc = MkSQLXmlConfigs.Me();
-		sxc.setSqlConfigs(mkweb_sql_config);
+		File[] config_sqls = mkweb_sql_config.listFiles();
+		
+		MkSQLJsonConfigs sxc = MkSQLJsonConfigs.Me();
+		sxc.setSqlConfigs(config_sqls);
 		
 		/*
 		 * Setting Pages
@@ -65,10 +65,10 @@ public class MkWebContextListener implements ServletContextListener {
 		/*
 		 *  Rest Api Settings
 		
-		*/
+		
 		if(MkConfigReader.Me().get("mkweb.restapi.use").equals("yes")) {
 			File mkweb_apisql_config = new File(new File(event.getServletContext().getRealPath("/")), apiSqlConfigs);
-			MkRestApiSqlConfigs mrasc = MkRestApiSqlConfigs.Me();
+			MkRestApiSqlConfigs_old mrasc = MkRestApiSqlConfigs_old.Me();
 			mrasc.setSqlConfigs(mkweb_apisql_config);
 			
 			File mkweb_apipage_config = new File(new File(event.getServletContext().getRealPath("/")), apiPageConfigs);
@@ -77,6 +77,6 @@ public class MkWebContextListener implements ServletContextListener {
 			MkRestApiPageConfigs mrac = MkRestApiPageConfigs.Me();
 			mrac.setPageConfigs(config_api_pages);
 		}
-		
+		*/
 	}
 }

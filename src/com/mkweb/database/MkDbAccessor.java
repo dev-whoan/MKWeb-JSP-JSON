@@ -3,6 +3,7 @@ package com.mkweb.database;
 import java.sql.Connection;
 
 
+
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,8 +14,8 @@ import java.util.LinkedHashMap;
 
 import org.json.simple.JSONObject;
 
-import com.mkweb.config.MkConfigReader;
 import com.mkweb.logger.MkLogger;
+import com.mkweb.config.MkConfigReader;
 
 public class MkDbAccessor {
 	//로그 만들기
@@ -37,6 +38,7 @@ public class MkDbAccessor {
 	protected Connection getDbCon() {	return this.dbCon;	}
 	public void setPreparedStatement(String qr) {
 		this.psmt = qr;
+		mklogger.debug(TAG, " psmt set check : " + this.psmt);
 	}
 	
 	public void setRequestValue(ArrayList<String> arr) {
@@ -102,7 +104,7 @@ public class MkDbAccessor {
 		}catch(SQLException e){
 			mklogger.error(TAG, "(connectDB) SQLException : " + e.getMessage());
 		}catch(Exception e){ 
-			mklogger.error(TAG, " " + e.getMessage());
+			mklogger.error(TAG, " me?? " + e.getMessage());
 		}
 		
 		return conn;
@@ -132,7 +134,7 @@ public class MkDbAccessor {
 			{
 				try {
 					PreparedStatement prestmt;
-					prestmt = dbCon.prepareStatement(this.psmt);
+					prestmt = dbCon.prepareStatement(this.psmt, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 					
 					if(reqValue != null) {
 						for(int i = 0; i < reqValue.size(); i++) {
@@ -144,8 +146,9 @@ public class MkDbAccessor {
 								prestmt.setString((i+1), reqValueArr[i]);
 						}
 					}
+
 					rs = prestmt.executeQuery(); 
-					
+
 					ResultSetMetaData rsmd; 
 					int columnCount;
 					String columnNames[];
@@ -156,7 +159,10 @@ public class MkDbAccessor {
 					    columnCount = rsmd.getColumnCount();
 					    columnNames = new String[columnCount];
 					    for(int i=0; i < columnCount; i++) {
-					        columnNames[i] = rsmd.getColumnName(i+1); 
+					    	String tempName = rsmd.getColumnName(i+1);
+					    	String tempLabel = rsmd.getColumnLabel(i+1);
+					    	
+					    	columnNames[i] = tempName.contentEquals(tempLabel) ? tempName : tempLabel;
 					    }
 					}
 					LinkedHashMap<String, Object> result = null;
@@ -164,14 +170,16 @@ public class MkDbAccessor {
 					
 					while(rs.next()) {
 						result = new LinkedHashMap<String, Object>();
+
 						for( String name : columnNames )
 						{
+							mklogger.debug(TAG, "name : " + name);
 							if(asJson)
 								result.put("\""+name+"\"", "\""+rs.getObject(name)+"\"");
 							else
 								result.put(name, rs.getObject(name));
 						}
-						
+
 						rst.add(result);
 					}
 					
@@ -184,6 +192,8 @@ public class MkDbAccessor {
 				} catch (SQLException e) {
 					mklogger.error(TAG, "(executeSEL) psmt = this.dbCon.prepareStatement(" + this.psmt + ") :" + e.getMessage());
 				}
+			}else {
+				mklogger.debug(TAG, "psmt 널임");
 			}
 		}
 		return rst;
@@ -199,7 +209,7 @@ public class MkDbAccessor {
 			{
 				try {
 					PreparedStatement prestmt;
-					prestmt = dbCon.prepareStatement(this.psmt);
+					prestmt = dbCon.prepareStatement(this.psmt, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 					
 					if(reqValue != null) {
 						for(int i = 0; i < reqValue.size(); i++) 
@@ -211,6 +221,9 @@ public class MkDbAccessor {
 						}
 					}
 					
+					mklogger.debug(TAG, "prestmt: \n\n\n" + prestmt.toString());
+					
+					
 					rs = prestmt.executeQuery(); 
 					
 					ResultSetMetaData rsmd; 
@@ -221,10 +234,14 @@ public class MkDbAccessor {
 						return null;
 					}else {
 						rsmd = rs.getMetaData();
-					    columnCount = rsmd.getColumnCount();
+						columnCount = rsmd.getColumnCount();
 					    columnNames = new String[columnCount];
+					    
 					    for(int i=0; i < columnCount; i++) {
-					        columnNames[i] = rsmd.getColumnName(i+1); 
+					    	String tempName = rsmd.getColumnName(i+1);
+					    	String tempLabel = rsmd.getColumnLabel(i+1);
+					    	
+					    	columnNames[i] = tempName.contentEquals(tempLabel) ? tempName : tempLabel;
 					    }
 					}
 					LinkedHashMap<String, Object> result = null;
@@ -266,7 +283,7 @@ public class MkDbAccessor {
 			{
 				try {
 					PreparedStatement prestmt;
-					prestmt = dbCon.prepareStatement(this.psmt);
+					prestmt = dbCon.prepareStatement(this.psmt, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 					
 					if(reqValue != null) {
 						for(int i = 0; i < reqValue.size(); i++) {

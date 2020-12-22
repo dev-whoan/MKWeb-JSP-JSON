@@ -79,12 +79,12 @@
 	
 	<context-param>
 		<param-name>MKWeb.SqlConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/MkSql.xml</param-value>
+		<param-value>/WEB-INF/classes/configs/sqls</param-value>
 	</context-param>
 
 	<context-param>
 		<param-name>MKWeb.LoggerConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/MkLogger.xml</param-value>
+		<param-value>/WEB-INF/classes/configs/MkLogger.json</param-value>
 	</context-param>
 
 	<context-param>
@@ -94,7 +94,7 @@
 	
 	<context-param>
 		<param-name>MkWeb.ApiSqlConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/MkApiSql.xml</param-value>
+		<param-value>/WEB-INF/classes/configs/MkApiSql.json</param-value>
 	</context-param>
 	
 	<context-param>

@@ -22,6 +22,11 @@
 			<rtexprvalue>false</rtexprvalue>
 		</attribute>
 		<attribute>
+			<name>id</name>
+			<required>true</required>
+			<rtexprvalue>false</rtexprvalue>
+		</attribute>
+		<attribute>
 			<name>like</name>
 			<required>false</required>
 			<rtexprvalue>false</rtexprvalue>

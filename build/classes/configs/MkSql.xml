@@ -2,13 +2,13 @@
 
 <MkSQL xmlid="sql">
 	<sql id="selectUserByClass" db="mkwiki">
-		SELECT *
+		SELECT name as NAME, u_class as userCLASS
 		FROM User
 		WHERE u_class = @user_class@;
 	</sql>
 	
 	<sql id="selectUser" db="mkwiki">
-		SELECT *
+		SELECT name as NAME, u_class as userCLASS
 		FROM User;
 	</sql>
 	
@@ -16,12 +16,6 @@
 		INSERT INTO User(name, u_class)
 		VALUES
 		(@uname@, @uclass@);
-	</sql>
-	
-	<sql id="api_selectUser" db="mkweb">
-		SELECT SEQ, name, u_class
-		FROM User
-		@CONDITION@;
 	</sql>
 
 <!-- 

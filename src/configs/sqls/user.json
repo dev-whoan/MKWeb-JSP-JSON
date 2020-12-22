@@ -1,0 +1,17 @@
+{
+	"Controller": {
+		"name":"user",
+		"debug":"error",
+		"db":"mkwiki",
+		"services":[
+			{
+				"id":"selectName",
+				"query":"SELECT * FROM User; "
+			},
+			{
+				"id":"selectUserByClass",
+				"query":"SELECT name, u_class FROM User WHERE u_class = @user_class@ AND user_name = @user_name@;"
+			}
+		]
+	}
+}

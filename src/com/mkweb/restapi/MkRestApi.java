@@ -2,6 +2,7 @@ package com.mkweb.restapi;
 
 import java.io.BufferedReader;
 
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,20 +11,22 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.data.MkJsonData;
-import com.mkweb.data.PageXmlData;
-import com.mkweb.data.SqlXmlData;
+import com.mkweb.data.PageJsonData;
+import com.mkweb.data.SqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.security.CheckPageInfo;
@@ -61,7 +64,7 @@ public class MkRestApi extends HttpServlet {
 
 	private boolean checkMethod(HttpServletRequest request, String rqMethod, String mkPage) {
 
-		ArrayList<PageXmlData> apiPageInfo = null;
+		ArrayList<PageJsonData> apiPageInfo = null;
 		if(MkRestApiPageConfigs.Me().getControl(mkPage) != null) {
 			apiPageInfo = MkRestApiPageConfigs.Me().getControl(mkPage);
 		}
@@ -76,9 +79,9 @@ public class MkRestApi extends HttpServlet {
 			return false;
 		}
 
-		PageXmlData pageInfo = null;
+		PageJsonData pageInfo = null;
 		for(int i = 0; i < apiPageInfo.size(); i++) {
-			if(apiPageInfo.get(i).getSql()[3].equals(rqMethod)) {
+			if(apiPageInfo.get(i).getSql()[2].equals(rqMethod)) {
 				pageInfo = apiPageInfo.get(i);
 				break;
 			}
@@ -149,11 +152,6 @@ public class MkRestApi extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "get");
-		
-		//mkweb.restapi.resource.start
-		//mkweb.restapi.resource.end
-		//오늘 할 거 : Get방식 주소 묶기 ( disable query string )
-		
 		doTask(request, response);
 	}
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -167,21 +165,22 @@ public class MkRestApi extends HttpServlet {
 			response.sendError(404);
 			return;
 		}
-		
+
 		final String MKWEB_URL_PATTERN = MkConfigReader.Me().get("mkweb.restapi.urlpattern");
 		final String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
+		mklogger.debug(TAG," 이거 찾아야해 " + MKWEB_API_ID);
 		final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.searchkey.exp");
 		String reqApiData = null;
-		
+
 		String requestURI = request.getRequestURI();
 		String[] reqPage = null;
 		String mkPage = null;
-		
+
 		boolean requireKey = MkConfigReader.Me().get("mkweb.restapi.usekey").contentEquals("yes") ? true : false;
 		String searchKey = null;
-		
+
 		reqPage = requestURI.split("/" + MKWEB_URL_PATTERN + "/");
-		
+
 		if(reqPage.length < 2) {
 			//예외
 			mklogger.debug(TAG, "401 here 3");
@@ -189,36 +188,56 @@ public class MkRestApi extends HttpServlet {
 			return;
 		}
 		mkPage = reqPage[1];
-		
+
 		if(mkPage.contains("/")) {
 			mkPage = mkPage.split("/")[0];
 		}
-		
+
 		mklogger.debug(TAG, "mkPage : " + mkPage);
-		
+
 		if(request.getAttribute("api-method").toString().contentEquals("get")) {
 			//
 			reqApiData = "{";
-			//3개면 쿼리스트링 3개 초과면 `/~/~/~`
-			//3개 미만이면 에러
-
+			
 			int size = requestURI.split("/").length;
 			mklogger.debug(TAG, "URI : " + requestURI + " || size : " + size);
-			
+
 			if(size == 3) {
 				//쿼리스트링
 				Enumeration params = request.getParameterNames();
 				String requestParams = null;
 				int i = 0;
+				mklogger.debug(TAG, "start reqApiData:" + reqApiData);
 				while(params.hasMoreElements()) {
 					if(i++ != 0)
 						reqApiData += ", ";
 					
 					String key = params.nextElement().toString().trim();
+					mklogger.debug(TAG, "key: " + key);
 					String value = request.getParameter(key);
+					mklogger.debug(TAG, "value : " + value);
+					if(key.contentEquals(MKWEB_API_ID)) {
+						reqApiData += "\"" + value + "\"";
+					}else {
+						reqApiData += "\"" + key + "\":" + "\"" + value + "\"";
+					}
 					
-					reqApiData += "\"" + key + "\":" + "\"" + value + "\"";
 				}
+				// i 가 0이면 전체조회
+				/*
+				if(i == 1) {
+					mklogger.debug(TAG, " you also get here" );
+					if(requireKey) {
+						String key = request.getParameter(MKWEB_SEARCH_KEY);
+						String value = request.getParameter(key);
+						mklogger.debug(TAG, " also key: " + key + ", value : " + value );
+						reqApiData += "\"" + key + "\":" + "\"" + value + "\"";
+						mklogger.debug(TAG, "also reqApiData: " + reqApiData);
+					}else {
+						reqApiData = "";
+					}
+				}
+				*/
 			}else if(size > 3) {
 				// `/~/~/~`
 				String[] urlPattern = requestURI.split(MKWEB_URL_PATTERN);
@@ -228,15 +247,13 @@ public class MkRestApi extends HttpServlet {
 					String[] reqApiArray = reqApiURI.split(mkPage);
 					if(reqApiArray != null && reqApiArray.length == 2) {
 						String[] reqApiRequestData = reqApiArray[1].split("/");;
-						
+
 						for(int i = 1; i < reqApiRequestData.length; i++) {
-							mklogger.debug(TAG, "splited api datas : " + reqApiRequestData[i]);
-							
 							if(i % 2 == 1) {
 								reqApiData += "\"" + reqApiRequestData[i] + "\"" + ":";
 							}else {
 								reqApiData += "\"" + reqApiRequestData[i] + "\"";
-								
+
 								if(i < reqApiRequestData.length -1) {
 									reqApiData += ", ";
 								}
@@ -248,22 +265,20 @@ public class MkRestApi extends HttpServlet {
 				}else {
 					mklogger.debug(TAG, "urlPattern 배열 확인 필요");
 				}
-				
+
 			}else {
 				// 예외
 			}
 			reqApiData += "}";
-		}else {
+		}else{
 			reqApiData = request.getParameter(MKWEB_API_ID);
 		}
-		
-		mklogger.debug(reqApiData);
 
 		String reqToJson = null;
 		boolean isDataRequestedAsJsonObject = true;
-		MkJsonData mkJsonObject = new MkJsonData();
+		MkRestApiData mkJsonObject = new MkRestApiData();
 		JSONObject jsonObject = null;
-		
+
 		if(reqApiData != null) {
 			mkJsonObject.setData(reqApiData);
 
@@ -285,7 +300,7 @@ public class MkRestApi extends HttpServlet {
 				jsonObject = mkJsonObject.getJsonObject();
 			}
 		}
-		
+
 		if(jsonObject == null) {
 			StringBuilder stringBuilder = new StringBuilder();
 
@@ -327,7 +342,7 @@ public class MkRestApi extends HttpServlet {
 
 				mkJsonObject.setData(reqApiData);
 				if(!mkJsonObject.setJsonObject()) {
-					mklogger.error(TAG, " failed to create JsonObject.");
+					mklogger.error(TAG, " Failed to create JsonObject.");
 					isDataRequestedAsJsonObject = false;
 				}
 
@@ -355,7 +370,7 @@ public class MkRestApi extends HttpServlet {
 				response.sendError(401);
 				return;
 			}
-			
+
 			if(searchKey == null) {
 				//예외
 				mklogger.debug(TAG, "401 here 2");
@@ -363,15 +378,21 @@ public class MkRestApi extends HttpServlet {
 				return;
 			}
 		}
-		
+/*
+ * func isValidDataForJson) ParseException:: Unexpected token RIGHT BRACE(}) at position 8. Given data is not valid for JSONObject.
+{"name":}
+/users/name
+/users/u_class
+{"name":"dev.whoan","u_class":}
+/users/name/dev.whoan/u_class
+jsonObject null
+ */
 		Object mAttributes = request.getAttribute("api-method");
 		String method = null;
-		
+
 		//페이지 유효성 검사
 		//String requestURI = request.getRequestURI();
 
-		mklogger.debug(TAG, "mkPage : " + mkPage);
-		
 		if(mAttributes != null)
 			method = mAttributes.toString().toLowerCase();
 
@@ -397,7 +418,6 @@ public class MkRestApi extends HttpServlet {
 		}
 		if(!checkMethod(request, method, mkPage)) {
 			//예외
-			
 			response.sendError(400);
 			return;
 		}
@@ -410,7 +430,7 @@ public class MkRestApi extends HttpServlet {
 		}
 		//리턴은 무조건 json이다.
 		//ApiSql에서 Allow_Single 확인
-		ArrayList<PageXmlData> apiPageInfo = MkRestApiPageConfigs.Me().getControl(mkPage);
+		ArrayList<PageJsonData> apiPageInfo = MkRestApiPageConfigs.Me().getControl(mkPage);
 
 		if(apiPageInfo == null) {
 			mklogger.error(TAG, " api page info null");
@@ -419,8 +439,9 @@ public class MkRestApi extends HttpServlet {
 		int target = -1;
 		for(int i = 0; i < apiPageInfo.size(); i++) {
 
-			if(apiPageInfo.get(i).getSql()[3].contentEquals(method)) {
+			if(apiPageInfo.get(i).getSql()[2].contentEquals(method)) {
 				target = i;
+				mklogger.debug(TAG, "target : " + target);
 				break;
 			}
 		}
@@ -434,44 +455,23 @@ public class MkRestApi extends HttpServlet {
 
 		}
 
-		PageXmlData pxData = apiPageInfo.get(target);
-		SqlXmlData sqlData = MkRestApiSqlConfigs.Me().getControlService(pxData.getServiceName().split("sql.")[1]);
+		PageJsonData pxData = apiPageInfo.get(target);
+		
+		SqlJsonData sqlData = MkRestApiSqlConfigs.Me().getControlService(pxData.getServiceName());
 
 		if(sqlData == null) {
 			//예외
-			mklogger.error(TAG, " There is no SQL Data named : " + pxData.getServiceName());
+			mklogger.debug(TAG, "TnSQDn: pxData.getControlName(): " + pxData.getControlName());
+			mklogger.error(TAG, "There is no SQL Data named : " + pxData.getServiceName());
 			return;
 		}
 
-		ArrayList<String> sqlKey = new ArrayList<>();
-		ArrayList<String> sqlColumnData = sqlData.getColumnData();
-		Object jsonObjectData = null;
-		if(sqlData.getAllowSingle()) {
-			//이 안에 있는게 필요한 거
-			for(String scData : sqlColumnData) {
-				jsonObjectData = jsonObject.get(scData);
-				if(jsonObjectData != null)
-					sqlKey.add(scData);
-			}
-			//들어온 파라미터 한 개만
-		}else {
-			for(String scData : sqlColumnData) {
-				jsonObjectData = jsonObject.get(scData);
-				if(jsonObjectData == null) {
-					//예외
-					mklogger.error(TAG, " Allowsingle is not allowed at this page : " + pxData.getControlName());
-					response.setStatus(401);
-					return;
-				}
-				sqlKey.add(scData);
-			}
-		}
-//
-//		if(!cpi.comparePageValueWithRequest(pxData.getData(), sqlKey, pxData.getPageStaticParams(), true)) {
-//			//예외
-//			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
-//			return;
-//		}
+		//
+		//		if(!cpi.comparePageValueWithRequest(pxData.getData(), sqlKey, pxData.getPageStaticParams(), true)) {
+		//			//예외
+		//			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
+		//			return;
+		//		}
 		//여기까지는 모든 메서드 중복되는 행위
 		//조회? 생성? 삭제?
 
@@ -501,27 +501,28 @@ public class MkRestApi extends HttpServlet {
 		} else {
 			lmrap = new ArrayList<>();
 		}
-		
+
 		if(!isDone) {
 			if(method.contentEquals("get")) {
 				//조회
-				resultObject = doTaskGet(pxData, sqlKey, sqlData, jsonObject, mkPage);
+				resultObject = doTaskGet(pxData, sqlData, jsonObject, mkPage);
 			}else if(method.contentEquals("post")) {
 				//삽입, 갱신
-				resultObject = doTaskPost(pxData, sqlKey, sqlData, jsonObject, mkPage);
+				resultObject = doTaskPost(pxData, sqlData, jsonObject, mkPage);
 			}else if(method.contentEquals("put")) {
 				//조회, 삽입
-				resultObject = doTaskPut(pxData, sqlKey, sqlData, jsonObject, mkPage);
+				resultObject = doTaskPut(pxData, sqlData, jsonObject, mkPage);
 			}else if(method.contentEquals("delete")) {
 				//삭제
-				resultObject = doTaskDelete(pxData, sqlKey, sqlData, jsonObject, mkPage);
+				resultObject = doTaskDelete(pxData, sqlData, jsonObject, mkPage);
 			}
 			Hash = pxData.getControlName() + sqlData.getServiceName() + method;
 			mrap = new MkRestApiResponse(resultObject, lmrap.size()+1, 1, Hash);
 		}
-		
+
+		//500 에러. 존재하지 않는 대상이면 500으로 넘어가는 문제
 		mkJsonObject.printObject(resultObject);
-		
+
 		if(lmrap.size() == 0)
 			lmrap.add(mrap);
 		else {
@@ -532,225 +533,290 @@ public class MkRestApi extends HttpServlet {
 				lmrap.add(mrap);
 			}
 		}
+		//Create ResponseData with resultObject.
+		MkRestApiData mkApiDData = new MkRestApiData();
 		request.setAttribute("mrap", lmrap);
 		request.setAttribute("mraHash", Hash);
 		//리스폰스(최초 응답, 이전, 다음 응답 기록)
 		response.setStatus(200);
 		response.setContentType("application/json;charset=UTF-8");
-        response.setCharacterEncoding("UTF-8");
+		response.setCharacterEncoding("UTF-8");
 		PrintWriter out = response.getWriter();
-		out.print(resultObject.toString());
+
+		String roString = resultObject.toJSONString();
+		String result = "";
+		int size = roString.length();
+		int tSize = -1;
+		int tabCount = 0;
+		boolean shouldTab = false;
+		while(++tSize < size) {
+			result += roString.charAt(tSize);
+			switch(roString.charAt(tSize)) {
+			case '{':
+				tabCount++;
+				result += "\n";
+				shouldTab = true;
+				break;
+			case '}':
+			{
+				tabCount--;
+				char rChar = result.charAt(result.length()-2);
+				switch(rChar) {
+				case '\"':
+				{
+					result = result.substring(0, result.length()-2) + "\"\n";
+					for(int i = 0; i < tabCount; i++) {	result += "\t";	}
+					result += "}";
+					break;
+				}
+				}
+				result += "\n";
+				shouldTab = true;
+				break;
+			}
+			case ']':
+				result = result.substring(0, result.length()-3) + "]\n";
+				shouldTab = true;
+				break;
+			case ',':
+				result += "\n";
+				shouldTab = true;
+				break;
+			}
+			if(shouldTab) {
+				for(int i = 0; i < tabCount; i++) {	result += "\t";	}
+				shouldTab = false;
+			}
+		}
+
+		result = result.substring(0, result.length()-3) + "}";
+
+		out.print("테스트\n");
+		out.print(result);
+		out.print("\n기본\n");
+		out.print(resultObject.toJSONString());		
 		out.flush();
 	}
 
-	private JSONObject doTaskGet(PageXmlData pxData, ArrayList<String> sqlKey, SqlXmlData sqlData, JSONObject jsonObject, String mkPage) {
+	private JSONObject doTaskGet(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
-		String service = pxData.getServiceName().split("\\.")[1];
-
-		String befQuery = cpi.regularQuery(service); 
+		String service = pxData.getServiceName();
+		String befQuery = cpi.regularQuery(service, true); 
 		String query = null;
 
+		mklogger.debug(TAG, " befQuery : "+ befQuery);
+		
+		query = cpi.setQuery(befQuery);
+		mklogger.debug(TAG, "query check : " + query);
+		DA.setPreparedStatement(query);
+		
+		Set keySet = jsonObject.keySet();
+		Iterator iter = keySet.iterator();
+		ArrayList<String> sqlKey = new ArrayList<String>();
+		while(iter.hasNext()) {
+			String key = iter.next().toString();
+			sqlKey.add(jsonObject.get(key).toString());
+		}
+		DA.setRequestValue(sqlKey);
+
+		ArrayList<Object> resultTest = null;
+
 		if(sqlData.getAllowLike()) {
-			query = cpi.setApiQueryLike(befQuery, sqlKey);
-		}else {
-			query = cpi.setApiQuery(befQuery, sqlKey);
+			resultTest = DA.executeSELLike(true);
+		}
+		else {
+			resultTest = DA.executeSEL(true);
 		}
 
-		if(sqlKey != null) {
-			DA.setPreparedStatement(query);
+		String test = "{\"" + mkPage + "\":[";
+		if(resultTest != null) {
+			for(int l = 0; l < resultTest.size(); l++) {
+				String damn = resultTest.get(l).toString();
+				damn = damn.replaceAll("=", ":");
+				MkRestApiData tttt = new MkRestApiData(damn);
+				test += damn;
 
-			DA.setRequestValue(sqlKey, jsonObject);
-
-			ArrayList<Object> resultTest = null;
-
-			if(sqlData.getAllowLike()) 
-				resultTest = DA.executeSELLike(true);
-			else
-				resultTest = DA.executeSEL(true);	
-
-			String test = "{\"" + mkPage + "\":[";
-			if(resultTest != null) {
-				for(int l = 0; l < resultTest.size(); l++) {
-					String damn = resultTest.get(l).toString();
-					damn = damn.replaceAll("=", ":");
-					MkJsonData tttt = new MkJsonData(damn);
-					test += damn;
-					
-					if(l < resultTest.size() - 1)
-						test += ", ";
-				}
-				test += "]}";
-				
-				MkJsonData tttt = new MkJsonData(test);
-				
-				if(tttt.setJsonObject()) {
-					resultObject = tttt.getJsonObject();
-				}
-			}else {
-				//조회 데이터 없음
+				if(l < resultTest.size() - 1)
+					test += ", ";
 			}
+			test += "]}";
+
+			MkRestApiData tttt = new MkRestApiData(test);
+
+			if(tttt.setJsonObject()) {
+				resultObject = tttt.getJsonObject();
+			}
+		}else {
+			//조회 데이터 없음
+		}
+
+
+		return resultObject;
+	}
+
+	private JSONObject doTaskPost(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
+		JSONObject resultObject = null;
+		MkDbAccessor DA = new MkDbAccessor();
+
+		String service = pxData.getServiceName();
+		String befQuery = cpi.regularQuery(service, true); 
+		String query = null;
+
+		query = cpi.setQuery(befQuery);
+
+		DA.setPreparedStatement(query);
+
+		Set keySet = jsonObject.keySet();
+		Iterator iter = keySet.iterator();
+		ArrayList<String> sqlKey = new ArrayList<String>();
+		while(iter.hasNext()) {
+			String key = iter.next().toString();
+			sqlKey.add(jsonObject.get(key).toString());
+		}
+		DA.setRequestValue(sqlKey);
+
+
+		ArrayList<Object> resultTest = null;
+
+		if(sqlData.getAllowLike()) 
+			resultTest = DA.executeSELLike(true);
+		else
+			resultTest = DA.executeSEL(true);	
+
+
+		String test = "{\"" + mkPage + "\":[";
+		if(resultTest != null) {
+			for(int l = 0; l < resultTest.size(); l++) {
+				String damn = resultTest.get(l).toString();
+				damn = damn.replaceAll("=", ":");
+				MkRestApiData tttt = new MkRestApiData(damn);
+				test += damn;
+
+				if(l < resultTest.size() - 1)
+					test += ", ";
+			}
+			test += "]}";
+
+			MkRestApiData tttt = new MkRestApiData(test);
+
+			if(tttt.setJsonObject()) {
+				resultObject = tttt.getJsonObject();
+			}
+		}else {
+			//조회 데이터 없음
 		}
 
 		return resultObject;
 	}
 
-	private JSONObject doTaskPost(PageXmlData pxData, ArrayList<String> sqlKey, SqlXmlData sqlData, JSONObject jsonObject, String mkPage) {
+	private JSONObject doTaskPut(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
 		String service = pxData.getServiceName().split("\\.")[1];
 
-		String befQuery = cpi.regularQuery(service); 
+		String befQuery = cpi.regularQuery(service, true); 
 		String query = null;
 
-		if(sqlData.getAllowLike()) {
-			query = cpi.setApiQueryLike(befQuery, sqlKey);
-		}else {
-			query = cpi.setApiQuery(befQuery, sqlKey);
+		query = cpi.setQuery(befQuery);
+
+
+		DA.setPreparedStatement(query);
+
+		Set keySet = jsonObject.keySet();
+		Iterator iter = keySet.iterator();
+		ArrayList<String> sqlKey = new ArrayList<String>();
+		while(iter.hasNext()) {
+			String key = iter.next().toString();
+			sqlKey.add(jsonObject.get(key).toString());
 		}
-
-		if(sqlKey != null) {
-			DA.setPreparedStatement(query);
-
-			DA.setRequestValue(sqlKey, jsonObject);
-
-			ArrayList<Object> resultTest = null;
-
-			if(sqlData.getAllowLike()) 
-				resultTest = DA.executeSELLike(true);
-			else
-				resultTest = DA.executeSEL(true);	
+		DA.setRequestValue(sqlKey);
 
 
-			String test = "{\"" + mkPage + "\":[";
-			if(resultTest != null) {
-				for(int l = 0; l < resultTest.size(); l++) {
-					String damn = resultTest.get(l).toString();
-					damn = damn.replaceAll("=", ":");
-					MkJsonData tttt = new MkJsonData(damn);
-					test += damn;
-					
-					if(l < resultTest.size() - 1)
-						test += ", ";
-				}
-				test += "]}";
-				
-				MkJsonData tttt = new MkJsonData(test);
-				
-				if(tttt.setJsonObject()) {
-					resultObject = tttt.getJsonObject();
-				}
-			}else {
-				//조회 데이터 없음
+		ArrayList<Object> resultTest = null;
+
+		if(sqlData.getAllowLike()) 
+			resultTest = DA.executeSELLike(true);
+		else
+			resultTest = DA.executeSEL(true);	
+
+		String test = "{\"" + mkPage + "\":[";
+		if(resultTest != null) {
+			for(int l = 0; l < resultTest.size(); l++) {
+				String damn = resultTest.get(l).toString();
+				damn = damn.replaceAll("=", ":");
+				MkRestApiData tttt = new MkRestApiData(damn);
+				test += damn;
+
+				if(l < resultTest.size() - 1)
+					test += ", ";
 			}
+			test += "]}";
+			MkRestApiData tttt = new MkRestApiData(test);
+
+			if(tttt.setJsonObject()) {
+				resultObject = tttt.getJsonObject();
+			}
+		}else {
+			//조회 데이터 없음
 		}
+
 
 		return resultObject;
 	}
 
-	private JSONObject doTaskPut(PageXmlData pxData, ArrayList<String> sqlKey, SqlXmlData sqlData, JSONObject jsonObject, String mkPage) {
+	private JSONObject doTaskDelete(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
 		String service = pxData.getServiceName().split("\\.")[1];
 
-		String befQuery = cpi.regularQuery(service); 
+		String befQuery = cpi.regularQuery(service, true); 
 		String query = null;
 
-		if(sqlData.getAllowLike()) {
-			query = cpi.setApiQueryLike(befQuery, sqlKey);
-		}else {
-			query = cpi.setApiQuery(befQuery, sqlKey);
+		query = cpi.setQuery(befQuery);
+		DA.setPreparedStatement(query);
+
+		Set keySet = jsonObject.keySet();
+		Iterator iter = keySet.iterator();
+		ArrayList<String> sqlKey = new ArrayList<String>();
+		while(iter.hasNext()) {
+			String key = iter.next().toString();
+			sqlKey.add(jsonObject.get(key).toString());
 		}
+		DA.setRequestValue(sqlKey);
 
-		if(sqlKey != null) {
-			DA.setPreparedStatement(query);
 
-			DA.setRequestValue(sqlKey, jsonObject);
+		ArrayList<Object> resultTest = null;
 
-			ArrayList<Object> resultTest = null;
+		if(sqlData.getAllowLike()) 
+			resultTest = DA.executeSELLike(true);
+		else
+			resultTest = DA.executeSEL(true);	
 
-			if(sqlData.getAllowLike()) 
-				resultTest = DA.executeSELLike(true);
-			else
-				resultTest = DA.executeSEL(true);	
 
-			String test = "{\"" + mkPage + "\":[";
-			if(resultTest != null) {
-				for(int l = 0; l < resultTest.size(); l++) {
-					String damn = resultTest.get(l).toString();
-					damn = damn.replaceAll("=", ":");
-					MkJsonData tttt = new MkJsonData(damn);
-					test += damn;
-					
-					if(l < resultTest.size() - 1)
-						test += ", ";
-				}
-				test += "]}";
-				MkJsonData tttt = new MkJsonData(test);
-				
-				if(tttt.setJsonObject()) {
-					resultObject = tttt.getJsonObject();
-				}
-			}else {
-				//조회 데이터 없음
+		String test = "{\"" + mkPage + "\":[";
+		if(resultTest != null) {
+			for(int l = 0; l < resultTest.size(); l++) {
+				String damn = resultTest.get(l).toString();
+				damn = damn.replaceAll("=", ":");
+				MkRestApiData tttt = new MkRestApiData(damn);
+				test += damn;
+
+				if(l < resultTest.size() - 1)
+					test += ", ";
 			}
-		}
+			test += "]}";
 
-		return resultObject;
-	}
+			MkRestApiData tttt = new MkRestApiData(test);
 
-	private JSONObject doTaskDelete(PageXmlData pxData, ArrayList<String> sqlKey, SqlXmlData sqlData, JSONObject jsonObject, String mkPage) {
-		JSONObject resultObject = null;
-		MkDbAccessor DA = new MkDbAccessor();
-
-		String service = pxData.getServiceName().split("\\.")[1];
-
-		String befQuery = cpi.regularQuery(service); 
-		String query = null;
-
-		if(sqlData.getAllowLike()) {
-			query = cpi.setApiQueryLike(befQuery, sqlKey);
-		}else {
-			query = cpi.setApiQuery(befQuery, sqlKey);
-		}
-
-		if(sqlKey != null) {
-			DA.setPreparedStatement(query);
-
-			DA.setRequestValue(sqlKey, jsonObject);
-
-			ArrayList<Object> resultTest = null;
-
-			if(sqlData.getAllowLike()) 
-				resultTest = DA.executeSELLike(true);
-			else
-				resultTest = DA.executeSEL(true);	
-
-
-			String test = "{\"" + mkPage + "\":[";
-			if(resultTest != null) {
-				for(int l = 0; l < resultTest.size(); l++) {
-					String damn = resultTest.get(l).toString();
-					damn = damn.replaceAll("=", ":");
-					MkJsonData tttt = new MkJsonData(damn);
-					test += damn;
-					
-					if(l < resultTest.size() - 1)
-						test += ", ";
-				}
-				test += "]}";
-				
-				MkJsonData tttt = new MkJsonData(test);
-				
-				if(tttt.setJsonObject()) {
-					resultObject = tttt.getJsonObject();
-				}
-			}else {
-				//조회 데이터 없음
+			if(tttt.setJsonObject()) {
+				resultObject = tttt.getJsonObject();
 			}
+		}else {
+			//조회 데이터 없음
 		}
 
 		return resultObject;

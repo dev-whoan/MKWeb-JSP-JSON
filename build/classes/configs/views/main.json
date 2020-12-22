@@ -1,0 +1,37 @@
+{
+	"Controller": {
+		"name":"",
+		"debug":"error",
+		"path":"/views/root",
+		"file":"main.jsp",
+		"uri":"/",
+		"services":[
+			{
+				"page_static":"true",
+				"type":{
+					"kind":"sql",
+					"id":""
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"alpha",
+				"value":"user_height"
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"selectUserByClass"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"byclass",
+				"value":[
+					{
+						"1":"user_class"
+					}
+				]
+			}
+		]
+	}
+}

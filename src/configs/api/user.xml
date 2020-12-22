@@ -1,30 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <views>
+	<!-- 페이지당 method는 6개 -->
+	<!-- 페이지당 sql은 n개?-->
+	<!-- method당 sql은 1개 -->
+	<!-- 
+	한 조건당 하나의 SQL
+	
+	selectUserByName
+SELECT *
+FROM USER
+WHERE name=@name@
+=> name=@name@
+
+selectUserNameClassByName
+SELECT name, u_class
+FROM USER
+WHERE name=@name@;
+같은 정신나간 사람은 없다.
+	 -->
+	
 	<Control name="users" debug="error" authorized="yes" post="yes" get="yes" put="yes" delete="yes" options="yes" head="yes">
 		<returnStructure value="users" />
-		<Service type="sql">
-			<Sql id="api_selectUser" method="get" />
+		<Service id="api_selectUserNames" type="sql">
+			<Sql method="get" />
 			<Parameter name="api_sel_user" />
 			
 			<Value>
-			<!-- 
+
+			</Value>
+		</Service>
+		<!-- 
+		<Service id="api_selectUser" type="sql">
+			<Sql method="get" />
+			<Parameter name="api_selUsers" />
+			
+			<Value>
 			// /mk_api_key/users?name=dev.whoan
 			// /mk_api_key/users/dev.whoan
 			// /mk_api_key/users get
 			// /mk_api_key/users/city/Bucheon/name/dev.whoan
 			// /mk_api_key/users post 추가
 			// /~/users/
-			-->
-				@set(api_sel_user.name = '%')
-				@set(api_sel_user.address = '%')
+
+				조회 가능하며, SQL 조건으로도 사용 가능한 모든 컬럼 
+
+			@set(api_sel_user.name = '%')
+			@set(api_sel_user.u_class = '%')
+			@set(api_sel_user.SEQ = '%')
 			</Value>
 		</Service>
-		<Service type="sql">
-			<Sql id="api_selectUser" method="post" />
-			<Parameter name="api_sel_user" />
+		 -->
+		<Service id="api_insertUser" type="sql">
+			<Sql method="post" />
+			<Parameter name="api_ins_user" />
 			<Value>
-				@set(api_sel_user.name = '%')
+				@set(api_ins_user.name = '%')
+				@set(api_ins_user.u_class = '%')
 			</Value>
 		</Service>
 		<!-- 
@@ -52,70 +84,3 @@
 		-->
 	</Control>
 </views>
-
-<!-- 
-{
-	"users" : {
-	    "user":
-	    {
-			"location" : {
-				"value" : "부천"
-				"name" : {
-					"value" : "홍길동"
-					"user_SEQ" : ... db상에서 가져올 정보들
-					"info" : >..
-					"phone" :{
-						
-					}
-				}
-			} 
-	}
-		
-}
-
-name info phone location family birthday
-example.com/userapi/name 
-example.com/userapi/name/{} post
-example.com/userapi/name/{}/location/{}
-example.com/userapi/location/{}
-"result"
-{
-	"user": { ...,
-		...
-		"user_location" : [{ ...
-			"user_name" : {
-				"user_phone" : {
-					...
-				},
-				"user_info" : {
-					...
-				}
-			}
-		}],
-		
-		"user_location" : [{ ...
-			"user_name" : {
-				"user_phone" : {
-					...
-				},
-				"user_info" : {
-					...
-				}
-			}
-		}],
-		
-		"user_location" : [{ ...
-			"user_name" : {
-				"user_phone" : {
-					...
-				},
-				"user_info" : {
-					...
-				}
-			}
-		}]
-	}]
-}
--->
-
-

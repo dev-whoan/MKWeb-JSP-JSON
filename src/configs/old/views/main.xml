@@ -17,7 +17,7 @@
 		</Service>
 		
 		<Service id="insertUser" type="sql">
-			<Sql method="post" />
+			<Sql obj="list" method="post" />
 			<Parameter name="ins" />
 			<Value>
 				@set(ins.qweqwe = '%')

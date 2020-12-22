@@ -3,7 +3,7 @@
 	<property name="dir.source.home" value="../MKWeb" />
     
 
-	<property name="host.real" value="eugenes.iptime.org" />
+	<property name="host.real" value="test-mkweb.dev-whoan.xyz" />
 
  	<property name="host.real.acc" value="mkweb" />
  	<property name="host.real.pass" value="mkweb" />

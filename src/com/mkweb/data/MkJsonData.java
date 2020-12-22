@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -34,6 +33,7 @@ public class MkJsonData {
 	private JSONObject isValidDataForJson(String data) {
 		boolean isDone = false;
 		try {
+	//		mklogger.debug(TAG, "check data : " + data);
 			JSONObject jo = new JSONObject();
 			JSONParser parser = new JSONParser();
 			Object obj = parser.parse(data);
@@ -161,7 +161,6 @@ public class MkJsonData {
 	    Set entrySet = jsonObject.keySet();
 	    Iterator iter = entrySet.iterator();
 	    
-		JSONArray jsonArray = new JSONArray();
 		String result = "";
 		while(iter.hasNext()) {
 			String key = (String) iter.next();

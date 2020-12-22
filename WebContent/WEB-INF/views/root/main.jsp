@@ -107,7 +107,7 @@ function removeUser(seq){
 This is page1.jsp
 
 <div>
-	
+
 	<div class="wrap">
         <!-- header -->
         <div class="header">
@@ -126,25 +126,17 @@ This is page1.jsp
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
-                    	<mkw:get name="selectName" obj="list" like="no">
-                    		<tr class="one-item">
-                    			<td> ${mkw.name}</td>
-                    			<td> ${mkw.address}</td>
-                    			<td>
-                    			<button onclick="modifyUser('${mkw.user_SEQ}')">수정</button>
-                    			<button onclick="removeUser('${mkw.user_SEQ}')">삭제</button>
-                    			</td>
-                    		</tr>
+                    	<mkw:get name="user" id="selectUserByClass" obj="list" like="yes">
+                    		<tr>${mkw.name}</tr>
+                    		<tr>${mkw.u_class}</tr>
                     	</mkw:get>
-                        
                     </tbody>
                 </table>
 
                 <div id="search_name">
                     <form action="" method="post">
                         <!-- <label>이름 : </label> -->
-                        <input type="text" name="param.user_name">
-                        <input type="text" name="param.user_info">
+                        <input type="text" name="byclass.user_class">
                         <input type="submit" value="찾기">
                     </form>
                 </div>

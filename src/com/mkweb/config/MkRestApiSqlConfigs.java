@@ -1,6 +1,7 @@
 package com.mkweb.config;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,11 +11,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.mkweb.can.MkSqlConfigCan;
-import com.mkweb.data.SqlXmlData;
+import com.mkweb.data.SqlJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiSqlConfigs extends MkSqlConfigCan {
-	private HashMap<String, SqlXmlData> api_sql_configs = new HashMap<String, SqlXmlData>();
+	private HashMap<String, SqlJsonData> api_sql_configs = new HashMap<String, SqlJsonData>();
 
 	private File defaultFile = null;
 
@@ -32,9 +33,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 	}
 	private String[] svc_list = {
 			"id",
-			"db",
-			"allow_single",
-			"allow_like"
+			"db"
 	};
 	private String[] svc_info = new String[svc_list.length];
 
@@ -65,46 +64,21 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						Node tN = attributes.getNamedItem(svc_list[sli]);
 						svc_info[sli] = (tN != null ? tN.getNodeValue() : null);
 					}
-					NodeList queryNodes = node.getChildNodes();
-					ArrayList<String> sqlColumns = null;
-					
+
 					String sqlQuerys = null;
-					if(queryNodes != null) {
-						for(int qn = 0; qn < queryNodes.getLength(); qn++) {
-							Node sqlInfo = queryNodes.item(qn);
-							if(sqlInfo.getNodeType() == Node.ELEMENT_NODE) {
-								if(sqlInfo.getNodeName().contentEquals("columns")) {
-									String col = sqlInfo.getTextContent();
-									String[] colSplits = col.split("@");
-									sqlColumns = new ArrayList<>();
-									for(int k = 1; k < colSplits.length; k++) {
-										sqlColumns.add(colSplits[k].trim());
-									}
-						//			sqlColumns = (ArrayList<String>) Arrays.asList(colSplit
-								}else if(sqlInfo.getNodeName().contentEquals("query")) {
-									sqlQuerys = sqlInfo.getTextContent();
-								}
-							}
-						}
-					}
-					
-					
-					SqlXmlData xmlData = new SqlXmlData();
+					sqlQuerys = node.getTextContent();
+					SqlJsonData xmlData = new SqlJsonData();
 
 					xmlData.setControlName(this.controlName);
 					//ID = 0, DB = 1  
 					xmlData.setServiceName(svc_info[0]);
 					xmlData.setDB(svc_info[1]);
-					xmlData.setAllowSingle(svc_info[2]);
-					xmlData.setAllowLike(svc_info[3]);
 					xmlData.setData(sqlQuerys);
-					xmlData.setColumnData(sqlColumns);
 
 					api_sql_configs.put(svc_info[0], xmlData);
 
 					mklogger.info("SQL ID :\t\t\t" + svc_info[0]);
 					mklogger.info("SQL DB :\t\t\t" + svc_info[1]);
-					mklogger.info("Allow  :\t\t\t" + svc_info[2]);
 					mklogger.info("");
 
 					sqlQuerys = sqlQuerys.trim();
@@ -118,18 +92,16 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					}
 
 					mklogger.info("query  :\n" + queryMsg + "\n");
-
 				}
 			}
 		}else {
 			mklogger.info(TAG + " No SQL Service has found. If you set SQL service, please check SQL config and web.xml.");
 		}
 
-
 		mklogger.info("=*=*=*=*=* MkWeb Rest Api Sql Configs Done*=*=*=*=*=*=");
 	}
 
-	public SqlXmlData getControlService(String serviceName) {
+	public SqlJsonData getControlService(String serviceName) {
 		if(lastModified != defaultFile.lastModified()) {
 			setSqlConfigs(defaultFile);
 			mklogger.info("==============Reload Rest Api SQL Config files==============");

@@ -6,16 +6,19 @@ import java.util.LinkedHashMap;
 
 import com.mkweb.logger.MkLogger;
 
-public class PageXmlData extends AbsXmlData {
+public class PageJsonData extends AbsJsonData {
 	private String logicalDir = null;
-	private String pageDir = null;
+	private String pageURI = null;
 	private String pageName = null;			//페이지 네임
 	private String debug = null;
+	/* Page Parameters */
 	private String parameter = null;
-	private String[] sql = null;
-	private String pageParamsName = null;
-	private ArrayList<String> pageParams = null;
 	private LinkedHashMap<String, Boolean> pageValue = null;
+	/* Page Parameters */
+	/* Page Static Parameters */
+	private boolean isPageStatic = false;
+	/* Page Static Parameters */
+	private String[] sql = null;
 	private boolean authorizedRequire = false;		//이거 클래스 필요한거임; 지우지마셈
 	private boolean post = false;
 	private boolean get = false;
@@ -23,13 +26,12 @@ public class PageXmlData extends AbsXmlData {
 	private boolean delete = false;
 	private boolean options = false;
 	private boolean head = false;
-	private String structure = null;
 	
 	public void setPageName(String pageName) {	this.pageName = pageName;	}
 	public void setDebug(String debug) {	this.debug = debug;	}
 	public void setParameter(String param) {	this.parameter = param;	}
 	public void setSql(String[] sql) {	this.sql = sql;	}
-	public void setDir(String dir) {	this.pageDir = dir;	}
+	public void setPageURI(String dir) {	this.pageURI = dir;	}
 	public void setLogicalDir(String dir) {	this.logicalDir = dir;	}
 	public void setAuthorizedRequire(String ar) {	this.authorizedRequire = (ar == null || ar.equals("no") ? false : ( ar.equals("yes") ? true : false) );	}
 	public void setPost(String post) {	this.post = (post == null || post.equals("no") ? false : ( post.equals("yes") ? true : false) );	}
@@ -38,16 +40,16 @@ public class PageXmlData extends AbsXmlData {
 	public void setDelete(String delete) {	this.delete = (delete == null || delete.equals("no") ? false : ( delete.equals("yes") ? true : false) );	}
 	public void setOptions(String options) {	this.options = (options == null || options.equals("no") ? false : ( options.equals("yes") ? true : false) );	}
 	public void setHead(String head) {	this.head = (head == null || head.equals("no") ? false : ( head.equals("yes") ? true : false) );	}
-	public void setStructure(String str) {	this.structure = str;	}
-	public void setPageStaticParamName(String ppn) {	this.pageParamsName = ppn;	}
-	public void setPageStaticParams(ArrayList<String> pageParams) {	this.pageParams = pageParams;	}
+//	public void setPageStaticParamName(String ppn) {	this.pageParamsName = ppn;	}
+//	public void setPageStaticParams(String[] pageParams) {	this.pageParams = pageParams;	}
 	public void setPageValue(LinkedHashMap<String, Boolean> pageValue) { this.pageValue = pageValue;	}
+	public void setPageStatic(boolean isPageStatic) {	this.isPageStatic = isPageStatic;	}
 
 	public String getPageName() {	return this.pageName;	}
 	public String getDebug() {	return this.debug;	}
 	public String getParameter() {	return this.parameter;	}
 	public String[] getSql() {	return this.sql;	}
-	public String getDir() {	return this.pageDir;	}
+	public String getPageURI() {	return this.pageURI;	}
 	public String getLogicalDir() {	return this.logicalDir;	}
 	public boolean getAuthorizedRequire() {	return this.authorizedRequire;	}
 	public boolean getPost() {	return this.post;	}
@@ -67,9 +69,9 @@ public class PageXmlData extends AbsXmlData {
 		
 		return map.get(method);
 	}
-	public String getStructure() {	return this.structure;	}
-	public String getPageStaticParamsName() {	return this.pageParamsName;	}
-	public ArrayList<String> getPageStaticParams() {	return this.pageParams;	} 
+//	public String getPageStaticParamsName() {	return this.pageParamsName;	}
+//	public String[] getPageStaticParams() {	return this.pageParams;	} 
 	public LinkedHashMap<String, Boolean> getPageValue(){	return this.pageValue;	}
+	public boolean getPageStatic() {	return this.isPageStatic;	}
 	public String getMyInfo() {	return "Control: " + (this.controlName) + " | Service: " + (this.serviceName) + " | Tag: " + (getTag());	}
 }
