@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.simple.JSONObject;
@@ -33,7 +34,6 @@ public class MkJsonData {
 	private JSONObject isValidDataForJson(String data) {
 		boolean isDone = false;
 		try {
-	//		mklogger.debug(TAG, "check data : " + data);
 			JSONObject jo = new JSONObject();
 			JSONParser parser = new JSONParser();
 			Object obj = parser.parse(data);
@@ -181,6 +181,32 @@ public class MkJsonData {
 
 		return true;
 	}
+	
+	public JSONObject mapToJson(Map<String, String> map) {
+		String tempString = "{";
+		
+		Set keys = map.keySet();
+		Iterator iter = keys.iterator();
+		int i = 0;
+		while(iter.hasNext()) {
+			String key = iter.next().toString();
+			String value = map.get(key);
+	//		"key":"value"
+	//		"\"" + key + "\"" + ":" + "\"" + value + "\"";
+			tempString += "\"" + key + "\"" + ":" + "\"" + value + "\"";
+			if( i < map.size() ){
+				tempString += ", ";
+			}
+		}
+		tempString += "}";
+		
+		setData(tempString);
+		
+		if(!setJsonObject())
+			return null;
+		return getJsonObject();
+	}
+	
 	public JSONObject getJsonObject() {	return this.jsonObject;	}
 	public String getData() {	return this.data;	}
 	public void setData(String data) {	this.data = data;	}

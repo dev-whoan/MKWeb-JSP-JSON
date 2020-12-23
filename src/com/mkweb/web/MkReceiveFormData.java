@@ -38,7 +38,8 @@ public class MkReceiveFormData extends HttpServlet {
 	PageJsonData pageStaticData = null;
 	ArrayList<String> requestServiceName = null;
 	ArrayList<String> pageParameter = null;
-	ArrayList<String[]> pageSqlInfo = null;
+	String pageObjectType = null;
+	String pageMethod = null;
 	ArrayList<LinkedHashMap<String, Boolean>> pageValue = null;
 	
     private String requestParams = null;
@@ -104,9 +105,9 @@ public class MkReceiveFormData extends HttpServlet {
 			}
 		}
 		
-		mklogger.debug(TAG, " method: " + pjData.getSql()[1]);
+		mklogger.debug(TAG, " method: " + pjData.getMethod());
 		
-		if(!pjData.getSql()[1].toLowerCase().contentEquals(rqMethod)) {
+		if(!pjData.getMethod().toLowerCase().contentEquals(rqMethod)) {
 			return false;
 		}
 
@@ -168,13 +169,13 @@ public class MkReceiveFormData extends HttpServlet {
 			}
 			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
-			pageSqlInfo = new ArrayList<>();
 			pageValue = new ArrayList<>();
 			requestServiceName = new ArrayList<>();
 			//pageConfig Parameters
 			for(int i = 0; i < pi.size(); i++) {
 				pageParameter.add(pi.get(i).getParameter());
-				pageSqlInfo.add(pi.get(i).getSql());
+				pageObjectType = pi.get(i).getObjectType();
+				pageMethod = pi.get(i).getMethod();
 				pageValue.add(pi.get(i).getPageValue());
 				requestServiceName.add(pi.get(i).getServiceName());
 			}
@@ -205,13 +206,13 @@ public class MkReceiveFormData extends HttpServlet {
 			}
 			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
-			pageSqlInfo = new ArrayList<>();
 			pageValue = new ArrayList<>();
 			requestServiceName = new ArrayList<>();
 			//pageConfig Parameters
 			for(int i = 0; i < pi.size(); i++) {
 				pageParameter.add(pi.get(i).getParameter());
-				pageSqlInfo.add(pi.get(i).getSql());
+				pageObjectType = pi.get(i).getObjectType();
+				pageMethod = pi.get(i).getMethod();
 				pageValue.add(pi.get(i).getPageValue());
 				requestServiceName.add(pi.get(i).getServiceName());
 			}

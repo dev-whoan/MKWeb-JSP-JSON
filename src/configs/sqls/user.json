@@ -3,22 +3,70 @@
 		"name":"user",
 		"debug":"error",
 		"db":"mkwiki",
+		"api":"no",
 		"services":[
 			{
 				"id":"selectName",
-				"query":"SELECT * FROM User; "
+				"query":{
+					"crud":"select",
+					"column":{
+						"1":"*"
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":""
+				}
 			},
 			{
 				"id":"selectUserByClass",
-				"query":"SELECT name, u_class FROM User WHERE u_class = @user_class@ AND user_name = @user_name@;"
+				"query":{
+					"crud":"select",
+					"column":{
+						"1":"name",
+						"2":"u_class"
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":"u_class = @user_class@ AND user_name = @user_name@"
+					
+				}
 			},
 			{
 				"id":"userByClassOrSeq",
-				"query":"SELECT * FROM User WHERE u_class = @user_class@ OR SEQ = @user_seq@;"
+				"query":{
+					"crud":"select",
+					"column":{
+						"1":"*"
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":"u_class = @user_class@ AND SEQ = @user_seq@"
+				}
 			},
 			{
 				"id":"insertUser",
-				"query":"INSERT INTO User(name, u_class, CNT_IP) Value (@user_name@, @user_class@, @user_ip@);"
+				"query":{
+					"crud":"insert",
+					"column":{
+						"1":"name",
+						"2":"u_class",
+						"3":"CNT_IP"
+					},
+					"table":"User",
+					"data":{
+						"1":"user_name",
+						"2":"user_class",
+						"3":"user_ip"
+					},
+					"where":""
+					
+				}
 			}
 		]
 	}

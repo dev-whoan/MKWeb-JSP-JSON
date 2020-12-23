@@ -58,6 +58,7 @@ public class tagSEL extends SimpleTagSupport {
 		if(o == null) {	return null;	}
 
 		String controlName = o.toString();
+		mklogger.debug(TAG, " control Name : " +controlName);
 
 		return MkPageConfigs.Me().getControl(controlName);
 	}
@@ -94,10 +95,13 @@ public class tagSEL extends SimpleTagSupport {
 			}
 		}
 
+		mklogger.debug(TAG, "pageINfo size : " +pageInfo.size());
+		
 		int pageServiceIndex = -1;
 		boolean pageServiceFound = false;
 		for(PageJsonData pjd : pageInfo) {
 			pageServiceIndex++;
+			mklogger.debug(TAG, "pageServiceIndex : " + pjd.getServiceName());
 			if(this.id.contentEquals(pjd.getServiceName())) {
 				pageServiceFound = true;
 				break;
@@ -119,13 +123,13 @@ public class tagSEL extends SimpleTagSupport {
 			sqlControlIndex = -1;
 
 		if(pageServiceIndex == -1) {
-			mklogger.error(TAG, " Tag 'name(" + this.name + ")' is not matched with any page service 'type:id'.");
+			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any page service 'type:id'.");
 			//	response.sendError(500);
 			return;
 		}
 
 		if(sqlControlIndex == -1) {
-			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any SQL controller. Please check SQL configs.");
+			mklogger.error(TAG, " Tag 'name(" + this.name + ")' is not matched with any SQL controller. Please check SQL configs.");
 			return;
 		}
 

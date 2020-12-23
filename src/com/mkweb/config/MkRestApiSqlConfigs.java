@@ -19,6 +19,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.mkweb.can.MkSqlConfigCan;
+import com.mkweb.data.MkJsonData;
 import com.mkweb.data.SqlJsonData;
 import com.mkweb.logger.MkLogger;
 
@@ -63,6 +64,26 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 				String sqlName = sqlObject.get("name").toString();
 				String sqlDebugLevel = sqlObject.get("debug").toString();
 				String sqlDB = sqlObject.get("db").toString();
+				String sqlAPI = sqlObject.get("api").toString();
+				
+				MkJsonData mkJsonData = new MkJsonData(sqlObject.get("condition").toString());
+				JSONObject tempValues = null;
+				String[] serviceConditions = null;
+				
+				if(mkJsonData.setJsonObject()) {
+					tempValues = mkJsonData.getJsonObject();
+				}
+				if(tempValues.size() == 0) {
+					mklogger.error(TAG, "[Controller: " + controlName + " | Service ID: " + serviceName + "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+					mklogger.debug(TAG, "{\"1\":\"\"}");
+					continue;
+				}
+				
+				serviceConditions = new String[tempValues.size()];
+				
+				for(int j = 0; j < tempValues.size(); j++) {
+					serviceConditions[j] = tempValues.get("" + (j+1)).toString();
+				}
 				
 				JSONArray serviceArray = (JSONArray) sqlObject.get("services");
 
@@ -73,22 +94,72 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 
 					try {
 						serviceId = serviceObject.get("id").toString();
-						serviceQuery[0] = serviceObject.get("query").toString();
+						String serviceColumns = null;
+						String serviceDatas = null;
+						MkJsonData mjd = new MkJsonData(serviceObject.get("query").toString());
+						if(!mjd.setJsonObject()) {
+							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId);
+							return;
+						}
+						
+						JSONObject serviceQueryData = mjd.getJsonObject();
+						serviceQuery = new String[serviceQueryData.size()];
+						
+						if(serviceQuery.length != 5) {
+							mklogger.error(TAG, "[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
+							return;
+						}
+						
+						serviceQuery[0] = serviceQueryData.get("crud").toString();
+						serviceQuery[2] = serviceQueryData.get("table").toString();
+						serviceQuery[4] = serviceQueryData.get("where").toString();
+						
+						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
+						if(!serviceColumn.setJsonObject()) {
+							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(column)");
+							return;
+						}
+						JSONObject jsonColumns = serviceColumn.getJsonObject();
+						serviceColumns = "";
+						for(int k = 0; k < jsonColumns.size(); k++) {
+							serviceColumns += jsonColumns.get("" + (k+1)).toString();
+							
+							if(k < jsonColumns.size()-1)
+								serviceColumns += ",";
+						}
+						
+						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
+						if(serviceData.setJsonObject()) {
+							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
+							return;
+						}
+						JSONObject jsonDatas = serviceData.getJsonObject();
+						serviceDatas = "";
+						for(int k = 0; k < jsonDatas.size(); k++) {
+							serviceDatas += "@" + jsonDatas.get("" + (k+1)).toString() + "@";
+							
+							if(k < jsonDatas.size()-1)
+								serviceDatas += ",";
+						}
+						
+						serviceQuery[1] = serviceColumns;
+						serviceQuery[3] = serviceDatas;
 					}catch(NullPointerException npe) {
 						mklogger.error("[Controller: " + sqlName + "] Some service of the SQL doesn't have attributes. Please check the SQL config.");
 						return;
 					}
 
 					SqlJsonData sqlData = new SqlJsonData();
+					String[] finalQuery = createSQL(serviceQuery);
 					
 					sqlData.setControlName(sqlName);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);
 					sqlData.setDB(sqlDB);
-					sqlData.setData(serviceQuery);
+					sqlData.setData(finalQuery);
 					sqlData.setDebugLevel(sqlDebugLevel);
-					sqlData.setApiSQL(true);
-
+					sqlData.setApiSQL(sqlAPI.toLowerCase().contentEquals("yes"));
+					sqlData.setCondition(serviceConditions);
 					sqlJsonData.add(sqlData);
 					printSqlInfo(sqlData, "info");
 				}
@@ -109,11 +180,21 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 	}
 
 	public void printSqlInfo(SqlJsonData jsonData, String type) {
+		String conditions = "";
+		int conditionLength = (jsonData.getCondition() != null ? jsonData.getCondition().length : -1);
+		
+		for(int i = 0; i < conditionLength; i++) {
+			conditions += jsonData.getCondition()[i];
+			
+			if(i < conditionLength -1)
+				conditions += ", ";
+		}
 		String tempMsg = "\n忙式式式式式式式式式式式式式式式式式式式式式式式式式式SQL Control  :  " + jsonData.getControlName() + "式式式式式式式式式式式式式式式式式式式式式式式式式式式式式"
 				+ "\n弛SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
 				+ "\n弛SQL DB:\t" + jsonData.getDB()
 				+ "\n弛SQL Debug:\t" + jsonData.getDebugLevel()
 				+ "\n弛sql Query:\t" + jsonData.getData()[0].trim()
+				+ "\n弛conditions:\t" + conditions
 				+ "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
 		
 		mklogger.temp(tempMsg, false);

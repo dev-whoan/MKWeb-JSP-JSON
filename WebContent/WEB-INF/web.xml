@@ -94,12 +94,12 @@
 	
 	<context-param>
 		<param-name>MkWeb.ApiSqlConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/MkApiSql.json</param-value>
+		<param-value>/WEB-INF/classes/configs/api/sqls</param-value>
 	</context-param>
 	
 	<context-param>
 		<param-name>MkWeb.ApiPageConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/api</param-value>
+		<param-value>/WEB-INF/classes/configs/api/views</param-value>
 	</context-param>
 	<!-- MkWeb Setting Configs -->
 </web-app>

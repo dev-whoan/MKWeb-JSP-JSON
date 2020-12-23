@@ -78,6 +78,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				String pageFilePath = pageObject.get("path").toString();
 				String pageFile = pageObject.get("file").toString();
 				String pageURI = pageObject.get("uri").toString();
+				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 
 				for(int i = 0; i < serviceArray.size(); i++) {
@@ -123,16 +124,18 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					for(int j = 0; j < tempValues.size(); j++) {
 						page_value[j] = tempValues.get("" + (j+1)).toString();
 					}
+					
 					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-					String[] sql_info = {serviceObjectType, serviceMethod};
 
 					PageJsonData curData = setPageJsonData(isPageStatic,
 							serviceId,
 							serviceType,
 							ctr_info,
-							sql_info,
+							serviceObjectType,
+							serviceMethod,
 							serviceParameter,
-							page_value);
+							page_value,
+							(pageAPI.toLowerCase().contentEquals("yes")));
 					
 					printPageInfo(curData, "info");
 					pageJsonData.add(curData);
@@ -154,15 +157,6 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	
 	@Override
 	public void printPageInfo(PageJsonData jsonData, String type) {
-		String[] SQL_INFO = jsonData.getSql();
-		String sql_info = "";
-		for(int i = 0; i < SQL_INFO.length; i++) {
-			if(i != SQL_INFO.length-1)
-				sql_info += SQL_INFO[i] + "\t";
-			else
-				sql_info += SQL_INFO[i];
-		}
-		
 		String[] VAL_INFO = jsonData.getData();
 		
 		String valMsg = "";
@@ -179,10 +173,10 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				+ "\n弛View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
 				+ "\n弛Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
 				+ "\n弛Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
-				+ "\n弛Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter();
-
+				+ "\n弛Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
+				+ "\n弛API :\t" + jsonData.IsApiPage();
 		if(!type.contentEquals("no-sql")) {
-			tempMsg +="\n弛SQL:\t" + sql_info
+			tempMsg +="\n弛SQL:\t" + jsonData.getObjectType() + "\tMethod\t" + jsonData.getMethod()
 					+ "\n弛Value:\t" + valMsg
 					+ "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
 			mklogger.temp(tempMsg, false);
@@ -221,7 +215,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String[] sqlInfo, String PRM_NAME, String[] VAL_INFO) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
 		result.setPageStatic(pageStatic);
@@ -234,10 +228,12 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		result.setServiceName(serviceName);
 		result.setServiceType(serviceType);
 
-		result.setSql(sqlInfo);
+		result.setObjectType(objectType);
+		result.setMethod(method);
 		result.setParameter(PRM_NAME);
 		result.setData(VAL_INFO);
-
+		result.setAPI(isApi);
+		
 		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
 		PAGE_VALUE = pageValueToHashMap(VAL_INFO);
 		result.setPageValue(PAGE_VALUE);

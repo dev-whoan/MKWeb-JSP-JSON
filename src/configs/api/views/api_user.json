@@ -1,0 +1,28 @@
+{
+	"Controller": {
+		"name":"users",
+		"debug":"error",
+		"path":"/views/root",
+		"file":"api_user.jsp",
+		"uri":"/",
+		"api":"yes",
+		"services":[
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"getAllUser"
+				},
+				"method":"get",
+				"select-condition":"yes",
+				"obj":"list",
+				"parameter_name":"",
+				"value":{
+					"1":"name",
+					"2":"class",
+					"3":"sequence"
+				}
+			}
+		]
+	}
+}

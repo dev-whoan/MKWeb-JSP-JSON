@@ -1,0 +1,11 @@
+{
+	"Controller": {
+		"name":"test",
+		"debug":"error",
+		"path":"/views/root/api",
+		"file":"api_test.jsp",
+		"uri":"/api",
+		"api":"no",
+		"services":[]
+	}
+}

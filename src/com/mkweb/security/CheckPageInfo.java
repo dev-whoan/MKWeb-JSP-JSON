@@ -192,15 +192,9 @@ public class CheckPageInfo {
 
 	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, PageJsonData pageStaticData, boolean isApi) {
 		LinkedHashMap<String, Boolean> staticData = pageStaticData.getPageValue(); 
-		/* 사용전에 null 확인하기 */
-		
+
 		int pageSize = pageValue.size();
 		int requestSize = requestValue.size();
-		
-		/* debug */
-		mklogger.debug(TAG, "pageValue : \n" + pageValue.toString());
-		mklogger.debug(TAG, "requestValues : \n" + requestValue.toString());
-		/* debug */
 		
 		if(pageSize != requestSize) {
 			mklogger.error(TAG, " Number of request parameters is not same as number of allowed parameters.");

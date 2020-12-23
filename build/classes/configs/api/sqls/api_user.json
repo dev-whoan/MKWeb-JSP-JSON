@@ -1,0 +1,30 @@
+{
+	"Controller": {
+		"name":"api_user",
+		"debug":"error",
+		"db":"mkwiki",
+		"api":"yes",
+		"condition":{
+			"1":"name",
+			"2":"class",
+			"3":"sequence"
+		},
+		"services":[
+			{
+				"id":"getAllUser",
+				"query":{
+					"crud":"select",
+					"column":{
+						"1":"name",
+						"2":"u_class"
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":""
+				}
+			}
+		]
+	}
+}

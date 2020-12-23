@@ -5,6 +5,7 @@
 		"path":"/views/root",
 		"file":"main.jsp",
 		"uri":"/",
+		"api":"no",
 		"services":[
 			{
 				"page_static":"true",

@@ -78,62 +78,95 @@ public class MkPageConfigs extends MkPageConfigCan{
 				String pageFilePath = pageObject.get("path").toString();
 				String pageFile = pageObject.get("file").toString();
 				String pageURI = pageObject.get("uri").toString();
+				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
-
-				for(int i = 0; i < serviceArray.size(); i++) {
-					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
-					boolean isPageStatic = false; 
-					String serviceId = null;
-					String serviceType = null;
-					JSONObject serviceKinds = null;
-					String serviceParameter = null;
-					String serviceObjectType = null;
-					String serviceMethod = null;
-
-					try {
-						isPageStatic = serviceObject.get("page_static").toString().contentEquals("true") ? true : false;
-						serviceParameter = serviceObject.get("parameter_name").toString();
-						serviceObjectType = serviceObject.get("obj").toString();
-						serviceMethod = serviceObject.get("method").toString();
+				
+				boolean isPageStatic = false; 
+				String serviceId = null;
+				String serviceType = null;
+				JSONObject serviceKinds = null;
+				String serviceParameter = null;
+				String serviceObjectType = null;
+				String serviceMethod = null;
+				String[] page_value = null;
+				boolean isApiService = false;
+				
+				if(serviceArray.size() > 0) {
+					for(int i = 0; i < serviceArray.size(); i++) {
+						JSONObject serviceObject = (JSONObject) serviceArray.get(i);
 						
-						serviceKinds = (JSONObject) serviceObject.get("type");
+						try {
+							isPageStatic = serviceObject.get("page_static").toString().contentEquals("true") ? true : false;
+							serviceParameter = serviceObject.get("parameter_name").toString();
+							serviceObjectType = serviceObject.get("obj").toString();
+							serviceMethod = serviceObject.get("method").toString();
+							
+							serviceKinds = (JSONObject) serviceObject.get("type");
+							
+							serviceType = serviceKinds.get("kind").toString();
+							serviceId = serviceKinds.get("id").toString();
+						}catch(NullPointerException npe) {
+							 mklogger.error("[Controller: " + pageName + "] Some service of the page doesn't have attributes. Please check the page config.");
+							 return;
+						}
 						
-						serviceType = serviceKinds.get("kind").toString();
-						serviceId = serviceKinds.get("id").toString();
-					}catch(NullPointerException npe) {
-						 mklogger.error("[Controller: " + pageName + "] Some service of the page doesn't have attributes. Please check the page config.");
-						 return;
+						MkJsonData mkJsonData = new MkJsonData(serviceObject.get("value").toString());
+						JSONObject tempValues = null;
+						
+						if(mkJsonData.setJsonObject()) {
+							tempValues = mkJsonData.getJsonObject();
+						}
+						if(tempValues.size() == 0) {
+							mklogger.error(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+							mklogger.debug(TAG, "{\"1\":\"\"}");
+							continue;
+						}
+						page_value = new String[tempValues.size()];
+						
+						for(int j = 0; j < tempValues.size(); j++) {
+							page_value[j] = tempValues.get("" + (j+1)).toString();
+						}
+						
+						
+						isApiService = (pageAPI.toLowerCase().contentEquals("yes"));
+						
+						String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
+						
+						PageJsonData curData = setPageJsonData(isPageStatic,
+								serviceId,
+								serviceType,
+								ctr_info,
+								serviceObjectType,
+								serviceMethod,
+								serviceParameter,
+								page_value,
+								isApiService);
+						
+						printPageInfo(curData, "info");
+						pageJsonData.add(curData);
+						page_configs.put(ctr_info[0], pageJsonData);
 					}
+				}else {
+					serviceId = "No Service";
+					serviceType = "No Service";
+					serviceObjectType = "No service";
+					serviceMethod = "No service";
+					page_value = new String[1];
+					page_value[0] = "";
+					isApiService = false;
 					
-					MkJsonData mkJsonData = new MkJsonData(serviceObject.get("value").toString());
-					JSONObject tempValues = null;
-					String[] page_value = null;
-					
-					if(mkJsonData.setJsonObject()) {
-						tempValues = mkJsonData.getJsonObject();
-					}
-					if(tempValues.size() == 0) {
-						mklogger.error(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
-						mklogger.debug(TAG, "{\"1\":\"\"}");
-						continue;
-					}
-					page_value = new String[tempValues.size()];
-					
-					for(int j = 0; j < tempValues.size(); j++) {
-						page_value[j] = tempValues.get("" + (j+1)).toString();
-					}
-
 					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-					String[] sql_info = {serviceObjectType, serviceMethod};
-
+					
 					PageJsonData curData = setPageJsonData(isPageStatic,
 							serviceId,
 							serviceType,
 							ctr_info,
-							sql_info,
+							serviceObjectType,
+							serviceMethod,
 							serviceParameter,
-							page_value);
-					
+							page_value,
+							isApiService);
+
 					printPageInfo(curData, "info");
 					pageJsonData.add(curData);
 					page_configs.put(ctr_info[0], pageJsonData);
@@ -154,14 +187,6 @@ public class MkPageConfigs extends MkPageConfigCan{
 
 	@Override
 	public void printPageInfo(PageJsonData jsonData, String type) {
-		String[] SQL_INFO = jsonData.getSql();
-		String sql_info = "";
-		for(int i = 0; i < SQL_INFO.length; i++) {
-			if(i != SQL_INFO.length-1)
-				sql_info += SQL_INFO[i] + "\t";
-			else
-				sql_info += SQL_INFO[i];
-		}
 		
 		String[] VAL_INFO = jsonData.getData();
 		
@@ -179,10 +204,11 @@ public class MkPageConfigs extends MkPageConfigCan{
 				+ "\n弛View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
 				+ "\n弛Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
 				+ "\n弛Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
-				+ "\n弛Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter();
+				+ "\n弛Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
+				+ "\n弛API :\t" + jsonData.IsApiPage();
 
 		if(!type.contentEquals("no-sql")) {
-			tempMsg +="\n弛SQL:\t" + sql_info
+			tempMsg +="\n弛SQL:\t" + jsonData.getObjectType() + "\tMethod:\t" + jsonData.getMethod()
 					+ "\n弛Value:\t" + valMsg
 					+ "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
 			mklogger.temp(tempMsg, false);
@@ -221,7 +247,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 	}
 
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String[] sqlInfo, String PRM_NAME, String[] VAL_INFO) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
 		result.setPageStatic(pageStatic);
@@ -234,9 +260,11 @@ public class MkPageConfigs extends MkPageConfigCan{
 		result.setServiceName(serviceName);
 		result.setServiceType(serviceType);
 
-		result.setSql(sqlInfo);
+		result.setObjectType(objectType);
+		result.setMethod(method);
 		result.setParameter(PRM_NAME);
 		result.setData(VAL_INFO);
+		result.setAPI(isApi);
 
 		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
 		PAGE_VALUE = pageValueToHashMap(VAL_INFO);
