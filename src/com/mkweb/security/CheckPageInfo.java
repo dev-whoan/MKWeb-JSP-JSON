@@ -29,13 +29,17 @@ public class CheckPageInfo {
 	public String regularQuery(String controlName, String serviceName, boolean isApi) {
 		ArrayList<SqlJsonData> resultSqlData = null;
 		if(isApi)
-			resultSqlData = MkSQLJsonConfigs.Me().getControlService(controlName);//MkRestApiSqlConfigs.Me().getControlService(serviceName);
+			resultSqlData = MkSQLJsonConfigs.Me().getControl(controlName);
 		else
-			resultSqlData = MkSQLJsonConfigs.Me().getControlService(controlName);
+			resultSqlData = MkSQLJsonConfigs.Me().getControl(controlName);
 
 		if(resultSqlData == null) {
-			mklogger.error(TAG, "There is no sql control named : " + controlName);
-			return null;
+			resultSqlData = MkSQLJsonConfigs.Me().getControlByServiceName(serviceName);
+			
+			if(resultSqlData == null) {
+				mklogger.error(TAG, "There is no sql control named : " + controlName);
+				return null;	
+			}
 		}
 		/*
 		 * n개의 SQL 파일 중 해당하는 Control 찾음!
@@ -77,7 +81,6 @@ public class CheckPageInfo {
 						return null;
 					}
 				}else {
-					/*	 최초값 	*/
 					if(staticPassCount > 0) {
 						mklogger.error(TAG, " (func getRequestPageParameterName) User request two different service in single request.");
 						mklogger.debug(TAG, " Static value checked before without parameter name, however current request include parameter name.");
@@ -105,15 +108,13 @@ public class CheckPageInfo {
 						break;
 					}
 				}
-
-				mklogger.debug(TAG, " null here (2)");
 			}
 		}
 		
 		if(staticPassCount > 0) {
 			if(staticPassCount == pageStaticParameters.length) {
 				requestParams = "__MKWEB_STATIC_VALUE__";
-				mklogger.warn(TAG, "STATIC VALUE IS SET");
+				mklogger.warn(TAG, "STATIC VALUE HAS SET");
 			}
 		}
 		
@@ -159,6 +160,7 @@ public class CheckPageInfo {
 	public String setQuery(String query) {
 		String befQuery = query;
 		if(befQuery != null) {
+			mklogger.debug(TAG, "(func setQuery): befQuery: " + befQuery);
 			String[] testQueryList = befQuery.split("@");
 			String[] replaceTarget = null;
 
@@ -175,6 +177,8 @@ public class CheckPageInfo {
 				}else {	return null;	}
 			}
 
+			
+			
 			if(replaceTarget != null) {
 				for(int i = 0; i < replaceTarget.length; i++) {
 					befQuery = befQuery.replaceFirst(("@" + replaceTarget[i]+ "@"), "?");

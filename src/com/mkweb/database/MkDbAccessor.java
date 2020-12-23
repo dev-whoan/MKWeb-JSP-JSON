@@ -104,26 +104,12 @@ public class MkDbAccessor {
 		}catch(SQLException e){
 			mklogger.error(TAG, "(connectDB) SQLException : " + e.getMessage());
 		}catch(Exception e){ 
-			mklogger.error(TAG, " me?? " + e.getMessage());
+			mklogger.error(TAG, e.getMessage());
 		}
 		
 		return conn;
 	}
 
-	private void queryLog(String query) {
-		query = query.trim();
-		String queryMsg = "";
-		String[] queryBuffer = query.split("\n");
-		
-		for (int i = 0; i < queryBuffer.length; i++) {
-			String tempQuery = queryBuffer[i].trim();
-			queryMsg += "\n\t\t\t\t\t" + tempQuery;
-		}
-		
-		mklogger.info(queryMsg);
-	}
-	
-	//DML
 	public ArrayList<Object> executeSEL(boolean asJson){
 		ArrayList<Object> rst = new ArrayList<Object>();
 		ResultSet rs = null;
@@ -173,7 +159,6 @@ public class MkDbAccessor {
 
 						for( String name : columnNames )
 						{
-							mklogger.debug(TAG, "name : " + name);
 							if(asJson)
 								result.put("\""+name+"\"", "\""+rs.getObject(name)+"\"");
 							else
@@ -222,7 +207,6 @@ public class MkDbAccessor {
 					}
 					
 					mklogger.debug(TAG, "prestmt: \n\n\n" + prestmt.toString());
-					
 					
 					rs = prestmt.executeQuery(); 
 					
@@ -302,8 +286,6 @@ public class MkDbAccessor {
 						dbCon.close();
 					if(prestmt != null)
 						prestmt.close();
-					
-					mklogger.debug(TAG, " 업로드 끝");
 					
 				} catch (SQLException e) {
 					mklogger.error(TAG, "(executeDML) psmt = this.dbCon.prepareStatement(" + this.psmt + ") :" + e.getMessage());

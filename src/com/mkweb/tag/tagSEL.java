@@ -44,7 +44,7 @@ public class tagSEL extends SimpleTagSupport {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public void setLike(String like) {
 		this.like = like;
 	}
@@ -61,9 +61,9 @@ public class tagSEL extends SimpleTagSupport {
 
 		return MkPageConfigs.Me().getControl(controlName);
 	}
-	
+
 	private ArrayList<SqlJsonData> getSqlControl(String sqlControlName){
-		return MkSQLJsonConfigs.Me().getControlService(sqlControlName);
+		return MkSQLJsonConfigs.Me().getControl(sqlControlName);
 	}
 
 	public void doTag() throws JspException, IOException{
@@ -78,13 +78,13 @@ public class tagSEL extends SimpleTagSupport {
 
 		String requestParams = null;
 		ArrayList<String> requestValues = new ArrayList<String>();
-		
+
 		ArrayList<PageJsonData> pageInfo = getPageControl(request);
 		ArrayList<SqlJsonData> sqlInfo = getSqlControl(this.name);
-		
+
 		boolean isSet = (pageInfo == null || pageInfo.size() == 0) ? false : true;
 		PageJsonData pageStaticData = null;
-		
+
 		if(isSet) {
 			for(int i = 0; i < pageInfo.size(); i++) {
 				if(pageInfo.get(i).getPageStatic()) {
@@ -93,7 +93,7 @@ public class tagSEL extends SimpleTagSupport {
 				}
 			}
 		}
-	
+
 		int pageServiceIndex = -1;
 		boolean pageServiceFound = false;
 		for(PageJsonData pjd : pageInfo) {
@@ -105,7 +105,7 @@ public class tagSEL extends SimpleTagSupport {
 		}
 		if(!pageServiceFound)
 			pageServiceIndex = -1;
-		
+
 		int sqlControlIndex = -1;
 		boolean sqlControlFound = false;
 		for(SqlJsonData sjd : sqlInfo) {
@@ -117,68 +117,48 @@ public class tagSEL extends SimpleTagSupport {
 		}
 		if(!sqlControlFound)
 			sqlControlIndex = -1;
-		
+
 		if(pageServiceIndex == -1) {
 			mklogger.error(TAG, " Tag 'name(" + this.name + ")' is not matched with any page service 'type:id'.");
-		//	response.sendError(500);
+			//	response.sendError(500);
 			return;
 		}
-		
+
 		if(sqlControlIndex == -1) {
 			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any SQL controller. Please check SQL configs.");
 			return;
 		}
-		
+
 		requestParams = cpi.getRequestPageParameterName(request, pageStaticData);
 		requestValues = cpi.getRequestParameterValues(request, pageInfo.get(pageServiceIndex).getParameter(), pageStaticData);
-		
+
 		if(!cpi.comparePageValueWithRequestValue(
 				pageInfo.get(pageServiceIndex).getPageValue(),
 				requestValues,
 				pageStaticData,
 				false)
-		){
+				){
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
-		//	response.sendError(500);
+			//	response.sendError(500);
 			return;
 		}
-		
-		LinkedHashMap<String, Boolean> rqvHash = new LinkedHashMap<>();
+
 		LinkedHashMap<String, Boolean> pvHash = pageInfo.get(pageServiceIndex).getPageValue();
-		
-		if(requestValues != null && requestValues.size() > 0) {
-			for(String s : requestValues) {
-				rqvHash.put(s, true);
-			}
-		}
-		
-		boolean doCheckPageValue = (pvHash != null && pvHash.size() > 0);
-		
 		requestValues.clear();
-		requestValues = null;
 		
-		if(doCheckPageValue) {
-		    Set entrySet = rqvHash.keySet();
-		    Iterator iter = entrySet.iterator();
-		    Set pvEntrySet = null;
-		    Iterator pvIter = null;
-		    
-		    while(iter.hasNext()) {
-				String key = (String) iter.next();
-				pvEntrySet = pvHash.keySet();
-			    pvIter = pvEntrySet.iterator();
-			    
-				while(pvIter.hasNext()) {
-					String pvKey = (String) pvIter.next();
-					if(key.contentEquals(pvKey)) {
-						if(requestValues == null)
-							requestValues = new ArrayList<>();
-						requestValues.add(key);
-					}
-				}
+		if(pvHash != null && pvHash.size() > 0) {
+			Set pvEntrySet = pvHash.keySet();
+			Iterator pvIter = pvEntrySet.iterator();
+
+			while(pvIter.hasNext()) {
+				String pvKey = (String) pvIter.next();		
+				if(requestValues == null)
+					requestValues = new ArrayList<>();
+				
+				requestValues.add(pvKey);
 			}
 		}
-		
+
 		String befQuery = cpi.regularQuery(sqlInfo.get(sqlControlIndex).getControlName(), pageInfo.get(pageServiceIndex).getServiceName(), false);
 
 		String query = null;
@@ -194,10 +174,11 @@ public class tagSEL extends SimpleTagSupport {
 				String[] reqs = new String[requestValues.size()];
 				String tempValue = "";
 				for(int i = 0; i < reqs.length; i++) {
+					mklogger.debug(TAG, "값 확인 : " + requestValues.get(i));
 					tempValue = request.getParameter(requestParams + "." + requestValues.get(i));
 					if(tempValue == null)
 						tempValue = request.getParameter(requestValues.get(i));
-					
+
 					if(this.like.equals("no"))
 					{
 						if(tempValue.contains("%"))

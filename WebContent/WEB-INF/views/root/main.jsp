@@ -33,9 +33,9 @@ $(document).ready(function(){
 	        url : "/data/receive",//호출 URL을 설정한다. GET방식일경우 뒤에 파라티터를 붙여서 사용해도된다.
 	        dataType : "text",//호출한 페이지의 형식이다. xml,json,html,text등의 여러 방식을 사용할 수 있다.
 	        data : {
-	        	"upd.user_name" : $("#Name").val(),
-	        	"upd.user_info" : $("#Info").val(),
-	        	"upd.user_SEQ" : user_seq
+	        	"iu.user_name" : $("#Name").val(),
+	        	"iu.user_class" : $("#Info").val(),
+	        	"iu.user_ip" : "121.143.143.48"
 	        },
 	        error : function(){
 	            alert("통신실패!!!!");
@@ -126,7 +126,7 @@ This is page1.jsp
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
-                    	<mkw:get name="user" id="selectUserByClass" obj="list" like="yes">
+                    	<mkw:get name="user" id="userByClassOrSeq" obj="list" like="no">
                     		<tr>${mkw.name}</tr>
                     		<tr>${mkw.u_class}</tr>
                     	</mkw:get>
@@ -141,7 +141,16 @@ This is page1.jsp
                     </form>
                 </div>
                 
-                <div id="modify-user">
+                <div id="search-class-seq">
+                	<form action="" method="post">
+                	
+                		번호   :<input type="text" name="ucs.user_seq" />
+                		클래스: <input type="text" name="ucs.user_class" />
+                		<input type="submit" value="찾기2" />
+                	</form>
+                </div>
+                
+                <div id="modify-user" style="display: block">
                 	<input type="text" id="Name" />
 	                <input type="text" id="Info" />
 	                <button id="textAJAX">수정</button>

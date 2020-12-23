@@ -16,6 +16,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.can.MkPageConfigCan;
+import com.mkweb.data.MkJsonData;
 import com.mkweb.data.PageJsonData;
 import com.mkweb.logger.MkLogger;
 
@@ -34,7 +35,6 @@ public class MkPageConfigs extends MkPageConfigCan{
 			pc = new MkPageConfigs();
 		return pc;
 	}
-	
 	private String[] ctr_list = {
 			"name",
 			"debug",
@@ -42,36 +42,12 @@ public class MkPageConfigs extends MkPageConfigCan{
 			"dir_key",
 			"page"
 	};
-	
 	private String[] ctr_info = new String[ctr_list.length];
 	private String[] svc_list = {
 			"obj",
 			"method"	
 	};
 	
-	private ArrayList<String> setPageParamToStrig(String pageParam) {
-		if(pageParam == null)
-			return null;
-		String[] tempPageParam = pageParam.split("@set" + "\\(");
-		String[] tempPageParam2 = new String[tempPageParam.length];
-		if(tempPageParam.length == 1) 
-			return null;
-
-		for(int i = 0; i < tempPageParam.length; i++) {
-			tempPageParam2[i] = tempPageParam[i].split("=")[0];
-		}
-
-		if(tempPageParam2.length == 1)
-			return null;
-
-		ArrayList<String> result = new ArrayList<String>();
-
-		for(int i = 1; i < tempPageParam2.length; i++) {
-			result.add(tempPageParam2[i].trim());
-		}
-
-		return result;
-	}
 	@Override
 	public void setPageConfigs(File[] pageConfigs) {
 		page_configs.clear();
@@ -124,43 +100,29 @@ public class MkPageConfigs extends MkPageConfigCan{
 						
 						serviceType = serviceKinds.get("kind").toString();
 						serviceId = serviceKinds.get("id").toString();
-						
 					}catch(NullPointerException npe) {
 						 mklogger.error("[Controller: " + pageName + "] Some service of the page doesn't have attributes. Please check the page config.");
 						 return;
 					}
 					
-					String serviceValue = null;
-					JSONObject serviceValues[] = null;
-					JSONArray serviceValueArray = null;
+					MkJsonData mkJsonData = new MkJsonData(serviceObject.get("value").toString());
+					JSONObject tempValues = null;
 					String[] page_value = null;
-					try {
-						serviceValueArray = (JSONArray) serviceObject.get("value");
-						serviceValue = null;
-						
-						serviceValues = new JSONObject[serviceValueArray.size()];
-						
-						for(int j = 0; j < serviceValues.length; j++) {
-							serviceValues[j] = (JSONObject) serviceValueArray.get(j);
-						}
-					}catch(Exception e) {
-						mklogger.warn(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId + "] We recommend you to set page value into JSONArray. But you set as a single String.");
-					}finally {
-						serviceValueArray = null;
-						serviceValue = serviceObject.get("value").toString();
-					}
 					
-					if(serviceValues != null) {
-						page_value = new String[serviceValues.length];
-						
-						for(int j = 0; j < serviceValues.length; j++) {
-							page_value[j] = serviceValues[j].get("" + (j+1)).toString();
-						}
-						
-					}else {
-						page_value = new String[1];
-						page_value[0] = serviceValue;
+					if(mkJsonData.setJsonObject()) {
+						tempValues = mkJsonData.getJsonObject();
 					}
+					if(tempValues.size() == 0) {
+						mklogger.error(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+						mklogger.debug(TAG, "{\"1\":\"\"}");
+						continue;
+					}
+					page_value = new String[tempValues.size()];
+					
+					for(int j = 0; j < tempValues.size(); j++) {
+						page_value[j] = tempValues.get("" + (j+1)).toString();
+					}
+
 					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
 					String[] sql_info = {serviceObjectType, serviceMethod};
 
@@ -192,7 +154,6 @@ public class MkPageConfigs extends MkPageConfigCan{
 
 	@Override
 	public void printPageInfo(PageJsonData jsonData, String type) {
-
 		String[] SQL_INFO = jsonData.getSql();
 		String sql_info = "";
 		for(int i = 0; i < SQL_INFO.length; i++) {
@@ -231,7 +192,6 @@ public class MkPageConfigs extends MkPageConfigCan{
 			mklogger.temp(tempMsg, false);
 			mklogger.flush("info");
 		}
-		
 	}
 
 	@Override

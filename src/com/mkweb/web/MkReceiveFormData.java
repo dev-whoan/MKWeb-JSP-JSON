@@ -2,12 +2,9 @@ package com.mkweb.web;
 
 import java.io.IOException;
 
-
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -34,13 +31,11 @@ public class MkReceiveFormData extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkReceiveFormData]";
-    private PageJsonData pxData = null;
+    private PageJsonData pjData = null;
     
     private ArrayList<PageJsonData> pi = null;
     private boolean isPiSet = false;
-	boolean isSet = false;
-	ArrayList<String> pageStaticParams = null;
-	String pageStaticParamsName = null;
+	PageJsonData pageStaticData = null;
 	ArrayList<String> requestServiceName = null;
 	ArrayList<String> pageParameter = null;
 	ArrayList<String[]> pageSqlInfo = null;
@@ -61,6 +56,8 @@ public class MkReceiveFormData extends HttpServlet {
 		if(mkPage.equals(MkConfigReader.Me().get("mkweb.web.hostname"))) {
 			mkPage = "";
 		}
+		
+		mklogger.debug(TAG, "receive mkpage : " + mkPage);
 		
 		return MkPageConfigs.Me().getControl(mkPage);		
 	}
@@ -97,38 +94,42 @@ public class MkReceiveFormData extends HttpServlet {
 			return false;
 		}
 		
-		requestParams = cpi.getRequestPageParameterName(request, pageStaticParams, pageStaticParamsName);
+		requestParams = cpi.getRequestPageParameterName(request, pageStaticData);
 		
 		ArrayList<PageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
-		for(PageJsonData px : pal) {
-			if(px.getParameter().equals(requestParams)) {
-				pxData = px;
+		for(PageJsonData pj : pal) {
+			if(pj.getParameter().equals(requestParams)) {
+				pjData = pj;
 				break;
 			}
 		}
 		
-		mklogger.debug(TAG, " method: " + pxData.getSql()[2]);
+		mklogger.debug(TAG, " method: " + pjData.getSql()[1]);
 		
-		if(!pxData.getSql()[2].toLowerCase().contentEquals(rqMethod)) {
+		if(!pjData.getSql()[1].toLowerCase().contentEquals(rqMethod)) {
 			return false;
 		}
-		
-		requestValues = cpi.getRequestParameterValues(request, pxData.getParameter(), pageStaticParams, pageStaticParamsName);
 
-    	return (pxData != null ? true : false);
+		requestValues = cpi.getRequestParameterValues(request, pjData.getParameter(), pageStaticData);
+
+    	return (pjData != null ? true : false);
     }
     
     private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	MkDbAccessor DA = new MkDbAccessor();
 		
-		if(!cpi.comparePageValueWithRequestValue(pxData.getPageValue(), requestValues, pxData.getPageStaticParams(), false)) {
+		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false)) {
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
 			response.sendError(400);
 			return;
 		}
 		
-		String service = pxData.getServiceName();
-		String befQuery = cpi.regularQuery(service, false);
+		String control = pjData.getControlName();
+		String service = pjData.getServiceName();
+		
+		mklogger.debug(TAG, "control : " + control + "| service : " + service);
+		
+		String befQuery = cpi.regularQuery(control, service, false);
 		String query = cpi.setQuery(befQuery);
 		
 		if(requestValues != null) {
@@ -154,12 +155,18 @@ public class MkReceiveFormData extends HttpServlet {
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);
-		
+		pageStaticData = null;
+
 		mklogger.debug(TAG, " isPiSet : " + isPiSet);
 		
 		if(isPiSet) {
-			pageStaticParams = new ArrayList<>();
-			pageStaticParamsName = "";
+			for(int i = 0; i < pi.size(); i++) {
+				if(pi.get(i).getPageStatic()) {
+					pageStaticData = pi.get(i);
+					break;
+				}
+			}
+			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
 			pageSqlInfo = new ArrayList<>();
 			pageValue = new ArrayList<>();
@@ -181,18 +188,22 @@ public class MkReceiveFormData extends HttpServlet {
 		
 		doTask(request, response);
 	}
-    
 	
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);
-		
+		pageStaticData = null;
 		mklogger.debug(TAG, " isPiSet : " + isPiSet);
 		
 		if(isPiSet) {
-			pageStaticParams = new ArrayList<>();
-			pageStaticParamsName = "";
+			for(int i = 0; i < pi.size(); i++) {
+				if(pi.get(i).getPageStatic()) {
+					pageStaticData = pi.get(i);
+					break;
+				}
+			}
+			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
 			pageSqlInfo = new ArrayList<>();
 			pageValue = new ArrayList<>();

@@ -15,7 +15,9 @@
 				"method":"post",
 				"obj":"list",
 				"parameter_name":"alpha",
-				"value":"user_height"
+				"value":{
+					"1":"user_height"
+				}
 			},
 			{
 				"page_static":"false",
@@ -26,11 +28,38 @@
 				"method":"post",
 				"obj":"list",
 				"parameter_name":"byclass",
-				"value":[
-					{
-						"1":"user_class"
-					}
-				]
+				"value":{
+					"1":"user_class"
+				}
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"userByClassOrSeq"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"ucs",
+				"value":{
+					"1":"user_class",
+					"2":"user_seq"
+				}
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"insertUser"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"iu",
+				"value":{
+					"1":"user_name",
+					"2":"user_class",
+					"3":"user_ip"
+				}
 			}
 		]
 	}
