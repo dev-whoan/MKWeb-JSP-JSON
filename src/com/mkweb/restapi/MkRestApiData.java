@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.mkweb.data.MkJsonData;
 
+//Caching 대상
 public class MkRestApiData extends MkJsonData{
 	//헤더 설정 뭐뭐있지?
 	private int responseCode = -1;

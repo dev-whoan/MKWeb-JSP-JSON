@@ -1,7 +1,7 @@
 package com.mkweb.web;
 
 import java.io.IOException;
-
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -148,7 +148,11 @@ public class MkReceiveFormData extends HttpServlet {
 			DA.setRequestValue(reqs);
 			reqs = null;
 			
-			DA.executeDML();
+			try {
+				DA.executeDML();
+			} catch (SQLException e) {
+				mklogger.error(TAG, "(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+			}
 		}
     }
 	

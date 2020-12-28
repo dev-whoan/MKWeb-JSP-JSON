@@ -1,10 +1,7 @@
 package com.mkweb.tag;
 
 import java.io.IOException;
-
-
-
-
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import java.util.Iterator;
@@ -197,11 +194,21 @@ public class tagSEL extends SimpleTagSupport {
 				DA.setRequestValue(reqs);
 				reqs = null;
 			}
-			if(this.like.equals("no"))
-				dbResult = DA.executeSEL(false);
-			else
-				dbResult = DA.executeSELLike(false);
-
+			if(this.like.equals("no")) {
+				try {
+					dbResult = DA.executeSEL(false);
+				}catch (SQLException e) {
+					mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+				}
+			}
+			else {
+				try {
+					dbResult = DA.executeSELLike(false);
+				}catch (SQLException e) {
+					mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+				}	
+			}
+			
 			LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
 
 			if(dbResult != null && dbResult.size() > 0)

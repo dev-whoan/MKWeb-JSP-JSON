@@ -11,6 +11,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mkweb.logger.MkLogger;
 
 
@@ -192,9 +194,7 @@ public class MkJsonData {
 		while(iter.hasNext()) {
 			String key = iter.next().toString();
 			String value = map.get(key);
-			mklogger.debug(TAG, "(func mapToJson) key : " + key + ", value : " + value);
-	//		"key":"value"
-	//		"\"" + key + "\"" + ":" + "\"" + value + "\"";
+		//	mklogger.debug(TAG, "(func mapToJson) key : " + key + ", value : " + value);
 			tempString += "\"" + key + "\"" + ":" + "\"" + value + "\"";
 			if( i < map.size() ){
 				tempString += ", ";
@@ -206,6 +206,11 @@ public class MkJsonData {
 		if(!setJsonObject())
 			return null;
 		return getJsonObject();
+	}
+	
+	public String jsonToPretty(JSONObject jsonObject) throws JsonProcessingException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
 	}
 	
 	public JSONObject getJsonObject() {	return this.jsonObject;	}

@@ -43,7 +43,6 @@ $(document).ready(function(){
 	        success : function(rd){
 	            console.log(rd);
 	        }
-	         
 	    });
 	});
 	
@@ -101,7 +100,6 @@ function removeUser(seq){
 }
 </style>
 
-
 </head>
 <body>
 This is page1.jsp
@@ -126,9 +124,13 @@ This is page1.jsp
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
-                    	<mkw:get name="user" id="userByClassOrSeq" obj="list" like="no">
-                    		<tr>${mkw.name}</tr>
-                    		<tr>${mkw.u_class}</tr>
+                    	<mkw:get name="user" id="selectUserByClass" obj="list" like="no">
+                    		<tr>
+	                    		<th style="font-weight: 300">${mkw.name}</th>
+	                    		<th style="font-weight: 300">${mkw.u_class}</th>
+	                    		<th></th>
+                    		</tr>
+                    		
                     	</mkw:get>
                     </tbody>
                 </table>
@@ -143,7 +145,6 @@ This is page1.jsp
                 
                 <div id="search-class-seq">
                 	<form action="" method="post">
-                	
                 		번호   :<input type="text" name="ucs.user_seq" />
                 		클래스: <input type="text" name="ucs.user_class" />
                 		<input type="submit" value="찾기2" />

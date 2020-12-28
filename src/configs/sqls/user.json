@@ -31,7 +31,7 @@
 					"data":{
 						"1":""
 					},
-					"where":"u_class = @user_class@ AND user_name = @user_name@"
+					"where":"u_class = @user_class@"
 					
 				}
 			},

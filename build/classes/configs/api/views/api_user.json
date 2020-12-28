@@ -14,45 +14,30 @@
 					"id":"getAllUser"
 				},
 				"method":"get",
-				"select-condition":"yes",
+				"select-condition":"no",
 				"obj":"list",
 				"parameter_name":"",
 				"value":{
 					"1":"name",
-					"2":"class",
-					"3":"sequence"
+					"2":"u_class",
+					"3":"SEQ"
 				}
 			},
 			{
 				"page_static":"false",
 				"type":{
 					"kind":"sql",
-					"id":"getAllUser"
+					"id":"createUser"
 				},
 				"method":"post",
-				"select-condition":"yes",
+				"select-condition":"no",
 				"obj":"list",
 				"parameter_name":"",
 				"value":{
 					"1":"name",
-					"2":"class",
-					"3":"sequence"
-				}
-			},
-			{
-				"page_static":"false",
-				"type":{
-					"kind":"sql",
-					"id":"getAllUser"
-				},
-				"method":"patch",
-				"select-condition":"yes",
-				"obj":"list",
-				"parameter_name":"",
-				"value":{
-					"1":"name",
-					"2":"class",
-					"3":"sequence"
+					"2":"u_class",
+					"3":"CNT_IP",
+					"4":"SEQ"
 				}
 			}
 		]

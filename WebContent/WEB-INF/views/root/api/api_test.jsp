@@ -1,5 +1,4 @@
- 
-<%@ page language="java" contentType="text/html; charset=UTF-8"
+ <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib uri="MkWeb" prefix="mkw" %>
 <!DOCTYPE html>
@@ -27,8 +26,52 @@ window.onload = function(){
 };
 
 $(document).ready(function(){
+	let userList, lastSEQ;
 	$("#test-api").click(function(){
-		var jsonInfo = '{"search_key":"apple", "name":"dev.whoan"}';
+		var jsonInfo = '{"search_key":"apple"}';
+		var queryInfo = "search_key=apple&name=dev.whoan";
+		$.ajax({
+	        type : "get",
+	        url : "/mk_api_key/users",
+	        dataType : "json",
+	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
+	        data : {
+	        	"apiData":jsonInfo
+	        },
+	        error : function(a, b, c){
+	            alert("통신실패!!!!");
+	            console.log(a.responseText);
+	            console.log(b);
+	            console.log(c);
+	        },
+	        success : function(rd){
+	        	console.log(rd);
+	        	let tempString, tempJSON;
+	        	tempString = JSON.stringify(rd);
+	        	tempJSON = JSON.parse(tempString);
+	        	userList = tempJSON['users'];
+	        	getLastSequence();
+	        }
+	    });
+	});
+	
+	function getLastSequence(){
+		if(userList.length > 0){
+			lastSEQ = parseInt(userList[0]['SEQ']);
+			console.log(userList.length);
+			for(let i = 1; i < userList.length; i++){
+				let temp = parseInt(userList[i]['SEQ']);
+				
+				if(temp > lastSEQ)
+					lastSEQ = temp;
+			}
+		}
+		
+		console.log("lastSEQ : " + lastSEQ);
+	}
+	
+	$("#test-post").click(function(){
+		var jsonInfo = '{"search_key":"apple", "name":"dev.whoan", "u_class":"5", "CNT_IP":"121.143.148.49", "SEQ":"' + (lastSEQ+1) + '"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
 	        type : "post",
@@ -36,10 +79,13 @@ $(document).ready(function(){
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
 	        data : {
-	        	"apiData":queryInfo
+	        	"apiData":jsonInfo
 	        },
-	        error : function(){
+	        error : function(a, b, c){
 	            alert("통신실패!!!!");
+	            console.log(a.responseText);
+	            console.log(b);
+	            console.log(c);
 	        },
 	        success : function(rd){
 	            console.log(rd);
@@ -79,6 +125,7 @@ This is api test page
         <div class="section">
             <div>
             	<button id="test-api">API 확인</button>
+            	<button id="test-post">POST 확인</button>
             </div>
         </div>
 
