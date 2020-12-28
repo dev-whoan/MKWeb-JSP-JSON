@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -73,12 +74,7 @@ public class MkRestApi extends HttpServlet {
 		return false;	
 	}
 
-	private boolean isValidKey(String key, String mkPage) {
-		if(!MkConfigReader.Me().get("mkweb.restapi.use").equals("yes"))
-			return false;
-		if(!MkRestApiPageConfigs.Me().isApiPageSet())
-			return false;
-
+	private boolean isKeyValid(String key, String mkPage) {
 		boolean isDone = false;
 		MkRestApiGetKey mra = new MkRestApiGetKey();
 		ArrayList<Object> apiKeyList = mra.GetKey();
@@ -205,13 +201,20 @@ public class MkRestApi extends HttpServlet {
 			return;
 		}
 		Enumeration<String> rpn = request.getParameterNames();
-		/* 컨트롤 내에 method가 허용 되는가? 
+		
 		if(!checkMethod(control, REQUEST_METHOD)) {
-			mklogger.error(TAG, "[API] Control " + mkPage + " does not allow method : " + REQUEST_METHOD);
+			mklogger.error(TAG, "[Control " + mkPage + "] does not allow method : " + REQUEST_METHOD);
 			response.sendError(404);
 			return;
 		}
-		*/
+		
+		
+		if(MKWEB_USE_KEY) {
+			String key = request.getParameter(MKWEB_SEARCH_KEY);
+			if(!isKeyValid(key, mkPage)) {
+				return;
+			}
+		}
 		
 		mklogger.debug(TAG, "REQUEST URI : " + requestURI);
 		/*
@@ -224,8 +227,10 @@ public class MkRestApi extends HttpServlet {
 			if(mkJsonData.setJsonObject()) {
 				requestParameterJson = mkJsonData.getJsonObject();
 			} else {
+				// /users/u_class/5
 				String[] tempURI = requestURI.split("/");
 				int shouldCheckQuery = -1;
+				int mkPageIndex = -1;
 				/*
 				 * -1 : do Nothing
 				 * 0  : 전체 조회
@@ -239,17 +244,17 @@ public class MkRestApi extends HttpServlet {
 						if(element.contentEquals(MKWEB_API_ID)) {
 							elementValue = request.getParameter(element);
 							if(elementValue.contains("=") && elementValue.contains(MKWEB_SEARCH_KEY)) {
-								mklogger.debug(TAG, "경우 1과 같음(/mk_api_key/users 처럼)");
+							//	mklogger.debug(TAG, "경우 1과 같음(/mk_api_key/users 처럼)");
 							}else if(!elementValue.contains(MKWEB_SEARCH_KEY)) {
-								mklogger.debug(TAG, "(1) 경우 2 - /mk_api_key/users?queryString~");
+							//	mklogger.debug(TAG, "(1) 경우 2 - /mk_api_key/users?queryString~");
 								shouldCheckQuery = 1;
 							}
 						}else {
 							if(!element.contentEquals(MKWEB_SEARCH_KEY)) {
-								mklogger.debug(TAG, "(1) 경우 2 - /mk_api_key/users?queryString~");
+							//	mklogger.debug(TAG, "(1) 경우 2 - /mk_api_key/users?queryString~");
 								shouldCheckQuery = 1;							
 							}else {
-								mklogger.debug(TAG, "경우 1과 같음 (/mk_api_key/users 처럼)");
+							//	mklogger.debug(TAG, "경우 1과 같음 (/mk_api_key/users 처럼)");
 							}
 						}
 					}else {
@@ -257,6 +262,14 @@ public class MkRestApi extends HttpServlet {
 					}
 					
 					shouldCheckQuery = 0;
+				}else {
+					shouldCheckQuery = -1;
+					for(int i = 0; i < tempURI.length; i++) {
+						if(tempURI[i].contentEquals(mkPage)) {
+							mkPageIndex = i;
+							break;
+						}
+					}	
 				}
 				
 				if(shouldCheckQuery == 1){
@@ -265,7 +278,7 @@ public class MkRestApi extends HttpServlet {
 					mklogger.warn(TAG, "Try to convert into MkJsonObject...");
 					
 					String tempAPIID = request.getParameter(MKWEB_API_ID);
-					HashMap<String, String> result = new HashMap<String, String>();
+					LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
 					mklogger.debug(TAG, "APIData가 존재 하는가? " + request.getParameter(MKWEB_API_ID));
 					
 					if(tempAPIID != null) {
@@ -278,11 +291,11 @@ public class MkRestApi extends HttpServlet {
 							for(int i = 0; i < tempArr.length; i++) {
 								mklogger.debug(TAG, "tempArr i : " + tempArr[i]);
 							}
-							result = (HashMap<String, String>) stringToMap(tempArr);
+							result = (LinkedHashMap<String, String>) stringToMap(tempArr);
 						}else {
 							tempArr = new String[1];
 							tempArr[0] = tempAPIID;
-							result = (HashMap<String, String>) stringToMap(tempArr);
+							result = (LinkedHashMap<String, String>) stringToMap(tempArr);
 						}
 					}
 					
@@ -295,7 +308,55 @@ public class MkRestApi extends HttpServlet {
 					
 					requestParameterJson = mkJsonData.mapToJson(result);
 					
-					mklogger.debug(TAG, "변환 결과 : " + requestParameterJson);
+					if(requestParameterJson == null) {
+						mklogger.error(TAG, "API Request only allow with JSON type. Cannot convert given data into JSON Type.");
+						return;
+					}
+				}else if(shouldCheckQuery == -1) {
+					/*
+					 1. /users/u_class/5
+					 1. /users/name/dev.whoan/
+					 
+					 2. /users/name/dev.whoan/u_class/5
+					 2. /users/u_class/5/name/gildong
+					 
+					 3. /users/name/dev.whoan/class/5/seq/1 
+					 
+					 4. /users/u_class/5
+					 4. /users/name/dev.whoan/class
+					 
+					 홀수번에는 Column
+					 짝수번에는 데이터
+					 */
+					// mkPageIndex = users를 찾음
+					ArrayList<String> searchColumns = new ArrayList<>();
+					ArrayList<String> searchValues = new ArrayList<>();
+					boolean isColumn = true;
+					for(int i = mkPageIndex+1; i < tempURI.length; i++) {
+						if(isColumn) {
+							isColumn = false;
+							searchColumns.add(tempURI[i]);
+						}else {
+							isColumn = true;
+							searchValues.add(tempURI[i]);
+						}
+					}
+					
+					if(searchColumns.size() == searchValues.size() + 1) {
+						searchValues.add("");
+					}
+					
+					if(searchColumns.size() != searchValues.size()) {
+						mklogger.error(TAG, "API Request is not valid.");
+						mklogger.debug(TAG, "searchColumns size != searchValues.size");
+						return;
+					}
+					LinkedHashMap<String, String> result = new LinkedHashMap<>();
+					
+					for(int i = 0; i < searchColumns.size(); i++) {
+						result.put(searchColumns.get(i), searchValues.get(i));
+					}
+					requestParameterJson = mkJsonData.mapToJson(result);
 					
 					if(requestParameterJson == null) {
 						mklogger.error(TAG, "API Request only allow with JSON type. Cannot convert given data into JSON Type.");
@@ -323,7 +384,99 @@ public class MkRestApi extends HttpServlet {
 				requestParameterJson = mkJsonData.getJsonObject();
 			}
 		}
+		mklogger.debug(TAG, "최종 : " + requestParameterJson);
+		Set requestKeySet = requestParameterJson.keySet();
+		Iterator requestIterator = requestKeySet.iterator();
+	
+		/*
+		 * 이제부터 할 것
+		 * ApiPageConfig에서 Method에 대한 Value 확인하기
+		 * 통과하면 SQL Condition 비교하기
+		 */
 		
+		ArrayList<PageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
+		PageJsonData pageService = null;
+		
+		for(PageJsonData service : pageControl) {
+	//		mklogger.debug(TAG, " service method : " + service.getMethod());
+			if(REQUEST_METHOD.contentEquals(service.getMethod())) {
+				pageService = service;
+				break;
+			}
+		}
+		
+		if(pageService == null) {
+			mklogger.error(TAG, "요청한 서비스는 존재하지 않습니다. (Method에 대한 Service 가 null임)");
+			return;
+		}
+		
+		ArrayList<SqlJsonData> sqlControl = MkRestApiSqlConfigs.Me().getControlByServiceName(pageService.getServiceName());
+		SqlJsonData sqlService = null;
+		String[] sqlConditions = sqlControl.get(0).getCondition();
+		
+		if(sqlConditions.length == 0) {
+			mklogger.error(TAG, "SQL Config 설정이 잘못됐습니다. condition이 비어있습니다. 전체조회를 희망할 경우 \"1\":\"\"을 추가해 주세요.");
+			return;
+		}
+		
+		for(SqlJsonData sqlServiceData : sqlControl) {
+			if(sqlServiceData.getServiceName().contentEquals(pageService.getServiceName())) {
+				sqlService = sqlServiceData;
+				break;
+			}
+		}
+		
+		if(sqlService == null) {
+			mklogger.error("요청한 SQL Service가 없습니다.");
+			return;
+		}
+		
+		String[] pageValues = pageService.getData();
+		
+		requestIterator = requestKeySet.iterator();
+		
+		while(requestIterator.hasNext()) {
+			String requestKey = requestIterator.next().toString();
+			int passed = -1;
+			for(int i = 0; i < pageValues.length; i++) {
+				if(pageValues[i].contentEquals(requestKey)) {
+					passed = 1;
+					break;
+				}
+			}
+			
+			if(passed == 1) {
+				for(int i = 0; i < sqlConditions.length; i++) {
+					if(sqlConditions[i].contentEquals(requestKey)) {
+						passed = 2;
+						break;
+					}
+				}
+			}
+			
+			if(passed != 2) {
+				mklogger.error(TAG, "요청한 Value에 대한 검색이 불가능합니다. " + requestKey);
+				return;
+			}
+		}
+		JSONObject resultObject = null;
+		switch(REQUEST_METHOD) {
+		case "get":
+			resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage);
+			break;
+		case "post":
+			
+			break;
+			
+		case "put":
+			
+			break;
+			
+		case "delete":
+			
+			break;
+		}
+		mklogger.debug(TAG, "resultObejct : " + resultObject.toString());
 /* {"name":""}
  * func isValidDataForJson) ParseException:: Unexpected token RIGHT BRACE(}) at position 8. Given data is not valid for JSONObject.
 {"name":}
@@ -380,19 +533,20 @@ jsonObject null
 		out.flush();
 	}
 
-	private JSONObject doTaskGet(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
+	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
-		String service = pxData.getServiceName();
-		String control = pxData.getControlName();
+		String service = pjData.getServiceName();
+		String control = sqlData.getControlName();
 		String befQuery = cpi.regularQuery(control, service, true);
 		String query = null;
-
-		mklogger.debug(TAG, " befQuery : "+ befQuery);
 		
-		query = cpi.setQuery(befQuery);
-		mklogger.debug(TAG, "query check : " + query);
+		//아예 전체조회는 특별한 String이 필요함 jsonObject { "특별한키":"true" }
+		//밑에는 조건조회
+		//value가 ""면 해당조건은 전체조회. 즉 value를 무시해도 됨
+		query = cpi.setApiQuery(befQuery).split("WHERE")[0];
+
 		DA.setPreparedStatement(query);
 		
 		Set keySet = jsonObject.keySet();

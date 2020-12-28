@@ -20,7 +20,7 @@ import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.config.MkSQLJsonConfigs;
+import com.mkweb.config.MkSQLConfigs;
 
 public class CheckPageInfo {
 	private String TAG = "[CheckPageInfo]";
@@ -29,12 +29,15 @@ public class CheckPageInfo {
 	public String regularQuery(String controlName, String serviceName, boolean isApi) {
 		ArrayList<SqlJsonData> resultSqlData = null;
 		if(isApi)
-			resultSqlData = MkSQLJsonConfigs.Me().getControl(controlName);
+			resultSqlData = MkRestApiSqlConfigs.Me().getControl(controlName);
 		else
-			resultSqlData = MkSQLJsonConfigs.Me().getControl(controlName);
+			resultSqlData = MkSQLConfigs.Me().getControl(controlName);
 
 		if(resultSqlData == null) {
-			resultSqlData = MkSQLJsonConfigs.Me().getControlByServiceName(serviceName);
+			if(isApi)
+				resultSqlData = MkRestApiSqlConfigs.Me().getControlByServiceName(serviceName);
+			else
+				resultSqlData = MkSQLConfigs.Me().getControlByServiceName(serviceName);
 			
 			if(resultSqlData == null) {
 				mklogger.error(TAG, "There is no sql control named : " + controlName);
@@ -158,10 +161,10 @@ public class CheckPageInfo {
 	}
 
 	public String setQuery(String query) {
-		String befQuery = query;
-		if(befQuery != null) {
-			mklogger.debug(TAG, "(func setQuery): befQuery: " + befQuery);
-			String[] testQueryList = befQuery.split("@");
+		String aftQuery = query;
+		if(aftQuery != null) {
+			mklogger.debug(TAG, "(func setQuery): befQuery: " + aftQuery);
+			String[] testQueryList = aftQuery.split("@");
 			String[] replaceTarget = null;
 
 			if(testQueryList.length == 1)
@@ -176,18 +179,26 @@ public class CheckPageInfo {
 					}
 				}else {	return null;	}
 			}
-
-			
 			
 			if(replaceTarget != null) {
 				for(int i = 0; i < replaceTarget.length; i++) {
-					befQuery = befQuery.replaceFirst(("@" + replaceTarget[i]+ "@"), "?");
+					aftQuery = aftQuery.replaceFirst(("@" + replaceTarget[i]+ "@"), "?");
 				}
 			}else {
 				return null;
 			}
 		}
-		return befQuery;
+		return aftQuery;
+	}
+	
+	public String setApiQuery(String query) {
+		String aftQuery = query;
+		
+		if(aftQuery != null) {
+			
+		}
+		
+		return aftQuery;
 	}
 
 	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, PageJsonData pageStaticData, boolean isApi) {

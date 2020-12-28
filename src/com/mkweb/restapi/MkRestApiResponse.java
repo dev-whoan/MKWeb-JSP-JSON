@@ -2,8 +2,8 @@ package com.mkweb.restapi;
 
 import org.json.simple.JSONObject;
 
+import com.mkweb.config.MkConfigReader;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.old.config.xml.MkConfigReader;
 import com.mkweb.security.MyCrypto;
 
 public class MkRestApiResponse {

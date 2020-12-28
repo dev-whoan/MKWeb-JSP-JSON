@@ -129,7 +129,8 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
-						if(serviceData.setJsonObject()) {
+						mklogger.debug(TAG, "sdg: " + serviceData.getData());
+						if(!serviceData.setJsonObject()) {
 							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
 							return;
 						}
@@ -234,7 +235,6 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		while(sqlIterator.hasNext()) {
 			String controlName = sqlIterator.next().toString();
 			jsonData = getControl(controlName);
-			
 			for(SqlJsonData curData : jsonData) {
 				if(serviceName.contentEquals(curData.getServiceName())) {
 					resultControlName = controlName;

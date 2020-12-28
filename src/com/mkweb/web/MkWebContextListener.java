@@ -10,7 +10,7 @@ import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.config.MkSQLJsonConfigs;
+import com.mkweb.config.MkSQLConfigs;
 import com.mkweb.logger.MkLogger;;
 
 public class MkWebContextListener implements ServletContextListener {
@@ -52,7 +52,7 @@ public class MkWebContextListener implements ServletContextListener {
 		File mkweb_sql_config = new File(new File(event.getServletContext().getRealPath("/")), sqlConfigsUri);
 		File[] config_sqls = mkweb_sql_config.listFiles();
 		
-		MkSQLJsonConfigs sxc = MkSQLJsonConfigs.Me();
+		MkSQLConfigs sxc = MkSQLConfigs.Me();
 		sxc.setSqlConfigs(config_sqls);
 		
 		/*

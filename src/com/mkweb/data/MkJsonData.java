@@ -36,6 +36,7 @@ public class MkJsonData {
 		try {
 			JSONObject jo = new JSONObject();
 			JSONParser parser = new JSONParser();
+			
 			Object obj = parser.parse(data);
 			jo = (JSONObject) obj;
 			isDone = true;
@@ -191,6 +192,7 @@ public class MkJsonData {
 		while(iter.hasNext()) {
 			String key = iter.next().toString();
 			String value = map.get(key);
+			mklogger.debug(TAG, "(func mapToJson) key : " + key + ", value : " + value);
 	//		"key":"value"
 	//		"\"" + key + "\"" + ":" + "\"" + value + "\"";
 			tempString += "\"" + key + "\"" + ":" + "\"" + value + "\"";
@@ -199,7 +201,6 @@ public class MkJsonData {
 			}
 		}
 		tempString += "}";
-		
 		setData(tempString);
 		
 		if(!setJsonObject())

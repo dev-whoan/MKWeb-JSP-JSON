@@ -1,6 +1,7 @@
 package com.mkweb.restapi;
 
 import java.sql.Connection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -8,9 +9,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.mkweb.config.MkConfigReader;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.old.config.xml.MkConfigReader;
 
 public class MkRestApiGetKey extends MkDbAccessor {
 	private Connection dbCon = null;

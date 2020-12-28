@@ -24,17 +24,17 @@ import com.mkweb.data.PageJsonData;
 import com.mkweb.data.SqlJsonData;
 import com.mkweb.logger.MkLogger;
 
-public class MkSQLJsonConfigs extends MkSqlConfigCan {
+public class MkSQLConfigs extends MkSqlConfigCan {
 	private HashMap<String, ArrayList<SqlJsonData>> sql_configs = new HashMap<String, ArrayList<SqlJsonData>>();
 	private File[] defaultFiles = null;
-	private static MkSQLJsonConfigs sxc = null;
+	private static MkSQLConfigs sxc = null;
 	private long[] lastModified = null;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[SQLXmlConfigs]";
 
-	public static MkSQLJsonConfigs Me() {
+	public static MkSQLConfigs Me() {
 		if(sxc == null)
-			sxc = new MkSQLJsonConfigs();
+			sxc = new MkSQLConfigs();
 		return sxc;
 	}
 
@@ -219,7 +219,6 @@ public class MkSQLJsonConfigs extends MkSqlConfigCan {
 			if(resultControlName != null) {
 				break;
 			}
-			
 			jsonData = null;
 		}
 		

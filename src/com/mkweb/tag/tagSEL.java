@@ -22,7 +22,7 @@ import com.mkweb.data.SqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkPageConfigs;
-import com.mkweb.config.MkSQLJsonConfigs;
+import com.mkweb.config.MkSQLConfigs;
 import com.mkweb.security.CheckPageInfo;
 
 public class tagSEL extends SimpleTagSupport {
@@ -64,7 +64,7 @@ public class tagSEL extends SimpleTagSupport {
 	}
 
 	private ArrayList<SqlJsonData> getSqlControl(String sqlControlName){
-		return MkSQLJsonConfigs.Me().getControl(sqlControlName);
+		return MkSQLConfigs.Me().getControl(sqlControlName);
 	}
 
 	public void doTag() throws JspException, IOException{
