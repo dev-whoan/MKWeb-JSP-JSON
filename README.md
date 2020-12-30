@@ -53,89 +53,97 @@ Definition of Services and Controllers
 JSON Configs are the biggest profit  when you use MKWeb.
 
 You can easily access to Model via services or controllers.
-To use the services and controllers, you <span>need to set the config files, ~.json</span>.
-<br><br>
-The configs are designed with <span>JSON</span>, so you can <span>simply define it</span>.
-<br><br>
-For example, before using MKWeb you need to design DBA, DBO, and whatever you need to access to DB, <span>but now you just need to set relevant Configs to access DB.</span>
-<br><br>
-Define the <span>SQL Json</span>, <span>and View Json</span> to choose which query to use, and after defining it, you can easily execute the SQL.
-<br><br>
+To use the services and controllers, you need to set the config files, ~.json.
+
+The configs are designed with JSON, so you can simply define it.
+
+For example, before using MKWeb you need to design DBA, DBO, and whatever you need to access to DB, but now you just need to set relevant Configs to access DB.
+
+Define the <span>SQL Json</span>, and View Json to choose which query to use, and after defining it, you can easily execute the SQL.
+
 Just you need to define the relations <span>well</span> for request to response.
-<br><br>
+
 If the relations or requests are not defined, MkLogger would let you know what's going on.
-<br><br>
-</p>
 
-<br>
-<span class='h1'>What MkWeb Can Do?</span>
-<hr>
 
-<p>
-<br>
-<span class='h2'>Logging, DB Connect, and RESTful API</span>
-<br>
+
+# What MkWeb Can Do?
+
+* Logging, DB Connect, and RESTful API
+
 MKWeb supports Logging, DB connect, and limited RESTful API functions.
-<br><br>
+
+* MkLogger
+
 MkLogger is logging every tasks on MkWeb, so you can check which requests has come, and what was the response.
-<br>
+
 You can manage your webserver easily with MkLogger's feedback.
-<br>
-For example, if the user asked wrong requesets, MkLogger would tell what is the problem,<br>
-And user asked right requests, and you set wrong definition(or relations) on controller, MkLogger would also tell the problem.<br>
-So, <span>easy maintance</span>.<br>
+
+For example, if the user asked wrong requesets, MkLogger would tell what is the problem,
+
+And user asked right requests, and you set wrong definition(or relations) on controller, MkLogger would also tell the problem.
+
+So, easy maintance.
+
 Also you can use MkLogger on your custom java file so you can check your custom log on MkLogger.
 
-<br><br>
 With other frameworks, you need to connect DB with programming it, and create every DAO, DTO, Data Beans.
-<br>
-However, using mkweb, <span>you don't have to create any DAO, DTO, and Data Beans.</span>
-<br>
-You <span>just need to config the View jsons and SQL jsons.</span>
-<br>
+
+However, using mkweb, you don't have to create any DAO, DTO, and Data Beans.
+
+You just need to config the View jsons and SQL jsons.
+
 You can easily use your query result data with &lt;mkw:get&gt; HTML Custom Tag.
-<br><br>
-MkWeb supports RESTful API.
-<br>
+
+* MkWeb supports RESTful API.
+
 For now, it's not 100% developed, but we are planning to support every function in RESTful API.
-<br><br>
+
 Supporting functions: <span>Method: Get, Post</span>
-<br><br>
+
 However, Get method is now limited supported. Following is now supporting functions.
-<br>
+
 For example, if you have Users data set, and there are 3 columns; name, phone, and address:
-<br><span>
-1. /users<br>
-2. /users/name/이름<br>
-3. /users/name/이름/phone/번호<br>
-</span> ==> 1. searching everything in users 2. searching with perfect condition (name have value, and phone have value)<br>
+
+1. /users
+
+2. /users/name/이름
+
+3. /users/name/이름/phone/번호
+
+==> 1. searching everything in users 2. searching with perfect condition (name have value, and phone have value)<br>
 
 And following functions are not supporting now.
-<br><br><span>
-1. /users/name<br>
+
+1. /users/name
+
 2. /users/name/이름/phone
-</span> ==> 1. want to get only name column that includes whole names in users / 2. want to get only phone column that the people whos' name is John.)
-<br><br>
-We support 100% POST method to create new data.<br>
-But there are some rules to use POST method, you can check it on <a href="./conf_api.html">RESTful API Configs</a>.
-<br><br>
-<span class='h2'>What We Are Planning To</span>
-<br>
+
+==> 1. want to get only name column that includes whole names in users / 2. want to get only phone column that the people whos' name is John.)
+
+We support 100% POST method to create new data.
+
+But there are some rules to use POST method, you can check it on RESTful API Configs.
+
+What We Are Planning To
+
 We are planning to following functions.
-<br><br>
-1. 100% RESTful API<br>
-2. Session<br>
-3. Device informations(Header)<br>
-</p>
-<span class='h1'>Developer E-mail</span>
-<hr>
-<p style="text-align: center;">
-<span class='h2'>dev-whoan</span>
+
+1. 100% RESTful API
+
+2. Session
+
+3. Device informations(Header)
+
+# Developer E-mail
+
+* dev-whoan
 dev.whoan@gmail.com
-<br><br>
-<span class='h2'>hyeonic</span>
+
+* hyeonic
 evan3566@gmail.com
-<span class='h2'>koh</span>
+
+* koh
 khj1538104@gmail.com
 
 # What we want you to do when you use MKWeb or copy and distribute MKWeb(convey).
