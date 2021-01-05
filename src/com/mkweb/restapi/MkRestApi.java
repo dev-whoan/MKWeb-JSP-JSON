@@ -254,7 +254,7 @@ public class MkRestApi extends HttpServlet {
 							}
 						}
 					}
-
+					
 					if (shouldCheckQuery == 1) {
 						mklogger.warn(TAG, "Given data is not valid to cast JSONObject.");
 						mklogger.warn(TAG, "Try to convert into MkJsonObject...");
@@ -268,10 +268,6 @@ public class MkRestApi extends HttpServlet {
 							if (tempAPIID.contains("&")) {
 								mklogger.debug(TAG, " & ¿÷¿Ω ");
 								tempArr = tempAPIID.split("&");
-								mklogger.debug(TAG, "tempArr: " + tempArr);
-								for (int i = 0; i < tempArr.length; i++) {
-									mklogger.debug(TAG, "tempArr i : " + tempArr[i]);
-								}
 								result = (LinkedHashMap<String, String>) stringToMap(tempArr);
 							} else {
 								tempArr = new String[1];
@@ -286,7 +282,6 @@ public class MkRestApi extends HttpServlet {
 							if (!parameter.contentEquals(MKWEB_API_ID))
 								result.put(parameter, request.getParameter(parameter));
 						}
-
 						requestParameterJson = mkJsonData.mapToJson(result);
 
 						if (requestParameterJson == null) {
@@ -351,7 +346,6 @@ public class MkRestApi extends HttpServlet {
 						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
 						result.put(MKWEB_SEARCH_ALL, MKWEB_SEARCH_ALL);
 						requestParameterJson = mkJsonData.mapToJson(result);
-
 						if(requestParameterJson == null) {
 							mklogger.error(TAG,
 									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
@@ -523,13 +517,12 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 			
-			
-			if(apiResponse.getCode() < 400 && apiResponse.getCode() != -1){
+			if(apiResponse.getCode() >= 400 && apiResponse.getCode() != -1){
 				break;
 			}
-
+			
 			switch (REQUEST_METHOD) {
-			case "get": case "head": case "options":
+			case "get": case "head":
 				resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse);
 				break;
 			case "post":
@@ -543,10 +536,9 @@ public class MkRestApi extends HttpServlet {
 
 				break;
 			}
-
-
 			break;
 		}
+		
 		apiResponse.setContentType("application/json;charset=UTF-8");
 		response.setStatus(apiResponse.getCode());
 		response.setContentType(apiResponse.getContentType());
@@ -573,10 +565,7 @@ public class MkRestApi extends HttpServlet {
 				}
 				allowMethods = allowMethods.substring(0, allowMethods.length()-1) + "\"";
 			}
-			
-			mklogger.debug(TAG, "allowMethods : " + allowMethods);
 			result = apiResponse.generateResult(false, REQUEST_METHOD, allowMethods);
-
 			out.print(result);
 		}else {
 			result = mkJsonData.jsonToPretty(resultObject);
@@ -585,12 +574,10 @@ public class MkRestApi extends HttpServlet {
 			response.addHeader("Content-Length", "" + apiResponse.getContentLength());
 			out.print(apiResponse.generateResult(true, REQUEST_METHOD, result));
 		}
-
-		out.flush();
 	}
 
 	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {
+			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
@@ -611,7 +598,7 @@ public class MkRestApi extends HttpServlet {
 		ArrayList<String> sqlKey = new ArrayList<String>();
 		String condition = "WHERE ";
 		int i = 0;
-
+		
 		while (iter.hasNext()) {
 			String key = iter.next().toString();
 			if (requestSize == 1) {
@@ -631,6 +618,7 @@ public class MkRestApi extends HttpServlet {
 		if (condition.contains("?")) {
 			query += condition;
 		}
+
 		DA.setPreparedStatement(query);
 
 		if (!searchAll) {
@@ -668,7 +656,7 @@ public class MkRestApi extends HttpServlet {
 					test += ", ";
 			}
 			test += "]}";
-
+			
 			MkRestApiData tttt = new MkRestApiData(test);
 
 			if (tttt.setJsonObject()) {
