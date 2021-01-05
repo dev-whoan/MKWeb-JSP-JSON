@@ -1,5 +1,7 @@
 package com.mkweb.restapi;
 
+import java.util.LinkedHashMap;
+
 import org.json.simple.JSONObject;
 
 import com.mkweb.config.MkConfigReader;
@@ -13,7 +15,8 @@ public class MkRestApiResponse {
 	private String responseMessage = null;
 	private String responseStatus = null;
 	private String documentURL = null;
-	
+	private String contentType = null;
+	private long contentLength = -1L; 
 	private String TAG = "[MkRestApiResponse]";
 	private MkLogger mklogger = MkLogger.Me();
 	
@@ -41,6 +44,8 @@ public class MkRestApiResponse {
 	public String getMessage() {	return this.responseMessage;	}
 	public String getDocs()	{	setDocs(responseCode);	return this.documentURL;	}
 	public String getStatus() {	setStatus();	return this.responseStatus;	}
+	public String getContentType() {	return this.contentType;	}
+	public long getContentLength() {	return this.contentLength;	}
 	
 	public void setCode(int responseCode) {	this.responseCode = responseCode;	}
 	public void setData(JSONObject jsonObject) {	this.responseResult = jsonObject.toString();	}
@@ -48,6 +53,30 @@ public class MkRestApiResponse {
 	public void setCount(int count) {	this.responseCount += count;	}
 	public void setMessage(String msg) {	this.responseMessage = msg;	}
 	private void setDocs(int errorcode) {	this.documentURL += ("" + errorcode);	}
+	public void setContentType(String contentType) {	this.contentType = contentType;	}
+	public void setContentLength(long contentLength) {	this.contentLength = contentLength;	}
+	
+	public String generateResult(boolean success) {
+		String result = null;
+		String temp = null;
+		if(success) {
+			result = "";
+		}else{
+			temp = "\"error\":{" +
+						"\"message\":\"" + getMessage() + "\"," +
+						"\"code\":\"" + getCode() + "\"," +
+						"\"status\":\"" + getStatus() + "\"," +
+						"\"info\":\"" + getDocs() + "\"}";
+			contentLength = temp.length();
+			result = "{" +
+					"\"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\"," +
+					"\"Content-Type\":\""+ getContentType()+"\"," +
+					"\"Content-Length\":\"" + getContentLength() + "\"," +
+					temp;
+			result += "}";
+		}
+		return result;
+	}
 	
 	private void setStatus() {
 		switch(responseCode) {

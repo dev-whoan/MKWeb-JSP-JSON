@@ -95,7 +95,7 @@ public class MkReceiveFormData extends HttpServlet {
 			return false;
 		}
 		
-		requestParams = cpi.getRequestPageParameterName(request, pageStaticData);
+		requestParams = cpi.getRequestPageParameterName(request, false, pageStaticData);
 		
 		ArrayList<PageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
 		for(PageJsonData pj : pal) {
@@ -119,7 +119,7 @@ public class MkReceiveFormData extends HttpServlet {
     private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	MkDbAccessor DA = new MkDbAccessor();
 		
-		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false)) {
+		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
 			response.sendError(400);
 			return;

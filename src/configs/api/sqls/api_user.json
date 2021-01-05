@@ -16,9 +16,7 @@
 				"query":{
 					"crud":"select",
 					"column":{
-						"1":"name",
-						"2":"u_class",
-						"3":"SEQ"
+						"1":"*"
 					},
 					"table":"User",
 					"data":{

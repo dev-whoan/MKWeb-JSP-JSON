@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -18,6 +19,7 @@ import com.mkweb.logger.MkLogger;
 
 public class MkJsonData {
 	private JSONObject jsonObject = null;
+	private JSONArray jsonArray = null;
 	private String data = null;
 
 	private String TAG = "[MkJsonData]";
@@ -45,9 +47,37 @@ public class MkJsonData {
 			return jo;
 		} catch (ParseException e) {
 			mklogger.error(TAG, "(func isValidDataForJson) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
+		} catch(NullPointerException e) {
+			mklogger.error(TAG, "(func isValidDataForJson) NullPoitnerException:: " + e + "\nGiven data is not valid for JSONObject.\n" + data);
+		} catch(Exception e){
+			mklogger.error(TAG, "(func isValidDataForJson) error : " + e);
+		} finally {
+			if(!isDone) {
+				return null;
+			}
+		}
+		return null;
+	}
+	
+	private JSONArray isValidDataForJsonArray(String data) {
+		boolean isDone = false;
+		try {
+			String temp = "[" + data + "]";
+			JSONArray ja = new JSONArray();
+			JSONParser parser = new JSONParser();
+			
+			Object obj = parser.parse(temp);
+			ja = (JSONArray) obj;
+			mklogger.debug(TAG, "ja : " +ja);
+			isDone = true;
+			return ja;
+		} catch (ParseException e) {
+			mklogger.error(TAG, "(func isValidDataForJsonArray) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
 		} catch(NullPointerException e2) {
-			mklogger.error(TAG, "(func isValidDataForJson) NullPoitnerException:: " + e2 + "\nGiven data is not valid for JSONObject.\n" + data);
-		}finally {
+			mklogger.error(TAG, "(func isValidDataForJsonArray) NullPoitnerException:: " + e2 + "\nGiven data is not valid for JSONObject.\n" + data);
+		} catch(Exception e){
+			mklogger.error(TAG, "(func isValidDataForJsonArray) error : " + e);
+		} finally {
 			if(!isDone) {
 				return null;
 			}
@@ -185,6 +215,19 @@ public class MkJsonData {
 		return true;
 	}
 	
+	public boolean setJsonArray() {
+		if(this.data == null) {
+			mklogger.error(TAG, "(func setJsonObject) No given data.");
+			return false;
+		}
+
+		if((jsonArray = isValidDataForJsonArray(this.data)) == null) {
+			return false;
+		}
+		
+		return true;
+	}
+	
 	public JSONObject mapToJson(Map<String, String> map) {
 		String tempString = "{";
 		
@@ -213,7 +256,13 @@ public class MkJsonData {
 		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
 	}
 	
+	public String jsonToPretty(JSONArray jsonObject) throws JsonProcessingException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+	}
+	
 	public JSONObject getJsonObject() {	return this.jsonObject;	}
+	public JSONArray getJsonArray() {	return this.jsonArray;	}
 	public String getData() {	return this.data;	}
 	public void setData(String data) {	this.data = data;	}
 }

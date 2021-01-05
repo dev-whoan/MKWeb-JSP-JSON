@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.mkweb.config.MkConfigReader;
@@ -496,27 +497,40 @@ public class MkRestApi extends HttpServlet {
 		response.setStatus(apiResponse.getCode());
 		response.setContentType("application/json;charset=UTF-8");
 		response.setCharacterEncoding("UTF-8");
+		apiResponse.setContentType("application/json;charset=UTF-8");
+		
 		PrintWriter out = response.getWriter();
 
-		String result = mkJsonData.jsonToPretty(resultObject);
+		String result = null;
 		if(resultObject == null) {
+			/*
 			result = "{" +
-								"\"response\":\"HTTP 1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus() + "\"," +
-								"\"error\":{" +
-									"\"message\":\"" + apiResponse.getMessage() + "\"," +
-									"\"code\":\"" + apiResponse.getCode() + "\"," +
-									"\"status\":\"" + apiResponse.getStatus() + "\"," +
-									"\"info\":\"" + apiResponse.getDocs() + "\"" +
-								"}" +
-							"}";
+					"\"response\":\"HTTP 1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus() + "\"," +
+					"\"error\":{" +
+						"\"message\":\"" + apiResponse.getMessage() + "\"," +
+						"\"code\":\"" + apiResponse.getCode() + "\"," +
+						"\"status\":\"" + apiResponse.getStatus() + "\"," +
+						"\"info\":\"" + apiResponse.getDocs() + "\"" +
+					"}" +
+				"}";
+			
+			result = apiResponse.generateResult(false);
 			mkJsonData.setData(result);
+			apiResponse.setContentLength(result.length());
 			mkJsonData.setJsonObject();
 			JSONObject error = mkJsonData.getJsonObject();
 			result = mkJsonData.jsonToPretty(error);
-			
+			*/
+			result = apiResponse.generateResult(false);
+			mkJsonData.setData(result);
+			mkJsonData.setJsonArray();
+			JSONArray error = mkJsonData.getJsonArray();
+			mklogger.debug(TAG, " error : " + error);
+			result = error.toString();
 			out.print(result);
 		}else {
-			result = result.substring(1, result.length()-1);
+			String tempResult = mkJsonData.jsonToPretty(resultObject);
+			result = tempResult.substring(1, tempResult.length()-1);
 			String okTop = "{\"response\":\"HTTP 1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus() +"\"," + result + "}";
 			mkJsonData.setData(okTop);
 			mkJsonData.setJsonObject();

@@ -9,17 +9,26 @@ public abstract class MkSqlConfigCan extends SqlJsonData{
 	public abstract Object getControlByServiceName(String serviceName);
 	public abstract void setSqlConfigs(File[] sqlConfigs);
 	
-	protected String[] createSQL(String[] befQuery) {
+	protected String[] createSQL(String[] befQuery, boolean isApi) {
 		String[] result = new String[1];
 
 		switch(befQuery[0].toLowerCase()) {
 		case "select":
-			result[0] = "SELECT " + befQuery[1] + " FROM " + befQuery[2] + " WHERE " + befQuery[4] + ";";
+			if(!isApi) {
+				if(befQuery[4].length() > 0)
+					result[0] = "SELECT " + befQuery[1] + " FROM " + befQuery[2] + " WHERE " + befQuery[4] + ";";
+				else
+					result[0] = "SELECT " + befQuery[1] + " FROM " + befQuery[2] + ";";
+			}else {
+				result[0] = "SELECT " + befQuery[1] + " FROM " + befQuery[2] + " WHERE " + befQuery[4] + ";";
+			}
+			
 			break;
 		case "insert":
 			result[0] = "INSERT INTO " + befQuery[2] + "(" + befQuery[1] + ") VALUE(" + befQuery[3] + ");";
 			break;
 		case "update":
+			
 			String[] tempColumns = befQuery[1].split(",");
 			String[] tempDatas = befQuery[3].split(",");
 			String tempField = "";

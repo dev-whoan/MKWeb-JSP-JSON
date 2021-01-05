@@ -200,21 +200,21 @@ public class MkPageConfigs extends MkPageConfigCan{
 			}
 		}
 		
-		String tempMsg = "\n忙式式式式式式式式式式式式式式式式式式式式式式式式式式式式Page Control  :  " + jsonData.getControlName() + "式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式"
-				+ "\n弛View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
-				+ "\n弛Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
-				+ "\n弛Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
-				+ "\n弛Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
-				+ "\n弛API :\t" + jsonData.IsApiPage();
+		String tempMsg = "\n=============================Page Control  :  " + jsonData.getControlName() + "=============================="
+				+ "\n|View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
+				+ "\n|Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
+				+ "\n|Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
+				+ "\n|Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
+				+ "\n|API :\t" + jsonData.IsApiPage();
 
 		if(!type.contentEquals("no-sql")) {
-			tempMsg +="\n弛SQL:\t" + jsonData.getObjectType() + "\tMethod:\t" + jsonData.getMethod()
-					+ "\n弛Value:\t" + valMsg
-					+ "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
+			tempMsg +="\n|SQL:\t" + jsonData.getObjectType() + "\tMethod:\t" + jsonData.getMethod()
+					+ "\n|Value:\t" + valMsg
+					+ "\n============================================================================";
 			mklogger.temp(tempMsg, false);
 			mklogger.flush(type);
 		}else {
-			tempMsg += "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
+			tempMsg += "\n============================================================================";
 			mklogger.temp(tempMsg, false);
 			mklogger.flush("info");
 		}

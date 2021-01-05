@@ -11,13 +11,26 @@
 				"page_static":"true",
 				"type":{
 					"kind":"sql",
-					"id":""
+					"id":"selectName"
 				},
-				"method":"post",
+				"method":"get",
 				"obj":"list",
-				"parameter_name":"alpha",
+				"parameter_name":"",
 				"value":{
-					"1":"user_height"
+					"1":""
+				}
+			},
+			{
+				"page_static":"true",
+				"type":{
+					"kind":"sql",
+					"id":"selectClass"
+				},
+				"method":"get",
+				"obj":"list",
+				"parameter_name":"",
+				"value":{
+					"1":""
 				}
 			},
 			{

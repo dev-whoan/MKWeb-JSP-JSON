@@ -44,7 +44,8 @@ public abstract class MkPageConfigCan extends PageJsonData {
     	
     	result = new LinkedHashMap<>();
     	for(int i = 0; i < pageValue.length; i++) {
-    		result.put(pageValue[i], true);
+    		if(pageValue[i].length() > 0)
+    			result.put(pageValue[i], true);
     	}
     	return result;
     }

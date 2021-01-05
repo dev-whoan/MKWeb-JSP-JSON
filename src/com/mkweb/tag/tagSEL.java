@@ -55,8 +55,6 @@ public class tagSEL extends SimpleTagSupport {
 		if(o == null) {	return null;	}
 
 		String controlName = o.toString();
-		mklogger.debug(TAG, " control Name : " +controlName);
-
 		return MkPageConfigs.Me().getControl(controlName);
 	}
 
@@ -91,14 +89,11 @@ public class tagSEL extends SimpleTagSupport {
 				}
 			}
 		}
-
-		mklogger.debug(TAG, "pageINfo size : " +pageInfo.size());
 		
 		int pageServiceIndex = -1;
 		boolean pageServiceFound = false;
 		for(PageJsonData pjd : pageInfo) {
 			pageServiceIndex++;
-			mklogger.debug(TAG, "pageServiceIndex : " + pjd.getServiceName());
 			if(this.id.contentEquals(pjd.getServiceName())) {
 				pageServiceFound = true;
 				break;
@@ -130,13 +125,14 @@ public class tagSEL extends SimpleTagSupport {
 			return;
 		}
 
-		requestParams = cpi.getRequestPageParameterName(request, pageStaticData);
+		requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData);
 		requestValues = cpi.getRequestParameterValues(request, pageInfo.get(pageServiceIndex).getParameter(), pageStaticData);
 
 		if(!cpi.comparePageValueWithRequestValue(
 				pageInfo.get(pageServiceIndex).getPageValue(),
 				requestValues,
 				pageStaticData,
+				pageInfo.get(pageServiceIndex).getPageStatic(),
 				false)
 				){
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
@@ -148,11 +144,11 @@ public class tagSEL extends SimpleTagSupport {
 		requestValues.clear();
 		
 		if(pvHash != null && pvHash.size() > 0) {
-			Set pvEntrySet = pvHash.keySet();
-			Iterator pvIter = pvEntrySet.iterator();
+			Set<String> pvEntrySet = pvHash.keySet();
+			Iterator<String> pvIter = pvEntrySet.iterator();
 
 			while(pvIter.hasNext()) {
-				String pvKey = (String) pvIter.next();		
+				String pvKey = pvIter.next();		
 				if(requestValues == null)
 					requestValues = new ArrayList<>();
 				
@@ -175,11 +171,12 @@ public class tagSEL extends SimpleTagSupport {
 				String[] reqs = new String[requestValues.size()];
 				String tempValue = "";
 				for(int i = 0; i < reqs.length; i++) {
-					mklogger.debug(TAG, "값 확인 : " + requestValues.get(i));
 					tempValue = request.getParameter(requestParams + "." + requestValues.get(i));
 					if(tempValue == null)
 						tempValue = request.getParameter(requestValues.get(i));
 
+					mklogger.debug(TAG, "requestParams : " + requestParams + "tempValue : " + tempValue);
+					
 					if(this.like.equals("no"))
 					{
 						if(tempValue.contains("%"))

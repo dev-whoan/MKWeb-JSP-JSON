@@ -38,7 +38,7 @@ public class CheckPageInfo {
 				resultSqlData = MkRestApiSqlConfigs.Me().getControlByServiceName(serviceName);
 			else
 				resultSqlData = MkSQLConfigs.Me().getControlByServiceName(serviceName);
-			
+
 			if(resultSqlData == null) {
 				mklogger.error(TAG, "There is no sql control named : " + controlName);
 				return null;	
@@ -55,102 +55,102 @@ public class CheckPageInfo {
 				break;
 			}
 		}
-		
+
 		return result[0];
 	}
 
-	public String getRequestPageParameterName(HttpServletRequest request, PageJsonData pageStaticData) {
-		Enumeration params = request.getParameterNames();
+	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, PageJsonData pageStaticData) {
+		Enumeration<String> params = request.getParameterNames();
 		String requestParams = null;
-		String pageStaticParameterName = pageStaticData == null ? pageStaticData.getParameter() : null;
+		String pageStaticParameterName = null;
 		String[] pageStaticParameters = null;
+		if (pageStaticData != null) {
+			pageStaticParameterName = pageStaticData.getParameter();
+			pageStaticParameters = pageStaticData.getData();
+		} 
 		int staticPassCount = 0;
-		while(params.hasMoreElements()) {
+		while (params.hasMoreElements()) {
 			String name = params.nextElement().toString().trim();
-
-			if(name.contains(".")) {
-
-				String userRequestParameterName = name.split("\\.")[0];
-
-				if(requestParams != null) {
-					if(requestParams.contentEquals(userRequestParameterName)) {
-						if(pageStaticParameterName != null)
-							if(userRequestParameterName.contentEquals(pageStaticParameterName))
-								staticPassCount++;
-						continue;
-					} else {
-						mklogger.error(TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
-						mklogger.debug(TAG, " The parameter name is not same as previous parameter name.");
+			if (isStaticService) {
+				if (name.contains(".")) {
+					String userRequestParameterName = name.split("\\.")[0];
+					if (requestParams != null) {
+						if (requestParams.contentEquals(userRequestParameterName) || !requestParams.contentEquals(pageStaticParameterName))
+							continue; 
+						this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+						this.mklogger.debug(this.TAG, " The parameter name is not same as page static parameter name.");
 						return null;
-					}
-				}else {
-					if(staticPassCount > 0) {
-						mklogger.error(TAG, " (func getRequestPageParameterName) User request two different service in single request.");
-						mklogger.debug(TAG, " Static value checked before without parameter name, however current request include parameter name.");
-						return null;
-					}
-					if(pageStaticParameterName != null)
-						if(userRequestParameterName.contentEquals(pageStaticParameterName))
-							staticPassCount++;
-					
+					} 
+					if (!userRequestParameterName.contentEquals(pageStaticParameterName))
+						continue; 
 					requestParams = userRequestParameterName;
-					continue;
-				}
-			} else {
-				if(pageStaticParameterName == null) {
-					mklogger.error(TAG, " (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
+				} 
+				continue;
+			} 
+			if (name.contains(".")) {
+				String userRequestParameterName = name.split("\\.")[0];
+				if (requestParams != null) {
+					if (requestParams.contentEquals(userRequestParameterName) || requestParams.contentEquals(pageStaticParameterName))
+						continue; 
+					this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+					this.mklogger.debug(this.TAG, " The parameter name is not same as previous parameter name.");
 					return null;
-				}
-				
-				pageStaticParameters = pageStaticData.getData();
-				for(int i = 0; i < pageStaticParameters.length; i++) {
-					String pageValue = pageStaticParameters[i];
-
-					if(name.contentEquals(pageValue)) {
-						staticPassCount++;
-						break;
-					}
-				}
-			}
-		}
-		
-		if(staticPassCount > 0) {
-			if(staticPassCount == pageStaticParameters.length) {
-				requestParams = "__MKWEB_STATIC_VALUE__";
-				mklogger.warn(TAG, "STATIC VALUE HAS SET");
-			}
-		}
-		
+				} 
+				if (userRequestParameterName.contentEquals(pageStaticParameterName))
+					continue; 
+				requestParams = userRequestParameterName;
+				continue;
+			} 
+			if (pageStaticData == null) {
+				this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
+				return null;
+			} 
+		} 
+		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || requestParams.contentEquals(pageStaticParameterName)) && 
+				staticPassCount == pageStaticParameters.length) {
+			requestParams = "__MKWEB_STATIC_VALUE__";
+			this.mklogger.warn(this.TAG, "STATIC VALUE HAS SET");
+		} 
 		return requestParams;
 	}
 
 	public ArrayList<String> getRequestParameterValues(HttpServletRequest request, String parameter, PageJsonData pageStaticData){
 		ArrayList<String> requestValues = new ArrayList<String>();
-		
-		Enumeration params = request.getParameterNames();
 
+		Enumeration<String> params = request.getParameterNames();
+		String pageStaticParameter = pageStaticData.getParameter();
+		String[] pageStaticParameters = null;
+		if(pageStaticData != null) {
+			pageStaticParameters = pageStaticData.getData();
+		}
+		/* static value면 static 요청이 아닐 경우 Skip 한다. */
+		/* static value가 아니면 static 요청일 때 Skip 한다. */
+		/* --> Parameter가 같은것만 받는다. */
 		while(params.hasMoreElements()) {
 			String name = params.nextElement().toString().trim();
 			if(name.contains(".")) {
 				String[] nname = name.split("\\.");
 				String userRequestParameter = nname[0];
 				String userRequestValue = nname[1];
-				
-				if(!userRequestParameter.contentEquals(parameter)) {
+
+				/*
+				if(!userRequestParameter.contentEquals(parameter) && !parameter.contentEquals(pageStaticData.getParameter())) {
 					mklogger.error(TAG, "(func getRequestParameterValues) Request parameter is not valid. (Unvalid parameter(" + userRequestParameter + ") for " + parameter);
 					return null;
 				}
-				requestValues.add(userRequestValue);
+				 */
+				if(userRequestParameter.contentEquals(parameter))
+					requestValues.add(userRequestValue);
+
 				continue;
 			}else {
-				if(parameter.contentEquals("__MKWEB_STATIC_VALUE__")) {
-					String[] pageStaticParameters = null;
-					pageStaticParameters = pageStaticData.getData();
-					
-					for(int i = 0; i < pageStaticParameters.length; i++) {
-						if(name.contentEquals(pageStaticParameters[i])) {
-							requestValues.add(name);
-							continue;
+				if(pageStaticParameter != null) {
+					if(parameter.contentEquals(pageStaticParameter)) {
+						for(int i = 0; i < pageStaticParameters.length; i++) {
+							if(name.contentEquals(pageStaticParameters[i])) {
+								requestValues.add(name);
+								continue;
+							}
 						}
 					}
 				}
@@ -179,7 +179,7 @@ public class CheckPageInfo {
 					}
 				}else {	return null;	}
 			}
-			
+
 			if(replaceTarget != null) {
 				for(int i = 0; i < replaceTarget.length; i++) {
 					aftQuery = aftQuery.replaceFirst(("@" + replaceTarget[i]+ "@"), "?");
@@ -190,46 +190,45 @@ public class CheckPageInfo {
 		}
 		return aftQuery;
 	}
-	
+
 	public String setApiQuery(String query) {
 		String aftQuery = query;
-		
+
 		if(aftQuery != null) {
-			
+
 		}
-		
+
 		return aftQuery;
 	}
 
-	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, PageJsonData pageStaticData, boolean isApi) {
-		LinkedHashMap<String, Boolean> staticData = pageStaticData.getPageValue(); 
+	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, PageJsonData pageStaticDatas, boolean isStaticService, boolean isApi) {
+		LinkedHashMap<String, Boolean> staticData = pageStaticDatas.getPageValue(); 
 
 		int pageSize = pageValue.size();
 		int requestSize = requestValue.size();
-		
+
 		if(pageSize != requestSize) {
 			mklogger.error(TAG, " Number of request parameters is not same as number of allowed parameters.");
 			mklogger.debug(TAG, " Page value size : " + pageSize + " | request size : " + requestSize);
+			mklogger.debug(TAG, "pageValue : " + pageValue.toString());
 			return false;
 		}
-		
+
 		String pageValues = "";
 		LinkedHashMap<String, Boolean> pv = null;
-		
+
 		if(pageValue != null)
 			pv = new LinkedHashMap<>(pageValue);
-		else
-			pv = new LinkedHashMap<>();
-		
+
 		if(pv.size() > 0 && pv != null) {
 			Set<String> entrySet = pv.keySet();
-			Iterator iter = entrySet.iterator();
+			Iterator<String> iter = entrySet.iterator();
 			while(iter.hasNext()) {
-				String key = (String) iter.next();
+				String key = iter.next();
 				pageValues += key;
 			}
 		}
-		
+
 		String requestValues = "";
 		if(requestValue != null) {
 			for(String rv : requestValue) {
@@ -241,12 +240,12 @@ public class CheckPageInfo {
 		char[] rvc = requestValues.toCharArray();
 		Arrays.sort(pvc);
 		Arrays.sort(rvc);
-		
+
 		pageValues = new String(pvc);
 		requestValues = new String(rvc);
-		
+
 		mklogger.debug(TAG, "pvc : " + pageValues + "\nrvc : " + requestValues);
-		
+
 		return (pageValues.contentEquals(requestValues));
 	}
 

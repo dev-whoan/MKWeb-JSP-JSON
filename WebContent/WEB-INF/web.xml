@@ -4,33 +4,6 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	id="WebApp_ID" version="3.0">
 	<display-name>MkWeb</display-name>
-	
-	<!-- MkWeb Dispatcher Settings -->
-	<!-- 
-	<servlet>
-		<servlet-name>DefaultDispatcher</servlet-name>
-		<servlet-class>com.mkweb.dispatcher.defaultDispatcher</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-	
-	<servlet-mapping>
-		<servlet-name>DefaultDispatcher</servlet-name>
-		<url-pattern>/</url-pattern>
-	</servlet-mapping>
-	-->
-	<!--
-	<servlet>
-		<servlet-name>MkWebDispatcher</servlet-name>
-		<servlet-class>com.mkweb.dispatcher.MkDispatcher</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-	
-	<servlet-mapping>
-		<servlet-name>MkWebDispatcher</servlet-name>
-		<url-pattern>*.mkw</url-pattern>
-	</servlet-mapping>
-	
-	-->
 	 
 	<servlet>
 		<servlet-name>MkReceiveFormData</servlet-name>

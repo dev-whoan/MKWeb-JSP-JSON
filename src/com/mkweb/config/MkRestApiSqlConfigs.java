@@ -151,7 +151,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					}
 
 					SqlJsonData sqlData = new SqlJsonData();
-					String[] finalQuery = createSQL(serviceQuery);
+					String[] finalQuery = createSQL(serviceQuery, true);
 					
 					sqlData.setControlName(sqlName);
 					//ID = 0, DB = 1
@@ -190,13 +190,13 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 			if(i < conditionLength -1)
 				conditions += ", ";
 		}
-		String tempMsg = "\n忙式式式式式式式式式式式式式式式式式式式式式式式式式式SQL Control  :  " + jsonData.getControlName() + "式式式式式式式式式式式式式式式式式式式式式式式式式式式式式"
-				+ "\n弛SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
-				+ "\n弛SQL DB:\t" + jsonData.getDB()
-				+ "\n弛SQL Debug:\t" + jsonData.getDebugLevel()
-				+ "\n弛sql Query:\t" + jsonData.getData()[0].trim()
-				+ "\n弛conditions:\t" + conditions
-				+ "\n戌式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式";
+		String tempMsg = "\n===========================SQL Control  :  " + jsonData.getControlName() + "============================="
+				+ "\n|SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
+				+ "\n|SQL DB:\t" + jsonData.getDB()
+				+ "\n|SQL Debug:\t" + jsonData.getDebugLevel()
+				+ "\n|sql Query:\t" + jsonData.getData()[0].trim()
+				+ "\n|conditions:\t" + conditions
+				+ "\n============================================================================";
 		
 		mklogger.temp(tempMsg, false);
 		mklogger.flush(type);

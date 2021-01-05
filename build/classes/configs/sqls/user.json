@@ -10,7 +10,21 @@
 				"query":{
 					"crud":"select",
 					"column":{
-						"1":"*"
+						"1":"name"
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":""
+				}
+			},
+			{
+				"id":"selectClass",
+				"query":{
+					"crud":"select",
+					"column":{
+						"1":"u_class"
 					},
 					"table":"User",
 					"data":{

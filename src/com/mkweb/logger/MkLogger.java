@@ -159,7 +159,6 @@ public class MkLogger{
 			System.out.println(absPath);
 			System.out.println("MkLogger File is not exists. Creating new one...");
 
-
 			String[] directoryPath = absPath.split("/");
 
 			String dirPath = "";
