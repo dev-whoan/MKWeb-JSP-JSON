@@ -215,9 +215,19 @@ public class MkJsonData {
 		return true;
 	}
 	
+	public boolean setJsonObject(String data) {
+		this.data = data;
+
+		if((jsonObject = isValidDataForJson(this.data)) == null) {
+			return false;
+		}
+
+		return true;
+	}
+	
 	public boolean setJsonArray() {
 		if(this.data == null) {
-			mklogger.error(TAG, "(func setJsonObject) No given data.");
+			mklogger.error(TAG, "(func setJsonArray) No given data.");
 			return false;
 		}
 
@@ -237,7 +247,7 @@ public class MkJsonData {
 		while(iter.hasNext()) {
 			String key = iter.next().toString();
 			String value = map.get(key);
-		//	mklogger.debug(TAG, "(func mapToJson) key : " + key + ", value : " + value);
+			
 			tempString += "\"" + key + "\"" + ":" + "\"" + value + "\"";
 			if( i < map.size() ){
 				tempString += ", ";

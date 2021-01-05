@@ -16,11 +16,12 @@ public class MkRestApiResponse {
 	private String responseStatus = null;
 	private String documentURL = null;
 	private String contentType = null;
-	private long contentLength = -1L; 
+	private int contentLength = -1; 
 	private String TAG = "[MkRestApiResponse]";
 	private MkLogger mklogger = MkLogger.Me();
-	
-	MkRestApiResponse(){	documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";	}
+	private long lifeTime = -1L;
+
+	MkRestApiResponse(){	documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";	lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;}
 	MkRestApiResponse(String jsonString, int code, int count){
 		mklogger.debug(TAG, " Called");
 		responseResult = jsonString;
@@ -28,8 +29,9 @@ public class MkRestApiResponse {
 		responseCount = count;
 		responseCode = code;
 		documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";
+		lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;
 	}
-	
+
 	public String getData() {
 		if(!needUpdate())
 			return this.responseResult;
@@ -37,7 +39,7 @@ public class MkRestApiResponse {
 			return null;
 		}
 	}
-	
+
 	public long getLife() {	return this.responseLife;	}
 	public int getCount() {	return this.responseCount;	}
 	public int getCode() {	return this.responseCode;	}
@@ -45,39 +47,68 @@ public class MkRestApiResponse {
 	public String getDocs()	{	setDocs(responseCode);	return this.documentURL;	}
 	public String getStatus() {	setStatus();	return this.responseStatus;	}
 	public String getContentType() {	return this.contentType;	}
-	public long getContentLength() {	return this.contentLength;	}
-	
+	public int  getContentLength() {	return this.contentLength;	}
+	public long getLifeTime() {	return this.lifeTime;	}
+
 	public void setCode(int responseCode) {	this.responseCode = responseCode;	}
 	public void setData(JSONObject jsonObject) {	this.responseResult = jsonObject.toString();	}
-	private void setLife() {	this.responseLife = System.currentTimeMillis() + Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;	}
+	private void setLife() {	this.responseLife = System.currentTimeMillis() + lifeTime;	}
 	public void setCount(int count) {	this.responseCount += count;	}
 	public void setMessage(String msg) {	this.responseMessage = msg;	}
 	private void setDocs(int errorcode) {	this.documentURL += ("" + errorcode);	}
 	public void setContentType(String contentType) {	this.contentType = contentType;	}
-	public void setContentLength(long contentLength) {	this.contentLength = contentLength;	}
-	
-	public String generateResult(boolean success) {
+	public void setContentLength(int contentLength) {	this.contentLength = contentLength;	}
+
+	public String generateResult(boolean success, String method, String prefix) {
 		String result = null;
 		String temp = null;
-		if(success) {
-			result = "";
-		}else{
-			temp = "\"error\":{" +
-						"\"message\":\"" + getMessage() + "\"," +
-						"\"code\":\"" + getCode() + "\"," +
-						"\"status\":\"" + getStatus() + "\"," +
-						"\"info\":\"" + getDocs() + "\"}";
-			contentLength = temp.length();
-			result = "{" +
-					"\"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\"," +
-					"\"Content-Type\":\""+ getContentType()+"\"," +
-					"\"Content-Length\":\"" + getContentLength() + "\"," +
-					temp;
-			result += "}";
+		if(!success) {
+			switch(method) {
+			case "options":
+			{
+				if(!prefix.contentEquals("")) {
+					result = "{\n" +
+							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+							prefix +"\n" +
+							"}";
+					break;
+				}else {
+					result = "{\n" +
+							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
+							"}";
+				}
+			}
+				
+			default:
+				temp = "  \"error\":{\n" +
+						"    \"message\":\"" + getMessage() + "\",\n" +
+						"    \"code\":\"" + getCode() + "\",\n" +
+						"    \"status\":\"" + getStatus() + "\",\n" +
+						"    \"info\":\"" + getDocs() + "\"\n  }";
+				contentLength = temp.length();
+				result = "{\n" +
+						"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
+						temp + "\n" +
+						"}";
+				break;
+			}
+			
+		}else {
+
+			result = "{\n" +
+					"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+					"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+					"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
+					prefix +
+					"}";
 		}
 		return result;
 	}
-	
+
 	private void setStatus() {
 		switch(responseCode) {
 		case -1:

@@ -31,7 +31,7 @@ $(document).ready(function(){
 		var jsonInfo = '{"search_key":"apple"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
-	        type : "get",
+	        type : "options",
 	        url : "/mk_api_key/users",
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
