@@ -69,6 +69,23 @@
 				"value":{
 					"1":""
 				}
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"getAllUser"
+				},
+				"method":"put",
+				"select-condition":"no",
+				"obj":"list",
+				"parameter_name":"",
+				"value":{
+					"1":"name",
+					"2":"u_class",
+					"3":"SEQ",
+					"4":"CNT_IP"
+				}
 			}
 		]
 	}

@@ -153,6 +153,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					SqlJsonData sqlData = new SqlJsonData();
 					String[] finalQuery = createSQL(serviceQuery, true);
 					
+					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);

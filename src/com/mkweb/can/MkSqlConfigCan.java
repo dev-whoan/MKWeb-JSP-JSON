@@ -50,7 +50,6 @@ public abstract class MkSqlConfigCan extends SqlJsonData{
 			result[0] = "DELETE FROM " + befQuery[2] + " WHERE " + befQuery[4] + ";";
 			break;
 		}
-		
 		return result;
 	}
 }

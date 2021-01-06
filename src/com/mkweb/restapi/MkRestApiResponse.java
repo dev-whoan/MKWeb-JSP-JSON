@@ -98,13 +98,24 @@ public class MkRestApiResponse {
 			}
 			
 		}else {
-
-			result = "{\n" +
-					"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
-					"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-					"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
-					prefix +
-					"}";
+			switch(method) {
+			case "put":
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
+						"}";
+				break;
+			default:
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
+						prefix +
+						"}";
+				break;
+			}
+			
 		}
 		return result;
 	}

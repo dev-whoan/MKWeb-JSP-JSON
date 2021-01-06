@@ -1,6 +1,7 @@
 package com.mkweb.restapi;
 
 import java.io.BufferedReader;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,14 +17,11 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
@@ -48,7 +46,6 @@ public class MkRestApi extends HttpServlet {
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkRestApi]";
 	private CheckPageInfo cpi = null;
-	private String[] methods = { "post", "get", "put", "delete", "options", "head" };
 
 	/**
 	 * @see HttpServlet#HttpServlet()
@@ -166,6 +163,7 @@ public class MkRestApi extends HttpServlet {
 		String mkPage = null;
 		String userKey = null;
 		JSONObject requestParameterJson = null;
+		JSONObject requestParameterJsonToModify = null;
 		MkJsonData mkJsonData = new MkJsonData();
 
 		MkRestApiResponse apiResponse = new MkRestApiResponse();
@@ -208,7 +206,8 @@ public class MkRestApi extends HttpServlet {
 				break;
 			}
 
-			if (REQUEST_METHOD.contentEquals("get") || REQUEST_METHOD.contentEquals("head")) {
+			if (REQUEST_METHOD.contentEquals("get") || REQUEST_METHOD.contentEquals("head") ||
+					REQUEST_METHOD.contentEquals("options") || REQUEST_METHOD.contentEquals("put")) {
 				mkJsonData.setData(request.getParameter(MKWEB_API_ID));
 				if (mkJsonData.setJsonObject()) {
 					requestParameterJson = mkJsonData.getJsonObject();
@@ -254,7 +253,7 @@ public class MkRestApi extends HttpServlet {
 							}
 						}
 					}
-					
+
 					if (shouldCheckQuery == 1) {
 						mklogger.warn(TAG, "Given data is not valid to cast JSONObject.");
 						mklogger.warn(TAG, "Try to convert into MkJsonObject...");
@@ -334,7 +333,6 @@ public class MkRestApi extends HttpServlet {
 							result.put(searchColumns.get(i), searchValues.get(i));
 						}
 						requestParameterJson = mkJsonData.mapToJson(result);
-
 						if (requestParameterJson == null) {
 							mklogger.error(TAG,
 									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
@@ -354,36 +352,39 @@ public class MkRestApi extends HttpServlet {
 						}
 					}
 				}
-			} else {
+			} 
+
+			if(REQUEST_METHOD.contentEquals("post") || REQUEST_METHOD.contentEquals("put")){
+
 				mkJsonData.setData(request.getParameter(MKWEB_API_ID));
 				if(mkJsonData.getData() == null) {
 					StringBuilder stringBuilder = new StringBuilder();
 					BufferedReader bufferedReader = null;
 					try {
-					    InputStream inputStream = request.getInputStream();
-					    if (inputStream != null) {
-					        bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-					        char[] charBuffer = new char[128];
-					        int bytesRead = -1;
-					        while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
-					            stringBuilder.append(charBuffer, 0, bytesRead);
-					        }
-					    }
+						InputStream inputStream = request.getInputStream();
+						if (inputStream != null) {
+							bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+							char[] charBuffer = new char[128];
+							int bytesRead = -1;
+							while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+								stringBuilder.append(charBuffer, 0, bytesRead);
+							}
+						}
 					} catch (IOException ex) {
-					    throw ex;
+						throw ex;
 					} finally {
-					    if (bufferedReader != null) {
-					        try {
-					            bufferedReader.close();
-					        } catch (IOException ex) {
-					            throw ex;
-					        }
-					    }
+						if (bufferedReader != null) {
+							try {
+								bufferedReader.close();
+							} catch (IOException ex) {
+								throw ex;
+							}
+						}
 					}
 					String rawData = URLDecoder.decode(stringBuilder.toString(), "UTF-8");
 					mklogger.debug(TAG, "rawData : " + rawData);
 					String rawDatas[] = rawData.split("\\=");
-					
+
 					if(rawDatas.length == 2) {
 						if(rawDatas[0].contentEquals(MKWEB_API_ID)) {
 							mkJsonData.setData(rawDatas[1]);
@@ -396,12 +397,13 @@ public class MkRestApi extends HttpServlet {
 					}
 				}
 				if (mkJsonData.setJsonObject()) {
-					requestParameterJson = mkJsonData.getJsonObject();
+					if(REQUEST_METHOD.contentEquals("put"))
+						requestParameterJsonToModify = mkJsonData.getJsonObject();
+					else
+						requestParameterJson = mkJsonData.getJsonObject();
 				} else {
 					if(mkJsonData.getData() != null) {
 						String tempJsonString = mkJsonData.stringToJsonString(mkJsonData.getData());
-
-						mklogger.debug(TAG, "stringToJsonString : " + tempJsonString);
 
 						mkJsonData.setData(tempJsonString);
 
@@ -412,8 +414,10 @@ public class MkRestApi extends HttpServlet {
 							apiResponse.setCode(400);
 							break;
 						}
-
-						requestParameterJson = mkJsonData.getJsonObject();
+						if(REQUEST_METHOD.contentEquals("put"))
+							requestParameterJsonToModify = mkJsonData.getJsonObject();
+						else
+							requestParameterJson = mkJsonData.getJsonObject();
 					}
 				}
 			}
@@ -421,6 +425,10 @@ public class MkRestApi extends HttpServlet {
 			if(userKey == null) {
 				if(requestParameterJson.get(MKWEB_SEARCH_KEY) != null) {
 					userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
+					requestParameterJson.remove(MKWEB_SEARCH_KEY);
+				}else if(requestParameterJsonToModify.get(MKWEB_SEARCH_KEY) != null) {
+					userKey = requestParameterJsonToModify.get(MKWEB_SEARCH_KEY).toString();
+					requestParameterJsonToModify.remove(MKWEB_SEARCH_KEY);
 				}else {
 					userKey = request.getParameter(MKWEB_SEARCH_KEY);
 				}
@@ -432,104 +440,102 @@ public class MkRestApi extends HttpServlet {
 					apiResponse.setCode(401);
 					break;
 				}
-
-				requestParameterJson.remove(MKWEB_SEARCH_KEY);
 			}
 			PageJsonData pageService = null;
-			
 			SqlJsonData sqlService = null;
-			if(!REQUEST_METHOD.contentEquals("options")) {
-				Set requestKeySet = requestParameterJson.keySet();
-				Iterator requestIterator = requestKeySet.iterator();
 
-				ArrayList<PageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
-				
-				for (PageJsonData service : pageControl) {
-					// mklogger.debug(TAG, " service method : " + service.getMethod());
-					if (REQUEST_METHOD.contentEquals(service.getMethod())) {
-						pageService = service;
+			Set<String> requestKeySet = requestParameterJson.keySet();
+			Iterator<String> requestIterator = requestKeySet.iterator();
+
+			ArrayList<PageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
+
+			for (PageJsonData service : pageControl) {
+				// mklogger.debug(TAG, " service method : " + service.getMethod());
+				if (REQUEST_METHOD.contentEquals(service.getMethod())) {
+					pageService = service;
+					break;
+				}
+			}
+
+			if (pageService == null) {
+				mklogger.error(TAG, "요청한 서비스는 존재하지 않습니다. (Method에 대한 Service 가 null임)");
+				apiResponse.setMessage("The method you requested is not allowed.");
+				apiResponse.setCode(405);
+				break;
+			}
+
+			ArrayList<SqlJsonData> sqlControl = MkRestApiSqlConfigs.Me()
+					.getControlByServiceName(pageService.getServiceName());
+
+			String[] sqlConditions = sqlControl.get(0).getCondition();
+
+			if (sqlConditions.length == 0) {
+				mklogger.error(TAG, "SQL Config 설정이 잘못됐습니다. condition이 비어있습니다. 전체조회를 희망할 경우 \"1\":\"*\"을 추가해 주세요.");
+				apiResponse.setMessage("SERVER ERROR. Please contact admin.");
+				apiResponse.setCode(500);
+				break;
+			}
+
+			for (SqlJsonData sqlServiceData : sqlControl) {
+				if (sqlServiceData.getServiceName().contentEquals(pageService.getServiceName())) {
+					sqlService = sqlServiceData;
+					break;
+				}
+			}
+
+			if (sqlService == null) {
+				mklogger.error("요청한 SQL Service가 없습니다.");
+				apiResponse.setMessage("The method you requested is not allowed.");
+				apiResponse.setCode(405);
+				break;
+			}
+
+			String[] pageValues = pageService.getData();
+
+			requestIterator = requestKeySet.iterator();
+
+			while (requestIterator.hasNext()) {
+				String requestKey = requestIterator.next().toString();
+				int passed = -1;
+				for (int i = 0; i < pageValues.length; i++) {
+					if (pageValues[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
+						passed = 1;
 						break;
 					}
 				}
 
-				if (pageService == null) {
-					mklogger.error(TAG, "요청한 서비스는 존재하지 않습니다. (Method에 대한 Service 가 null임)");
-					apiResponse.setMessage("The method you requested is not allowed.");
-					apiResponse.setCode(405);
-					break;
-				}
-
-				ArrayList<SqlJsonData> sqlControl = MkRestApiSqlConfigs.Me()
-						.getControlByServiceName(pageService.getServiceName());
-				
-				String[] sqlConditions = sqlControl.get(0).getCondition();
-
-				if (sqlConditions.length == 0) {
-					mklogger.error(TAG, "SQL Config 설정이 잘못됐습니다. condition이 비어있습니다. 전체조회를 희망할 경우 \"1\":\"*\"을 추가해 주세요.");
-					apiResponse.setMessage("SERVER ERROR. Please contact admin.");
-					apiResponse.setCode(500);
-					break;
-				}
-
-				for (SqlJsonData sqlServiceData : sqlControl) {
-					if (sqlServiceData.getServiceName().contentEquals(pageService.getServiceName())) {
-						sqlService = sqlServiceData;
-						break;
-					}
-				}
-
-				if (sqlService == null) {
-					mklogger.error("요청한 SQL Service가 없습니다.");
-					apiResponse.setMessage("The method you requested is not allowed.");
-					apiResponse.setCode(405);
-					break;
-				}
-
-				String[] pageValues = pageService.getData();
-
-				requestIterator = requestKeySet.iterator();
-
-				while (requestIterator.hasNext()) {
-					String requestKey = requestIterator.next().toString();
-					int passed = -1;
-					for (int i = 0; i < pageValues.length; i++) {
-						if (pageValues[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
-							passed = 1;
+				if (passed == 1) {
+					for (int i = 0; i < sqlConditions.length; i++) {
+						if (sqlConditions[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
+							passed = 2;
 							break;
 						}
 					}
+				}
 
-					if (passed == 1) {
-						for (int i = 0; i < sqlConditions.length; i++) {
-							if (sqlConditions[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
-								passed = 2;
-								break;
-							}
-						}
-					}
-
-					if (passed != 2) {
-						mklogger.error(TAG, "요청한 Value에 대한 검색이 불가능합니다. " + requestKey);
-						apiResponse.setMessage("The column you entered is not allowed. (" + requestKey + ")");
-						apiResponse.setCode(400);
-						break;
-					}
+				if (passed != 2) {
+					mklogger.error(TAG, "요청한 Value에 대한 검색이 불가능합니다. " + requestKey);
+					apiResponse.setMessage("The column you entered is not allowed. (" + requestKey + ")");
+					apiResponse.setCode(400);
+					break;
 				}
 			}
-			
+
+
 			if(apiResponse.getCode() >= 400 && apiResponse.getCode() != -1){
 				break;
 			}
-			
+
 			switch (REQUEST_METHOD) {
-			case "get": case "head":
+			case "get": case "head": case "options":
 				resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse);
 				break;
 			case "post":
-				resultObject = doTaskPost(pageService, sqlService, requestParameterJson, mkPage, apiResponse);
+				resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse);
 				break;
 			case "put":
-
+				mklogger.debug(TAG, " putting ... ");
+				resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse);
 				break;
 
 			case "delete":
@@ -538,7 +544,7 @@ public class MkRestApi extends HttpServlet {
 			}
 			break;
 		}
-		
+
 		apiResponse.setContentType("application/json;charset=UTF-8");
 		response.setStatus(apiResponse.getCode());
 		response.setContentType(apiResponse.getContentType());
@@ -557,8 +563,9 @@ public class MkRestApi extends HttpServlet {
 				allowMethods = "  \"Allow\":\"";
 				ArrayList<PageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 				for(int i = 0; i < control.size(); i++) {
+
 					allowMethods += control.get(i).getMethod().toString().toUpperCase();
-					
+
 					if( i < control.size()-1) {
 						allowMethods += ",";
 					}
@@ -570,6 +577,13 @@ public class MkRestApi extends HttpServlet {
 		}else {
 			result = mkJsonData.jsonToPretty(resultObject);
 			result = result.substring(1, result.length()-1);
+			Object roPut = resultObject.get("PUT_UPDATE_DONE");
+			Object roPost = resultObject.get("PUT_INSERT_DONE");
+			if(roPut != null) {
+				result = "";
+			}else if(roPost != null) {
+				resultObject.remove("PUT_INSERT_DONE");
+			}
 			apiResponse.setContentLength(resultObject.toString().length());
 			response.addHeader("Content-Length", "" + apiResponse.getContentLength());
 			out.print(apiResponse.generateResult(true, REQUEST_METHOD, result));
@@ -594,13 +608,13 @@ public class MkRestApi extends HttpServlet {
 		query = cpi.setApiQuery(befQuery).split("WHERE")[0];
 
 		Set<String> keySet = jsonObject.keySet();
-		Iterator iter = keySet.iterator();
+		Iterator<String> iter = keySet.iterator();
 		ArrayList<String> sqlKey = new ArrayList<String>();
 		String condition = "WHERE ";
 		int i = 0;
-		
+
 		while (iter.hasNext()) {
-			String key = iter.next().toString();
+			String key = iter.next();
 			if (requestSize == 1) {
 				if (key.contentEquals(MKWEB_SEARCH_ALL)) {
 					searchAll = true;
@@ -656,7 +670,7 @@ public class MkRestApi extends HttpServlet {
 					test += ", ";
 			}
 			test += "]}";
-			
+
 			MkRestApiData tttt = new MkRestApiData(test);
 
 			if (tttt.setJsonObject()) {
@@ -667,7 +681,9 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskPost(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
+	private JSONObject doTaskInput(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
+			String requestMethod, MkRestApiResponse mkResponse) {
+
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor();
 
@@ -698,6 +714,7 @@ public class MkRestApi extends HttpServlet {
 
 		DA.setRequestValue(inputValues);
 		query = cpi.setQuery(befQuery);
+		mklogger.debug(TAG, "그래서 쿼리는 : " +query);
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");
@@ -719,26 +736,82 @@ public class MkRestApi extends HttpServlet {
 		if(result > 0) {
 			resultObject = new JSONObject();
 			resultObject.put(mkPage, jsonObject);
+			mkResponse.setCode(201);
 		}
 
 		mklogger.debug(TAG, "resultObject: " + resultObject);
 		return resultObject;
 	}
 
-	private JSONObject doTaskPut(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage) {
+	private JSONObject doTaskPut(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, JSONObject modifyObject, String mkPage,
+			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse) {
 		JSONObject resultObject = null;
+		String[] inputKey = pjData.getData();
+
+		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse);
 		MkDbAccessor DA = new MkDbAccessor();
 
-		String service = pxData.getServiceName();
-		String control = pxData.getControlName();
-		String befQuery = cpi.regularQuery(control, service, true);
+		String service = pjData.getServiceName();
+		String control = sqlData.getControlName();
 		String query = null;
+		String[] modifyValues = new String[modifyObject.size()];
+		int mvIterator = 0;
+		for(int i = 0; i < pjData.getData().length; i++) {
+			Object tik = modifyObject.get(inputKey[i]);
+			if(tik != null) {					
+				modifyValues[mvIterator++] = tik.toString();					
+			}
+		}
+		String[] searchKey = new String[jsonObject.size()];
+		String[] modifyKey = new String[modifyObject.size()];
+		Set<String> jSet = jsonObject.keySet();
+		Iterator<String> jKey = jSet.iterator();
+		int i = 0;
+		while(jKey.hasNext()) {
+			searchKey[i++] = jKey.next();
+		}
+		i = 0;
+		jSet = modifyObject.keySet();
+		jKey = jSet.iterator();
+		while(jKey.hasNext()) {
+			modifyKey[i++] = jKey.next();
+		}
+		i = 0;
 
-		query = cpi.setQuery(befQuery);
+		String tempCrud = (getResult == null ? "insert" : "update");
+
+		query = (createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getRawSql()[2]));
+
+		if(query == null) {
+			mkResponse.setCode(500);
+			mkResponse.setMessage("Server Error. Please contact Admin.");
+			mklogger.error(TAG, "Query is null. Please check API SQL configs");
+			return null;
+		}
 
 		DA.setPreparedStatement(query);
 
+		int result;
+		try {
+			result = DA.executeDML();
+		} catch (SQLException e) {
+			mkResponse.setCode(400);
+			mkResponse.setMessage(e.getMessage());
 
+			return null;
+		}
+
+		if(result > 0) {
+			resultObject = new JSONObject();
+			if(tempCrud.contentEquals("insert")) {
+				resultObject.put("PUT_INSERT_DONE", "true");
+				resultObject.put(mkPage, jsonObject);
+				mkResponse.setCode(201);
+			}else {
+				resultObject.put("PUT_UPDATE_DONE", "true");
+				mkResponse.setCode(200);
+			}
+		}	
 
 		return resultObject;
 	}
@@ -758,5 +831,57 @@ public class MkRestApi extends HttpServlet {
 
 
 		return resultObject;
+	}
+
+	private String createSQL(String crud, String[] searchKey, JSONObject searchObject, String[] modifyKey, JSONObject modifyObject, String Table) {
+		String result = null;
+		mklogger.debug(TAG, " what is my crud : " + crud);
+		switch(crud.toLowerCase()) {
+		case "select":
+
+			break;
+		case "insert":
+			String targetColumns = "";
+			String targetValues = "";
+			for(int i = 0; i < modifyKey.length; i++) {
+				targetColumns += modifyKey[i];
+				targetValues += "'" + modifyObject.get(modifyKey[i]) + "'";
+				if(i < modifyKey.length-1) {
+					targetColumns += ",";
+					targetValues += ",";
+				}
+			}
+			result = "INSERT INTO " + Table + "(" + targetColumns + ") VALUE(" + targetValues + ");";
+
+			break;
+		case "update":
+			//WHERE : requireColumns 구요. 이것의 키는 어떻게 구해요? 넣어야 되네요!
+			//requestColumns : 값입니다.
+			// WHERE name = dev.whoan AND ...
+			String whereClause = (searchKey.length > 0 ? " WHERE " : "");
+			for(int i = 0; i < searchKey.length; i++) {
+				whereClause += searchKey[i] + "=" + "'" + searchObject.get(searchKey[i]) + "'";
+				if(i < searchKey.length -1) {
+					whereClause += " AND ";
+				}
+			}
+
+			String dataField = "";
+			for(int i = 0; i < modifyKey.length; i++) {
+				dataField += modifyKey[i] + "=" + "'" + modifyObject.get(modifyKey[i]) + "'";
+
+				if(i < modifyKey.length-1) {
+					dataField += ", ";
+				}
+			}
+			result = "UPDATE " + Table + " SET " + dataField + whereClause + ";";
+			break;
+
+		case "delete":
+
+			break;
+		}
+
+		return result;
 	}
 }

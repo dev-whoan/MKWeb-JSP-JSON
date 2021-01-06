@@ -55,6 +55,29 @@ $(document).ready(function(){
 	    });
 	});
 	
+	$("#test-put").click(function(){
+		var jsonInfo = '{"u_class":"1"}';
+		var queryInfo = "search_key=apple&name=dev.whoan";
+		$.ajax({
+	        type : "put",
+	        url : "/mk_api_key/users/name/Trump",
+	        dataType : "json",
+	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
+	        data : {
+	        	"apiData":jsonInfo
+	        },
+	        error : function(a, b, c){
+	            alert("통신실패!!!!");
+	            console.log(a.responseText);
+	            console.log(b);
+	            console.log(c);
+	        },
+	        success : function(rd){
+	            console.log(rd);
+	        }
+	    });
+	});
+	
 	function getLastSequence(){
 		if(userList.length > 0){
 			lastSEQ = parseInt(userList[0]['SEQ']);
@@ -126,6 +149,7 @@ This is api test page
             <div>
             	<button id="test-api">API 확인</button>
             	<button id="test-post">POST 확인</button>
+            	<button id="test-put">PUT 확인</button>
             </div>
         </div>
 
