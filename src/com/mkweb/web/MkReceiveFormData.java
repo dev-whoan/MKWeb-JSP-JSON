@@ -157,6 +157,12 @@ public class MkReceiveFormData extends HttpServlet {
     }
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		if(MkConfigReader.Me().get("mkweb.web.receive.use").contentEquals("no")) {
+			mklogger.error(TAG, "MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
+			mklogger.debug(TAG, "mkweb.web.receive.use is not yes.");
+			return;
+		}
+			
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);
@@ -195,6 +201,12 @@ public class MkReceiveFormData extends HttpServlet {
 	}
 	
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		if(MkConfigReader.Me().get("mkweb.web.receive.use").contentEquals("no")) {
+			mklogger.error(TAG, "MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
+			mklogger.error(TAG, "Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.");
+			mklogger.debug(TAG, "mkweb.web.receive.use is not yes. Please check MkWeb.conf");
+			return;
+		}
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);

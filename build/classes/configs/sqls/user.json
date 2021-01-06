@@ -81,6 +81,20 @@
 					"where":""
 					
 				}
+			},
+			{
+				"id":"removeUser",
+				"query":{
+					"crud":"delete",
+					"column":{
+						"1":""
+					},
+					"table":"User",
+					"data":{
+						"1":""
+					},
+					"where":"name = @user_name@"
+				}
 			}
 		]
 	}

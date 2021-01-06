@@ -41,6 +41,7 @@ public class MkDispatcher extends HttpServlet {
 	
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String requestURI = request.getRequestURI();
+		String clientAddress = request.getAttribute("client-host").toString();
 		Object o = request.getAttribute("mkPage");
 		if(o == null) {
 			mklogger.error(TAG, "Request URI is invalid. ( Unauthorzied connection [" + requestURI + "] )");
@@ -59,7 +60,7 @@ public class MkDispatcher extends HttpServlet {
 		request.setAttribute("mkPage", mkPage);
 		dispatch(request, response, targetURI);
 		
-		mklogger.info(TAG, "Page Called");
+		mklogger.info(TAG, "Page Called by " + clientAddress);
 		MkPageConfigs.Me().printPageInfo(resultJsonData.get(0), "no-sql");
 	}
 	

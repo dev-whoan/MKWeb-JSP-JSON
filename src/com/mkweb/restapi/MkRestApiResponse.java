@@ -80,7 +80,7 @@ public class MkRestApiResponse {
 							"}";
 				}
 			}
-				
+
 			default:
 				temp = "  \"error\":{\n" +
 						"    \"message\":\"" + getMessage() + "\",\n" +
@@ -96,10 +96,17 @@ public class MkRestApiResponse {
 						"}";
 				break;
 			}
-			
+
 		}else {
 			switch(method) {
 			case "put":
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
+						"}";
+				break;
+			case "delete":
 				result = "{\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
@@ -115,7 +122,67 @@ public class MkRestApiResponse {
 						"}";
 				break;
 			}
-			
+		}
+		return result;
+	}
+
+	public String generateResult(int code, String method, String prefix) {
+		String result = null;
+		String temp = null;
+		if(code >= 400) {
+			temp = "  \"error\":{\n" +
+					"    \"message\":\"" + getMessage() + "\",\n" +
+					"    \"code\":\"" + getCode() + "\",\n" +
+					"    \"status\":\"" + getStatus() + "\",\n" +
+					"    \"info\":\"" + getDocs() + "\"\n  }";
+			contentLength = temp.length();
+			result = "{\n" +
+					"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+					"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+					"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
+					temp + "\n" +
+					"}";
+		}else {
+			switch(method) {
+			case "put":
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
+						"}";
+				break;
+			case "delete":
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
+						"}";
+				break;
+			case "options":
+			{
+				if(!prefix.contentEquals("")) {
+					result = "{\n" +
+							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+							prefix +"\n" +
+							"}";
+					break;
+				}else {
+					result = "{\n" +
+							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
+							"}";
+				}
+			}
+			default:
+				result = "{\n" +
+						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
+						prefix +
+						"}";
+				break;
+			}
 		}
 		return result;
 	}

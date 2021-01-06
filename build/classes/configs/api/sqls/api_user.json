@@ -4,6 +4,7 @@
 		"debug":"error",
 		"db":"mkwiki",
 		"api":"yes",
+		"table":"User",
 		"condition":{
 			"1":"name",
 			"2":"u_class",
@@ -16,9 +17,10 @@
 				"query":{
 					"crud":"select",
 					"column":{
-						"1":"*"
+						"1":"name",
+						"2":"u_class",
+						"3":"SEQ"
 					},
-					"table":"User",
 					"data":{
 						"1":""
 					},
@@ -35,7 +37,6 @@
 						"3":"CNT_IP",
 						"4":"SEQ"
 					},
-					"table":"User",
 					"data":{
 						"1":"name",
 						"2":"u_class",
@@ -44,6 +45,19 @@
 					},
 					"where":""
 					
+				}
+			},
+			{
+				"id":"removeUser",
+				"query":{
+					"crud":"delete",
+					"column":{
+						"1":""
+					},
+					"data":{
+						"1":""
+					},
+					"where":""
 				}
 			}
 		]

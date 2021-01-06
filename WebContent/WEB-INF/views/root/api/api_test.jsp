@@ -31,7 +31,7 @@ $(document).ready(function(){
 		var jsonInfo = '{"search_key":"apple"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
-	        type : "options",
+	        type : "get",
 	        url : "/mk_api_key/users",
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
@@ -56,11 +56,33 @@ $(document).ready(function(){
 	});
 	
 	$("#test-put").click(function(){
-		var jsonInfo = '{"u_class":"1"}';
+		var jsonInfo = '{"u_class":"1", "name":"Trump", "CNT_IP":"8.8.8.8", "SEQ":"11"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
 	        type : "put",
-	        url : "/mk_api_key/users/name/Trump",
+	        url : "/mk_api_key/users/name/Trump?search_key=apple",
+	        dataType : "json",
+	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
+	        data : {
+	        	"apiData":jsonInfo
+	        },
+	        error : function(a, b, c){
+	            alert("통신실패!!!!");
+	            console.log(a.responseText);
+	            console.log(b);
+	            console.log(c);
+	        },
+	        success : function(rd){
+	            console.log(rd);
+	        }
+	    });
+	});
+	
+	$("#test-delete").click(function(){
+		var jsonInfo = '{"name":"Trump"}';
+		$.ajax({
+	        type : "delete",
+	        url : "/mk_api_key/users?search_key=apple",
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
 	        data : {
@@ -94,7 +116,7 @@ $(document).ready(function(){
 	}
 	
 	$("#test-post").click(function(){
-		var jsonInfo = '{"search_key":"apple", "name":"dev.whoan", "u_class":"5", "CNT_IP":"121.143.148.49", "SEQ":"' + (lastSEQ+1) + '"}';
+		var jsonInfo = '{"search_key":"apple", "name":"Park", "u_class":"1", "CNT_IP":"4.4.4.4", "SEQ":"' + (lastSEQ+1) + '"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
 	        type : "post",
@@ -150,6 +172,7 @@ This is api test page
             	<button id="test-api">API 확인</button>
             	<button id="test-post">POST 확인</button>
             	<button id="test-put">PUT 확인</button>
+            	<button id="test-delete">DELETE 확인</button>
             </div>
         </div>
 

@@ -34,7 +34,7 @@ public class defaultDispatcher extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-
+    
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -48,6 +48,11 @@ public class defaultDispatcher extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
+		String ipAddress = request.getHeader("X-FORWARDED-FOR");  
+		if (ipAddress == null) {  
+		    ipAddress = request.getRemoteAddr();  
+		}
+		
 		String requestURI = request.getRequestURI();	// /main
 		String[] reqPage = null;
 		String mkPage = null;
@@ -71,6 +76,7 @@ public class defaultDispatcher extends HttpServlet {
 		}
 		
 		request.setAttribute("mkPage", mkPage);
+		request.setAttribute("client-host", ipAddress);
 		RequestDispatcher dispatcher = this.getServletContext().getRequestDispatcher(requestURI + ".mkw");
 		dispatcher.forward(request, response);
 	}

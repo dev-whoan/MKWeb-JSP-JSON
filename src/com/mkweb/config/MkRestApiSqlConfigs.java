@@ -65,6 +65,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 				String sqlDebugLevel = sqlObject.get("debug").toString();
 				String sqlDB = sqlObject.get("db").toString();
 				String sqlAPI = sqlObject.get("api").toString();
+				String sqlTable = sqlObject.get("table").toString();
 				
 				MkJsonData mkJsonData = new MkJsonData(sqlObject.get("condition").toString());
 				JSONObject tempValues = null;
@@ -103,7 +104,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						JSONObject serviceQueryData = mjd.getJsonObject();
-						serviceQuery = new String[serviceQueryData.size()];
+						serviceQuery = new String[serviceQueryData.size()+1];
 						
 						if(serviceQuery.length != 5) {
 							mklogger.error(TAG, "[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
@@ -111,7 +112,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						serviceQuery[0] = serviceQueryData.get("crud").toString();
-						serviceQuery[2] = serviceQueryData.get("table").toString();
+						serviceQuery[2] = sqlTable;
 						serviceQuery[4] = serviceQueryData.get("where").toString();
 						
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());

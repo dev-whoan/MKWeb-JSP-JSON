@@ -32,7 +32,7 @@ public class MkLogger{
 
 		return ml;
 	}
-
+	
 	private void Log(Object msg, String caller) {
 		try {
 			if(log_configs.get("print_date").toString().equals("yes"))

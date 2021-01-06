@@ -4,17 +4,18 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	id="WebApp_ID" version="3.0">
 	<display-name>MkWeb</display-name>
-	 
+	
 	<servlet>
 		<servlet-name>MkReceiveFormData</servlet-name>
 		<servlet-class>com.mkweb.web.MkReceiveFormData</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-	
+	 
 	<servlet-mapping>
 		<servlet-name>MkReceiveFormData</servlet-name>
 		<url-pattern>/data/receive</url-pattern>
 	</servlet-mapping>
+
 	<servlet>
 		<servlet-name>MkWebRestApi</servlet-name>
 		<servlet-class>com.mkweb.restapi.MkRestApi</servlet-class>
@@ -47,7 +48,7 @@
 	<!-- MkWeb Setting Configs -->
 	<context-param>
 		<param-name>MKWeb.Properties</param-name>
-		<param-value>/WEB-INF/classes/configs/MKWeb.conf</param-value>
+		<param-value>/WEB-INF/classes/configs/MkWeb.conf</param-value>
 	</context-param>
 	
 	<context-param>
