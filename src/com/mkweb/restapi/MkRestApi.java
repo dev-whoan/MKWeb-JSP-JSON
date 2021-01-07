@@ -590,13 +590,17 @@ public class MkRestApi extends HttpServlet {
 				allowMethods += "\"";
 			}
 			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods);
-			response.setContentLength(result.length());
+			response.setContentLength(result.length());/*
 			char[] bufferedData = result.toCharArray();
+			mklogger.debug(TAG, "result : " + result);
+			
 			for(int i = 0; i < bufferedData.length; i++) {
 				out.print(bufferedData[i]);
 				if(i % 100 == 0)
 					out.flush();
 			}
+			*/
+			out.print(result);
 		}else {
 			result = mkJsonData.jsonToPretty(resultObject);
 			result = result.substring(1, result.length()-1);
@@ -613,14 +617,10 @@ public class MkRestApi extends HttpServlet {
 			apiResponse.setContentLength(resultObject.toString().length());
 			response.setContentLength(apiResponse.getContentLength());
 			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result);
-			char[] bufferedData = temp.toCharArray();
-			for(int i = 0; i < bufferedData.length; i++) {
-				out.print(bufferedData[i]);
-				if(i % 100 == 0)
-					out.flush();
-			}
+
+			out.print(temp);
 		}
-		out.flush();
+		out.close();
 	}
 
 	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
