@@ -137,6 +137,28 @@ $(document).ready(function(){
 	        }
 	    });
 	});
+	$("#test-head").click(function(){
+		var jsonInfo = '{"search_key":"apple"}';
+		var queryInfo = "search_key=apple&name=dev.whoan";
+		$.ajax({
+	        type : "head",
+	        url : "/mk_api_key/users",
+	        dataType : "json",
+	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
+	        data : {
+	        	"apiData":jsonInfo
+	        },
+	        error : function(a, b, c){
+	            alert("통신실패!!!!");
+	            console.log(a.responseText);
+	            console.log(b);
+	            console.log(c);
+	        },
+	        success : function(rd){
+	            console.log(rd);
+	        }
+	    });
+	})
 });
 
 </script>
@@ -172,6 +194,7 @@ This is api test page
             	<button id="test-api">API 확인</button>
             	<button id="test-post">POST 확인</button>
             	<button id="test-put">PUT 확인</button>
+            	<button id="test-head">HEAD 확인</button>
             	<button id="test-delete">DELETE 확인</button>
             </div>
         </div>

@@ -571,10 +571,8 @@ public class MkRestApi extends HttpServlet {
 		response.setHeader("Result", "HTTP/1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus());
 		response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
 
-		response.setHeader("Keep-Alive", "" + apiResponse.getLife());
-
 		PrintWriter out = response.getWriter();
-		out.flush();
+
 		String result = null;
 		if(resultObject == null) {
 			String allowMethods = "";
@@ -592,6 +590,7 @@ public class MkRestApi extends HttpServlet {
 				allowMethods += "\"";
 			}
 			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods);
+			response.setContentLength(result.length());
 			char[] bufferedData = result.toCharArray();
 			for(int i = 0; i < bufferedData.length; i++) {
 				out.print(bufferedData[i]);
@@ -612,7 +611,7 @@ public class MkRestApi extends HttpServlet {
 				resultObject.remove("DELETE_DONE");
 			}
 			apiResponse.setContentLength(resultObject.toString().length());
-			response.addHeader("Content-Length", "" + apiResponse.getContentLength());
+			response.setContentLength(apiResponse.getContentLength());
 			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result);
 			char[] bufferedData = temp.toCharArray();
 			for(int i = 0; i < bufferedData.length; i++) {
@@ -621,6 +620,7 @@ public class MkRestApi extends HttpServlet {
 					out.flush();
 			}
 		}
+		out.flush();
 	}
 
 	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
