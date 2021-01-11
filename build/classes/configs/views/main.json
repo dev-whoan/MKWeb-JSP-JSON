@@ -12,10 +12,10 @@
 				"en":{
 					"path":"/views/root/eng",
 					"file":"main.jsp",
-					"uri":"/eng"
+					"uri":""
 				}
 			},
-			"android":{
+		 	"android":{
 				"default":{
 					"path":"/views/root/android",
 					"file":"main.jsp",
@@ -24,7 +24,7 @@
 				"en":{
 					"path":"/views/root/android/eng",
 					"file":"main.jsp",
-					"uri":"/and/eng"
+					"uri":"/and"
 				}
 			}
 		},

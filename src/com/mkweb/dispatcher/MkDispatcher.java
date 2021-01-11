@@ -66,7 +66,6 @@ public class MkDispatcher extends HttpServlet {
 			return;
 		}
 		ArrayList<PageJsonData> resultPageData = MkPageConfigs.Me().getControl(mkPage);
-		
 		String userAcceptLanguage = request.getHeader("Accept-Language");
 		String userAgent = request.getHeader("User-Agent").toLowerCase();
 		String userPlatform = null;
@@ -85,6 +84,11 @@ public class MkDispatcher extends HttpServlet {
 			userPlatform = "desktop";
 		
 		String targetURI = PageJsonData.getAbsPath() + (new CheckPageInfo()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
+		
+		if(targetURI.contains("error_")) {
+			response.sendError(Integer.parseInt(targetURI.split("error_")[1]));
+			return;
+		}
 		
 		request.setAttribute("mkPage", mkPage);
 		dispatch(request, response, targetURI);

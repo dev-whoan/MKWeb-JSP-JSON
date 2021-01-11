@@ -261,55 +261,61 @@ public class CheckPageInfo {
 		return true;
 	}
 	
-	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userLanguage, ArrayList<PageJsonData> resultPageData) {
+	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<PageJsonData> resultPageData) {
 		String defaultLanguage = null;
-
 		if(userPlatform == null)
 			userPlatform = "desktop";
-
 		try {
-			defaultLanguage = Locale.LanguageRange.parse(userLanguage)
+			defaultLanguage = Locale.LanguageRange.parse(userAcceptLanguage)
 					.stream().sorted(Comparator.comparing(Locale.LanguageRange::getWeight).reversed())
 					.map(range -> new Locale(range.getRange())).collect(Collectors.toList()).get(0).toString().substring(0, 2);
 		} catch (NullPointerException e) {
 			return "error_404";
 		}
-		/*
-		 * mkPage가 default가 아니라면, mkpage 페이지를 보여준다.
-		 * mkpage에서  last_uri를 빼면 서비스 uri가 나온다. 
-		 */
-		
+
 		String lastURI = resultPageData.get(0).getLastURI();
-		String requestServiceURI = requestControlName.substring(0, requestControlName.indexOf(lastURI));
-		if(requestServiceURI.charAt(requestServiceURI.length()-1) == '/') {
-			requestServiceURI = requestServiceURI.substring(0, requestServiceURI.length()-1);
+		String requestServiceURI = (!lastURI.contentEquals("") ? requestControlName.substring(0, requestControlName.indexOf(lastURI)) : requestControlName);
+		if(!requestServiceURI.contentEquals("")) {
+			if(requestServiceURI.charAt(requestServiceURI.length()-1) == '/') {
+				requestServiceURI = requestServiceURI.substring(0, requestServiceURI.length()-1);
+			}	
 		}
 		
 		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
 		Device userDevice = null;
 		int desktopIndex = -1;
-		
+		boolean isDone = false;
 		for(int i = 0; i < devices.size(); i++) {
 			Device currentDevice = devices.get(i);
 			if(currentDevice.getControlName().contentEquals("desktop"))
 				desktopIndex = i;
 			
 			if(currentDevice.getControlName().contentEquals(userPlatform)) {
-				if(currentDevice.getDeviceInfo(defaultLanguage.toString()) != null) {
-					userDevice = currentDevice;
-					break;
-				}
-				/*	Set Language	*/
-				if(userDevice == null) {
-					if(currentDevice.getDeviceInfo("default") != null) {
+				/* Language 선택 할 때, URI가 완벽히 일치하면 그 language 선택 */
+				HashMap<String, String[]> currentDeviceInfo = currentDevice.getDeviceInfo();
+				Set<String> key = currentDeviceInfo.keySet();
+				Iterator<String> iter = key.iterator();
+				int sameCount = 0;
+				while(iter.hasNext()) {
+					String cService = iter.next();
+					if(requestServiceURI.contentEquals(currentDeviceInfo.get(cService)[2])) {
 						userDevice = currentDevice;
-						defaultLanguage = "default";
+						if(!cService.contentEquals("default"))
+							defaultLanguage = cService;
+						isDone = true;
 						break;
 					}
 				}
+				
+				if(isDone)
+					break;
+				
+				if(!isDone && userDevice != null) {
+					defaultLanguage = "default";
+				}
 			}
 		}
-
+		
 		if(userDevice == null) {
 			/* Set Platform and Language	*/
 			if(desktopIndex != -1) {
@@ -319,10 +325,10 @@ public class CheckPageInfo {
 			}else {
 				return "error_500";
 			}
+		}else {
+			if(userDevice.getDeviceInfo(defaultLanguage) == null)
+				defaultLanguage = "default";
 		}
-		mklogger.debug(TAG, " userDevice : " + userDevice.getControlName());
-		mklogger.debug(TAG, "user platform: " + userPlatform + ", dl : "+ defaultLanguage);
-
 		String[] uriInfo = userDevice.getDeviceInfo(defaultLanguage);
 		
 		return uriInfo[0] + "/" + uriInfo[1];

@@ -16,9 +16,9 @@ public class Device extends AbsJsonData{
 	/*	key: default, eng, ko ... 등 언어 설정 	*/
 	
 	/* 
-	 * index 0: pageURI		: 연결 URI dir
+	 * index 0: pageName	: 실제 파일 이름 / 연결 종단 URI
 	 * index 1: filePath	: 실제 파일 경로
-	 * index 2: pageName	: 실제 파일 이름 / 연결 종단 URI
+	 * index 2: pageURI		: 연결 URI dir
 	 */
 	private HashMap<String, String[]> deviceInfo = new HashMap<>();
 	
