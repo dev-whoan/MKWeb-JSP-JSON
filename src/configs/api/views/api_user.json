@@ -1,10 +1,17 @@
 {
 	"Controller": {
 		"name":"users",
+		"last_uri":"users",
+		"device":{
+			"desktop":{
+				"default":{
+					"path":"",
+					"file":"",
+					"uri":""
+				}
+			}
+		},
 		"debug":"error",
-		"path":"",
-		"file":"",
-		"uri":"",
 		"api":"yes",
 		"services":[
 			{

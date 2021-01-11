@@ -7,7 +7,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -15,6 +17,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.can.MkPageConfigCan;
+import com.mkweb.data.Device;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.PageJsonData;
 import com.mkweb.logger.MkLogger;
@@ -77,13 +80,60 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				JSONObject pageObject = (JSONObject) jsonObject.get("Controller");
 
 				String pageName = pageObject.get("name").toString();
+				String lastURI = pageObject.get("last_uri").toString();
 				String pageDebugLevel = pageObject.get("debug").toString();
-				String pageFilePath = pageObject.get("path").toString();
-				String pageFile = pageObject.get("file").toString();
-				String pageURI = pageObject.get("uri").toString();
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 
+				JSONObject pageDevice = (JSONObject) pageObject.get("device");
+				
+				/*	디바이스 구분 : desktop, android, ios 최대 3개*/
+				ArrayList<Device> deviceConfig = new ArrayList<>();
+				
+				Set<String> deviceConfigKey = pageDevice.keySet();
+
+				Iterator<String> deviceConfigIter = deviceConfigKey.iterator();
+				while(deviceConfigIter.hasNext()) {
+					String deviceControlName = deviceConfigIter.next();
+					
+					Object dO = pageDevice.get(deviceControlName);
+					if(dO != null) {
+						//desktop, android, ios에 대한 JSONObject
+						JSONObject deviceObject = (JSONObject) dO;
+						
+						//만들기 위한 Device 설정
+						Device tempDevice = new Device();
+						// tempDeviceInfo(language, JSONObject(path, file, uri));
+						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
+						
+						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
+						
+						//Device Controller가 갖고있는 key를 찾아야 합니다.
+						Set<String> deviceObjectKey = deviceObject.keySet();
+						Iterator<String> iterator = deviceObjectKey.iterator();
+						while(iterator.hasNext()) {
+							String iNext = iterator.next();
+							JSONObject deviceService = (JSONObject) deviceObject.get(iNext);
+							
+							String[] tempDeviceServiceInfo = new String[device_service_filter.length];
+							for(int di = 0; di < device_service_filter.length; di++) {
+								tempDeviceServiceInfo[di] = deviceService.get(device_service_filter[di]).toString();
+								tempDeviceInfo.put(iNext, tempDeviceServiceInfo);
+							}
+							
+							tempDevice.setDeviceInfo(tempDeviceInfo);
+						}
+						
+						if(tempDeviceInfo.get("default") == null) {
+							mklogger.temp(TAG + "[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
+							mklogger.temp("The settings for this view controller is terminated.", false);
+							mklogger.flush("error");
+							return;
+						}
+						deviceConfig.add(tempDevice);
+					}
+				}
+				
 				for(int i = 0; i < serviceArray.size(); i++) {
 					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
 					boolean isPageStatic = false; 
@@ -128,27 +178,31 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 						page_value[j] = tempValues.get("" + (j+1)).toString();
 					}
 					
-					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-					
-					String controlName = ctr_info[3] + "/" + ctr_info[0];
+					String controlName = lastURI;
 					/*	 Add Index Page	*/
-					if(controlName.contentEquals("/")) 
-						controlName = "";
+					if(controlName.contentEquals("/")) {
+						mklogger.temp(TAG + "[" + pageName + "] RESTful API view last_uri property must have value.", false);
+						mklogger.temp("The settings for this view controller is terminated.", false);
+						mklogger.flush("error");
+						return;
+					}
 					
 					PageJsonData curData = setPageJsonData(isPageStatic,
 							controlName,
+							lastURI,
 							serviceId,
 							serviceType,
-							ctr_info,
+							pageDebugLevel,
+							deviceConfig,
 							serviceObjectType,
 							serviceMethod,
 							serviceParameter,
 							page_value,
 							(pageAPI.toLowerCase().contentEquals("yes")));
 					
-					printPageInfo(curData, "info");
+					printPageInfo(mklogger, TAG, curData, "info");
 					pageJsonData.add(curData);
-					page_configs.put(ctr_info[0], pageJsonData);
+					page_configs.put(controlName, pageJsonData);
 				}
 			} catch (FileNotFoundException e) {
 				mklogger.error(e.getMessage());
@@ -164,39 +218,6 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		}
 	}
 	
-	@Override
-	public void printPageInfo(PageJsonData jsonData, String type) {
-		String[] VAL_INFO = jsonData.getData();
-		
-		String valMsg = "";
-		
-		for(int i = 0; i < VAL_INFO.length; i++) {
-			valMsg += VAL_INFO[i];
-			
-			if(i < VAL_INFO.length-1) {
-				valMsg += ", ";
-			}
-		}
-		
-		String tempMsg = "\n=============================Page Control  :  " + jsonData.getControlName() + "=============================="
-				+ "\n|View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
-				+ "\n|Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
-				+ "\n|Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
-				+ "\n|Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
-				+ "\n|API :\t" + jsonData.IsApiPage();
-		if(!type.contentEquals("no-sql")) {
-			tempMsg +="\n|SQL:\t" + jsonData.getObjectType() + "\tMethod\t" + jsonData.getMethod()
-					+ "\n|Value:\t" + valMsg
-					+ "\n============================================================================";
-			mklogger.temp(tempMsg, false);
-			mklogger.flush(type);
-		}else {
-			tempMsg += "\n============================================================================";
-			mklogger.temp(tempMsg, false);
-			mklogger.flush("info");
-		}
-	}
-
 	@Override
 	public ArrayList<PageJsonData> getControl(String k) {
 		for(int i = 0; i < defaultFiles.length; i++)
@@ -224,17 +245,17 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
 		result.setPageStatic(pageStatic);
 		result.setControlName(controlName);
-		result.setDebug(ctr_info[1]);
-		result.setPageURI(ctr_info[2]);
-		result.setLogicalDir(ctr_info[3]);
-		result.setPageName(ctr_info[4]);
+		result.setLastURI(pageLastURI);
+		result.setDebug(debugLevel);
 		
-		result.setServiceName(serviceName);
+		result.setDevice(device);
+		
+		result.setServiceName(serviceName);		
 		result.setServiceType(serviceType);
 
 		result.setObjectType(objectType);

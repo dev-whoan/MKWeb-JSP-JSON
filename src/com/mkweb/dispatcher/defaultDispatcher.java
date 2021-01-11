@@ -54,7 +54,6 @@ public class defaultDispatcher extends HttpServlet {
 		}
 		
 		String requestURI = request.getRequestURI();	// /main
-		String[] reqPage = null;
 		String mkPage = null;
 		
 		String hostcheck = request.getRequestURL().toString().split("://")[1];
@@ -62,10 +61,8 @@ public class defaultDispatcher extends HttpServlet {
 
 		if(!hostcheck.equals(host))
 		{
-			reqPage = requestURI.split("/");
 			mkPage = requestURI;//reqPage[reqPage.length - 1];
 		}else {
-			reqPage = null;
 			mkPage = "";
 		}
 		

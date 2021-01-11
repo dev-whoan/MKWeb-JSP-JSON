@@ -7,9 +7,12 @@ import java.util.LinkedHashMap;
 import com.mkweb.logger.MkLogger;
 
 public class PageJsonData extends AbsJsonData {
-	private String logicalDir = null;
-	private String pageURI = null;
-	private String pageName = null;			//페이지 네임
+	/*
+	 * 0: Default device
+	 * 1~: additional device settings
+	 */
+	private ArrayList<Device> device = null;
+
 	private String debug = null;
 	/* Page Parameters */
 	private String parameter = null;
@@ -28,14 +31,16 @@ public class PageJsonData extends AbsJsonData {
 	private boolean options = false;
 	private boolean head = false;
 	private boolean isApi = false;
+	private String pageLastURI = null;
+	private String serviceURI = null;
 	
-	public void setPageName(String pageName) {	this.pageName = pageName;	}
+	/* Language */
+	private String[] languages = null;
+	
 	public void setDebug(String debug) {	this.debug = debug;	}
 	public void setParameter(String param) {	this.parameter = param;	}
 	public void setObjectType(String objectType) {	this.objectType = objectType;	}
 	public void setMethod(String method) {	this.method = method;	}
-	public void setPageURI(String dir) {	this.pageURI = dir;	}
-	public void setLogicalDir(String dir) {	this.logicalDir = dir;	}
 	public void setAuthorizedRequire(String ar) {	this.authorizedRequire = (ar == null || ar.equals("no") ? false : ( ar.equals("yes") ? true : false) );	}
 	public void setPost(String post) {	this.post = (post == null || post.equals("no") ? false : ( post.equals("yes") ? true : false) );	}
 	public void setGet(String get) {	this.get = (get == null || get.equals("no") ? false : ( get.equals("yes") ? true : false) );	}
@@ -48,14 +53,16 @@ public class PageJsonData extends AbsJsonData {
 	public void setPageValue(LinkedHashMap<String, Boolean> pageValue) { this.pageValue = pageValue;	}
 	public void setPageStatic(boolean isPageStatic) {	this.isPageStatic = isPageStatic;	}
 	public void setAPI(boolean ia) {	this.isApi = ia;	}
+	public void setLastURI(String pageLastURI) {	this.pageLastURI = pageLastURI;	}
+	public void setServiceURI(String serviceURI) {	this.serviceURI = serviceURI;	}
+	
+	public void setDevice(int index, Device device) {	if(this.device == null) {	this.device = new ArrayList<>();	}	this.device.set(index, device);	}
+	public void setDevice(ArrayList<Device> device) {	this.device = device;	}
 
-	public String getPageName() {	return this.pageName;	}
 	public String getDebug() {	return this.debug;	}
 	public String getParameter() {	return this.parameter;	}
 	public String getObjectType() {	return this.objectType;	}
 	public String getMethod() {	return this.method;	}
-	public String getPageURI() {	return this.pageURI;	}
-	public String getLogicalDir() {	return this.logicalDir;	}
 	public boolean getAuthorizedRequire() {	return this.authorizedRequire;	}
 	public boolean getPost() {	return this.post;	}
 	public boolean getGet() {	return this.get;	}
@@ -78,6 +85,13 @@ public class PageJsonData extends AbsJsonData {
 //	public String[] getPageStaticParams() {	return this.pageParams;	} 
 	public LinkedHashMap<String, Boolean> getPageValue(){	return this.pageValue;	}
 	public boolean IsApiPage() {	return this.isApi;	}
+	
+	public String getLastURI() {	return this.pageLastURI;	}
+	public String getServiceURI() {	return this.serviceURI;		}
+	
+	public ArrayList<Device> getAllDevices(){	return this.device;	}
+	public Device getDevice(int index) {	return this.device.get(index);	}
+	
 	public boolean getPageStatic() {	return this.isPageStatic;	}
 	public String getMyInfo() {	return "Control: " + (this.controlName) + " | Service: " + (this.serviceName) + " | Tag: " + (getTag());	}
 }

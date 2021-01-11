@@ -82,7 +82,7 @@ $(document).ready(function(){
 	<div class="wrap">
         <!-- header -->
         <div class="header">
-        Default Page
+        English Page
         </div>
  
         <!-- section -->
@@ -94,7 +94,7 @@ $(document).ready(function(){
                         <tr>
                             <th>name</th>
                             <th>address</th>
-                            <th>비고</th>
+                            <th>remark</th>
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
@@ -114,7 +114,7 @@ $(document).ready(function(){
                         <tr>
                             <th>name</th>
                             <th>address</th>
-                            <th>비고</th>
+                            <th>remark</th>
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
@@ -133,7 +133,7 @@ $(document).ready(function(){
                         <tr>
                             <th>name</th>
                             <th>address</th>
-                            <th>비고</th>
+                            <th>remark</th>
                         </tr>
                     </thead>
                     <tbody id="table-wrapper">
@@ -177,9 +177,9 @@ $(document).ready(function(){
                 <div id="modify-user">
 					<label for="cu.user_name">Name</label>
                 	<input type="text" id="newName" name="user_name" />
-					<label for="cu.old_name">조건</label>
+					<label for="cu.old_name">cond</label>
 	                <input type="text" id="oldName" name="old_name"/>
-	                <button id="changeAJAX">수정</button>
+	                <button id="changeAJAX">modify</button>
                 </div>
             </div>
         </div>

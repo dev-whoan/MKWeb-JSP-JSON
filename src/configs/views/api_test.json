@@ -1,10 +1,17 @@
 {
 	"Controller": {
-		"name":"test",
+		"name":"api-test",
+		"last_uri":"test",
 		"debug":"error",
-		"path":"/views/root/api",
-		"file":"api_test.jsp",
-		"uri":"/api",
+		"device":{
+			"desktop":{
+				"default":{
+					"path":"/views/root/api",
+					"file":"api_test.jsp",
+					"uri":"/api"
+				}
+			}
+		},
 		"api":"no",
 		"services":[]
 	}

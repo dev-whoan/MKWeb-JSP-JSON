@@ -133,7 +133,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
-						mklogger.debug(TAG, "sdg: " + serviceData.getData());
+
 						if(!serviceData.setJsonObject()) {
 							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
 							return;

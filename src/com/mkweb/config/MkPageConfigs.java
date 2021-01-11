@@ -18,18 +18,19 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.can.MkPageConfigCan;
+import com.mkweb.data.Device;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.PageJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkPageConfigs extends MkPageConfigCan{
 	private HashMap<String, ArrayList<PageJsonData>> page_configs = new HashMap<String, ArrayList<PageJsonData>>();
+	private HashMap<String, String> allowURI = new HashMap<String, String>();
 	private File[] defaultFiles = null;
 
 	private static MkPageConfigs pc = null;
 	private long lastModified[];
 	private MkLogger mklogger = MkLogger.Me();
-
 	private String TAG = "[PageConfigs]";
 
 	public static MkPageConfigs Me() {
@@ -78,11 +79,15 @@ public class MkPageConfigs extends MkPageConfigCan{
 				JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
 				JSONObject pageObject = (JSONObject) jsonObject.get("Controller");
 
-				String pageName = pageObject.get("name").toString();
+				String controlName = pageObject.get("name").toString();
+				String lastURI = pageObject.get("last_uri").toString();
 				String pageDebugLevel = pageObject.get("debug").toString();
+				/*
+				Device로 이전 사항
 				String pageFilePath = pageObject.get("path").toString();
 				String pageFile = pageObject.get("file").toString();
 				String pageURI = pageObject.get("uri").toString();
+				*/
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 				
@@ -95,6 +100,72 @@ public class MkPageConfigs extends MkPageConfigCan{
 				String serviceMethod = null;
 				String[] page_value = null;
 				boolean isApiService = false;
+				
+				/*
+				 * device태그는 무조건 있고 JSONObject
+				 */
+				JSONObject pageDevice = (JSONObject) pageObject.get("device");
+				
+				/*	디바이스 구분 : desktop, android, ios 최대 3개*/
+				ArrayList<Device> deviceConfig = new ArrayList<>();
+				
+				Set<String> deviceConfigKey = pageDevice.keySet();
+
+				Iterator<String> deviceConfigIter = deviceConfigKey.iterator();
+				while(deviceConfigIter.hasNext()) {
+					String deviceControlName = deviceConfigIter.next();
+					
+					Object dO = pageDevice.get(deviceControlName);
+					if(dO != null) {
+						//desktop, android, ios에 대한 JSONObject
+						JSONObject deviceObject = (JSONObject) dO;
+						
+						//만들기 위한 Device 설정
+						Device tempDevice = new Device();
+						// tempDeviceInfo(language, JSONObject(path, file, uri));
+						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
+						
+						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
+						
+						//Device Controller가 갖고있는 key를 찾아야 합니다.
+						Set<String> deviceObjectKey = deviceObject.keySet();
+						Iterator<String> iterator = deviceObjectKey.iterator();
+						while(iterator.hasNext()) {
+							String iNext = iterator.next();
+							tempDevice.setServiceName(iNext);
+							JSONObject deviceService = (JSONObject) deviceObject.get(iNext);
+							
+							String[] tempDeviceServiceInfo = new String[device_service_filter.length];
+							for(int di = 0; di < device_service_filter.length; di++) {
+								String deviceURI = deviceService.get(device_service_filter[di]).toString();
+								tempDeviceServiceInfo[di] = deviceURI;
+								tempDeviceInfo.put(iNext, tempDeviceServiceInfo);
+								if(di == 2) {
+									if(!deviceURI.contentEquals("") && deviceURI != null) {
+										if(!lastURI.contentEquals("") && lastURI != null) {
+											if(  deviceURI.charAt(deviceURI.length()-1) != '/' ) {
+												deviceURI += "/";
+											}											
+										}
+									}
+									
+									allowURI.put((deviceURI + lastURI), controlName);
+								}
+							}
+							
+							tempDevice.setDeviceInfo(tempDeviceInfo);
+						}
+						
+						if(tempDeviceInfo.get("default") == null) {
+							mklogger.temp(TAG + "[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
+							mklogger.temp("The settings for this view controller is terminated.", false);
+							mklogger.flush("error");
+							return;
+						}
+						deviceConfig.add(tempDevice);
+					}
+				}
+				
 				
 				if(serviceArray.size() > 0) {
 					for(int i = 0; i < serviceArray.size(); i++) {
@@ -111,7 +182,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 							serviceType = serviceKinds.get("kind").toString();
 							serviceId = serviceKinds.get("id").toString();
 						}catch(NullPointerException npe) {
-							 mklogger.error("[Controller: " + pageName + "] Some service of the page doesn't have attributes. Please check the page config.");
+							 mklogger.error("[Controller: " + controlName + "] Some service of the page doesn't have attributes. Please check the page config.");
 							 return;
 						}
 						
@@ -122,7 +193,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 							tempValues = mkJsonData.getJsonObject();
 						}
 						if(tempValues.size() == 0) {
-							mklogger.error(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+							mklogger.error(TAG, "[Controller: " + controlName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
 							mklogger.debug(TAG, "{\"1\":\"\"}");
 							continue;
 						}
@@ -132,28 +203,26 @@ public class MkPageConfigs extends MkPageConfigCan{
 							page_value[j] = tempValues.get("" + (j+1)).toString();
 						}
 						
-						
 						isApiService = (pageAPI.toLowerCase().contentEquals("yes"));
 						
-						String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-						
-						String controlName = ctr_info[3] + "/" + ctr_info[0];
 						/*	 Add Index Page	*/
 						if(controlName.contentEquals("/")) 
 							controlName = "";
 						
 						PageJsonData curData = setPageJsonData(isPageStatic,
 								controlName,
+								lastURI,
 								serviceId,
 								serviceType,
-								ctr_info,
+								pageDebugLevel,
+								deviceConfig,
 								serviceObjectType,
 								serviceMethod,
 								serviceParameter,
 								page_value,
 								isApiService);
 						
-						printPageInfo(curData, "info");
+						printPageInfo(mklogger, TAG, curData, "info");
 						pageJsonData.add(curData);
 						page_configs.put(controlName, pageJsonData);
 					}
@@ -166,78 +235,46 @@ public class MkPageConfigs extends MkPageConfigCan{
 					page_value[0] = "";
 					isApiService = false;
 					
-					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
 					/*	 Add Index Page	*/
-					String controlName = ctr_info[3] + "/" + ctr_info[0];
 					if(controlName.contentEquals("/")) 
 						controlName = "";
 					PageJsonData curData = setPageJsonData(isPageStatic,
-							controlName, 
-							serviceId,
+							controlName,
+							lastURI,
+							serviceId,							
 							serviceType,
-							ctr_info,
+							pageDebugLevel,
+							deviceConfig,
 							serviceObjectType,
 							serviceMethod,
 							serviceParameter,
 							page_value,
 							isApiService);
 
-					printPageInfo(curData, "info");
+					printPageInfo(mklogger, TAG, curData, "info");
 					pageJsonData.add(curData);
-					page_configs.put(ctr_info[0], pageJsonData);
+					page_configs.put(controlName, pageJsonData);
 				}
+				
 			} catch (FileNotFoundException e) {
-				mklogger.error(e.getMessage());
+				mklogger.error(TAG, "defaultFile.getName()FileNOtFoundException: " + e.getMessage());
 				e.printStackTrace();
 			} catch (IOException e) {
-				mklogger.error(e.getMessage());
+				mklogger.error(TAG, "IOException: " + e.getMessage());
 				e.printStackTrace();
 			} catch (ParseException e) {
-				mklogger.error(e.getMessage());
+				mklogger.error(TAG, "ParseException : " + e.getMessage());
 				e.printStackTrace();
-			}
+			} 
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs  Done*=*=*=*=*=*=*=*=");
 		}
 	}
 
+	private String getURIControl(String requestURI) {	return allowURI.get(requestURI);	}
+	
 	@Override
-	public void printPageInfo(PageJsonData jsonData, String type) {
-		
-		String[] VAL_INFO = jsonData.getData();
-		
-		String valMsg = "";
-		
-		for(int i = 0; i < VAL_INFO.length; i++) {
-			valMsg += VAL_INFO[i];
-			
-			if(i < VAL_INFO.length-1) {
-				valMsg += ", ";
-			}
-		}
-		
-		String tempMsg = "\n===============================Page Control================================="
-				+ "\n|Control Name:\t" + jsonData.getControlName()
-				+ "\n|View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
-				+ "\n|Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
-				+ "\n|Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
-				+ "\n|Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
-				+ "\n|API :\t" + jsonData.IsApiPage();
-
-		if(!type.contentEquals("no-sql")) {
-			tempMsg +="\n|SQL:\t" + jsonData.getObjectType() + "\tMethod:\t" + jsonData.getMethod()
-					+ "\n|Value:\t" + valMsg
-					+ "\n============================================================================";
-			mklogger.temp(tempMsg, false);
-			mklogger.flush(type);
-		}else {
-			tempMsg += "\n============================================================================";
-			mklogger.temp(tempMsg, false);
-			mklogger.flush("info");
-		}
-	}
-
-	@Override
-	public ArrayList<PageJsonData> getControl(String mkPage) {
+	public ArrayList<PageJsonData> getControl(String requestURI) {
+		String mkPage = getURIControl(requestURI);
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
@@ -258,23 +295,22 @@ public class MkPageConfigs extends MkPageConfigCan{
 
 		if(page_configs.get(mkPage) == null)
 		{
-			mklogger.error(TAG + " : The control is unknown. [called control name: " + mkPage + "]");
+			mklogger.error(TAG + " : The control is unknown. [called control name: " + mkPage + ", uri:" + requestURI + "]");
 			return null;
 		}
 		return page_configs.get(mkPage);
 	}
 
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
-		mklogger.debug(TAG, "new Control is registered : " + controlName + ")");
 		result.setPageStatic(pageStatic);
 		result.setControlName(controlName);
-		result.setDebug(ctr_info[1]);
-		result.setPageURI(ctr_info[2]);
-		result.setLogicalDir(ctr_info[3]);
-		result.setPageName(ctr_info[4]);
+		result.setLastURI(pageLastURI);
+		result.setDebug(debugLevel);
+		
+		result.setDevice(device);
 		
 		result.setServiceName(serviceName);
 		result.setServiceType(serviceType);

@@ -6,14 +6,18 @@ import java.util.ArrayList;
 
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.mkweb.data.Device;
 import com.mkweb.data.PageJsonData;
 import com.mkweb.data.SqlJsonData;
 import com.mkweb.logger.MkLogger;
@@ -77,8 +81,8 @@ public class CheckPageInfo {
 					if (requestParams != null) {
 						if (requestParams.contentEquals(userRequestParameterName) || !requestParams.contentEquals(pageStaticParameterName))
 							continue; 
-						this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
-						this.mklogger.debug(this.TAG, " The parameter name is not same as page static parameter name.");
+						mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+						mklogger.debug(this.TAG, " The parameter name is not same as page static parameter name.");
 						return null;
 					} 
 					if (!userRequestParameterName.contentEquals(pageStaticParameterName))
@@ -92,8 +96,8 @@ public class CheckPageInfo {
 				if (requestParams != null) {
 					if (requestParams.contentEquals(userRequestParameterName) || requestParams.contentEquals(pageStaticParameterName))
 						continue; 
-					this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
-					this.mklogger.debug(this.TAG, " The parameter name is not same as previous parameter name.");
+					mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+					mklogger.debug(this.TAG, " The parameter name is not same as previous parameter name.");
 					return null;
 				} 
 				if (userRequestParameterName.contentEquals(pageStaticParameterName))
@@ -102,14 +106,14 @@ public class CheckPageInfo {
 				continue;
 			} 
 			if (pageStaticData == null) {
-				this.mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
+				mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
 				return null;
 			} 
 		} 
 		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || requestParams.contentEquals(pageStaticParameterName)) && 
 				staticPassCount == pageStaticParameters.length) {
 			requestParams = "__MKWEB_STATIC_VALUE__";
-			this.mklogger.warn(this.TAG, "STATIC VALUE HAS SET");
+			mklogger.warn(this.TAG, "STATIC VALUE HAS SET");
 		} 
 		return requestParams;
 	}
@@ -209,8 +213,9 @@ public class CheckPageInfo {
 
 		if(pageSize != requestSize) {
 			mklogger.error(TAG, " Number of request parameters is not same as number of allowed parameters.");
-			mklogger.debug(TAG, " Page value size : " + pageSize + " | request size : " + requestSize);
-			mklogger.debug(TAG, "pageValue : " + pageValue.toString());
+			mklogger.temp(TAG + " Page value size : " + pageSize + " | request size : " + requestSize, false);
+			mklogger.temp("pageValue : " + pageValue.toString(), false);
+			mklogger.flush("debug");
 			return false;
 		}
 
@@ -244,42 +249,83 @@ public class CheckPageInfo {
 		pageValues = new String(pvc);
 		requestValues = new String(rvc);
 
-		mklogger.debug(TAG, "pvc : " + pageValues + "\nrvc : " + requestValues);
-
 		return (pageValues.contentEquals(requestValues));
 	}
 
-	
 	public boolean isValidPageConnection(String requestControlName) {
 		ArrayList<PageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
 			return false;
-		/*
-		PageJsonData jsonData = resultPageData.get(0);
-		/*
-		 * 오직허용: log_dir + page control name
-		 * requestDir = URI / 자른거.
-		 * mkPage = request page control name
-		 
-		String AllowPath = jsonData.getLogicalDir();
-		String userLogicalDir = "";
+	
+		return true;
+	}
+	
+	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userLanguage, ArrayList<PageJsonData> resultPageData) {
+		String defaultLanguage = null;
 
-		if(requestDir != null) {
-			for(int i = 1; i < requestDir.length-1; i++) 
-				userLogicalDir += "/" + requestDir[i];
+		if(userPlatform == null)
+			userPlatform = "desktop";
+
+		try {
+			defaultLanguage = Locale.LanguageRange.parse(userLanguage)
+					.stream().sorted(Comparator.comparing(Locale.LanguageRange::getWeight).reversed())
+					.map(range -> new Locale(range.getRange())).collect(Collectors.toList()).get(0).toString().substring(0, 2);
+		} catch (NullPointerException e) {
+			return "error_404";
+		}
+		/*
+		 * mkPage가 default가 아니라면, mkpage 페이지를 보여준다.
+		 * mkpage에서  last_uri를 빼면 서비스 uri가 나온다. 
+		 */
+		
+		String lastURI = resultPageData.get(0).getLastURI();
+		String requestServiceURI = requestControlName.substring(0, requestControlName.indexOf(lastURI));
+		if(requestServiceURI.charAt(requestServiceURI.length()-1) == '/') {
+			requestServiceURI = requestServiceURI.substring(0, requestServiceURI.length()-1);
+		}
+		
+		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
+		Device userDevice = null;
+		int desktopIndex = -1;
+		
+		for(int i = 0; i < devices.size(); i++) {
+			Device currentDevice = devices.get(i);
+			if(currentDevice.getControlName().contentEquals("desktop"))
+				desktopIndex = i;
+			
+			if(currentDevice.getControlName().contentEquals(userPlatform)) {
+				if(currentDevice.getDeviceInfo(defaultLanguage.toString()) != null) {
+					userDevice = currentDevice;
+					break;
+				}
+				/*	Set Language	*/
+				if(userDevice == null) {
+					if(currentDevice.getDeviceInfo("default") != null) {
+						userDevice = currentDevice;
+						defaultLanguage = "default";
+						break;
+					}
+				}
+			}
 		}
 
-		if(userLogicalDir.equals(""))
-			userLogicalDir = "/";
+		if(userDevice == null) {
+			/* Set Platform and Language	*/
+			if(desktopIndex != -1) {
+				userDevice = devices.get(desktopIndex);
+				if(userDevice.getDeviceInfo(defaultLanguage) == null)
+					defaultLanguage = "default";
+			}else {
+				return "error_500";
+			}
+		}
+		mklogger.debug(TAG, " userDevice : " + userDevice.getControlName());
+		mklogger.debug(TAG, "user platform: " + userPlatform + ", dl : "+ defaultLanguage);
 
-		String c1 = userLogicalDir + requestControlName;
-		String c2 = AllowPath + jsonData.getControlName();
-
-		if(!c1.equals(c2))
-			return false;
-		*/
-		return true;
+		String[] uriInfo = userDevice.getDeviceInfo(defaultLanguage);
+		
+		return uriInfo[0] + "/" + uriInfo[1];
 	}
 
 	public boolean isValidApiPageConnection(String requestControlName, String[] requestDir) {
@@ -288,11 +334,7 @@ public class CheckPageInfo {
 		if(resultPageData == null || resultPageData.size() < 1)
 			return false;
 		PageJsonData jsonData = resultPageData.get(0);
-		/*
-		 * 오직허용: log_dir + page control name
-		 * requestDir = URI / 자른거.
-		 * mkPage = request page control name
-		 */
+
 		String userLogicalDir = "";
 
 		if(requestDir != null) {
