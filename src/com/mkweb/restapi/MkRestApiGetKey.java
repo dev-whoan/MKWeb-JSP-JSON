@@ -27,10 +27,8 @@ public class MkRestApiGetKey extends MkDbAccessor {
 		ArrayList<Object> rst = new ArrayList<Object>();
 		ResultSet rs = null;
 		
-
 		if(dbCon != null)
 		{
-
 			try {
 				PreparedStatement prestmt;
 				this.psmt = "SELECT * FROM " + MkConfigReader.Me().get("mkweb.restapi.key.table") + ";";

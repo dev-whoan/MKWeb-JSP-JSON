@@ -57,6 +57,9 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
 		{
+			if(defaultFile.isDirectory())
+				continue;
+			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb API Page Configs Start*=*=*=*=*=*=*=*=");
 			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
@@ -126,8 +129,14 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					}
 					
 					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-
+					
+					String controlName = ctr_info[3] + "/" + ctr_info[0];
+					/*	 Add Index Page	*/
+					if(controlName.contentEquals("/")) 
+						controlName = "";
+					
 					PageJsonData curData = setPageJsonData(isPageStatic,
+							controlName,
 							serviceId,
 							serviceType,
 							ctr_info,
@@ -215,11 +224,11 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
 		result.setPageStatic(pageStatic);
-		result.setControlName(ctr_info[0]);
+		result.setControlName(controlName);
 		result.setDebug(ctr_info[1]);
 		result.setPageURI(ctr_info[2]);
 		result.setLogicalDir(ctr_info[3]);

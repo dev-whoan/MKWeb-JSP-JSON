@@ -68,6 +68,8 @@ public class MkRestApi extends HttpServlet {
 	private boolean isKeyValid(String key, String mkPage) {
 		boolean isDone = false;
 		MkRestApiGetKey mra = new MkRestApiGetKey();
+		String keyColumn = MkConfigReader.Me().get("mkweb.restapi.key.column.name");
+		String remarkColumn = MkConfigReader.Me().get("mkweb.restapi.key.column.remark");
 		ArrayList<Object> apiKeyList = mra.GetKey();
 
 		mklogger.temp(TAG, " REST Api Key has searched : " + key + " Result: ", false);
@@ -76,8 +78,8 @@ public class MkRestApi extends HttpServlet {
 			for (int i = 0; i < apiKeyList.size(); i++) {
 				HashMap<String, Object> result = new HashMap<String, Object>();
 				result = (HashMap<String, Object>) apiKeyList.get(i);
-				if (result.get("api_key").equals(key)) {
-					mklogger.temp(TAG, " key is valid! (user_id : " + result.get("user_id") + ")", false);
+				if (result.get(keyColumn).equals(key)) {
+					mklogger.temp(TAG, " key is valid! (remark : " + result.get(remarkColumn) + ")", false);
 					mklogger.flush("info");
 					isDone = true;
 					break;
@@ -185,7 +187,7 @@ public class MkRestApi extends HttpServlet {
 			if (mkPage.contains("/")) {
 				mkPage = mkPage.split("/")[0];
 			}
-
+			
 			mklogger.debug(TAG, "Request MKPage : " + mkPage + "| Method : " + REQUEST_METHOD);
 
 			ArrayList<PageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
@@ -590,16 +592,6 @@ public class MkRestApi extends HttpServlet {
 				allowMethods += "\"";
 			}
 			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods);
-			response.setContentLength(result.length());/*
-			char[] bufferedData = result.toCharArray();
-			mklogger.debug(TAG, "result : " + result);
-			
-			for(int i = 0; i < bufferedData.length; i++) {
-				out.print(bufferedData[i]);
-				if(i % 100 == 0)
-					out.flush();
-			}
-			*/
 			out.print(result);
 		}else {
 			result = mkJsonData.jsonToPretty(resultObject);
@@ -615,18 +607,19 @@ public class MkRestApi extends HttpServlet {
 				resultObject.remove("DELETE_DONE");
 			}
 			apiResponse.setContentLength(resultObject.toString().length());
-			response.setContentLength(apiResponse.getContentLength());
+			
 			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result);
-
 			out.print(temp);
 		}
+		out.flush();
 		out.close();
 	}
 
 	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
 			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
 		JSONObject resultObject = null;
-		MkDbAccessor DA = new MkDbAccessor();
+	
+		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
@@ -715,7 +708,7 @@ public class MkRestApi extends HttpServlet {
 			String requestMethod, MkRestApiResponse mkResponse) {
 
 		JSONObject resultObject = null;
-		MkDbAccessor DA = new MkDbAccessor();
+		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
@@ -785,7 +778,7 @@ public class MkRestApi extends HttpServlet {
 		String[] inputKey = pjData.getData();
 
 		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse);
-		MkDbAccessor DA = new MkDbAccessor();
+		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
 		String query = null;
@@ -853,7 +846,7 @@ public class MkRestApi extends HttpServlet {
 
 	private JSONObject doTaskDelete(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
 		JSONObject resultObject = null;
-		MkDbAccessor DA = new MkDbAccessor();
+		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
 		String service = pxData.getServiceName();
 		String control = pxData.getControlName();

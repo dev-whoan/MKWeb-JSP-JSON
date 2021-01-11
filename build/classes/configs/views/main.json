@@ -4,7 +4,7 @@
 		"debug":"error",
 		"path":"/views/root",
 		"file":"main.jsp",
-		"uri":"/",
+		"uri":"",
 		"api":"no",
 		"services":[
 			{
@@ -73,6 +73,20 @@
 					"1":"user_name",
 					"2":"user_class",
 					"3":"user_ip"
+				}
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"sql",
+					"id":"changeName"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"cu",
+				"value":{
+					"1":"user_name",
+					"2":"old_name"
 				}
 			}
 		]

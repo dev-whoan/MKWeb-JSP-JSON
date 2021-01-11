@@ -73,19 +73,9 @@ public class MkReceiveFormData extends HttpServlet {
     	}
     	host = host + "/";
     	String requestURI = rqPageURL.split(MkConfigReader.Me().get("mkweb.web.hostname"))[1];
-		String[] reqPage = null;
-		String mkPage = null;
-	
-		if(!hostCheck.equals(host))
-		{
-			reqPage = requestURI.split("/");
-			mkPage = reqPage[reqPage.length - 1];
-		}else {
-			reqPage = null;
-			mkPage = "";
-		}
+		String mkPage = (!hostCheck.contentEquals(host) ? requestURI : "");
 
-		if(!cpi.isValidPageConnection(mkPage, reqPage)) {
+		if(!cpi.isValidPageConnection(mkPage)) {
 			mklogger.error(TAG, " checkMethod: Invalid Page Connection.");
 			return false;
 		}
@@ -117,7 +107,7 @@ public class MkReceiveFormData extends HttpServlet {
     }
     
     private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    	MkDbAccessor DA = new MkDbAccessor();
+		MkDbAccessor DA = new MkDbAccessor();
 		
 		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
 			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");

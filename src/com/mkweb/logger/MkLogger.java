@@ -26,6 +26,7 @@ public class MkLogger{
 
 	private String logMsg = null;
 	private static MkLogger ml = null;
+	
 	public static MkLogger Me() {
 		if(ml == null)
 			ml = new MkLogger();
@@ -191,7 +192,7 @@ public class MkLogger{
 			}
 		}
 	}
-
+	
 	public void setLogConfig(File logConfigs) {
 		log_configs.clear();
 		logMsg = "";

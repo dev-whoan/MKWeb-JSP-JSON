@@ -45,6 +45,9 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
 		{
+			if(defaultFile.isDirectory())
+				continue;
+			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb API Sql  Configs Start*=*=*=*=*=*=*=*=");
 			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());

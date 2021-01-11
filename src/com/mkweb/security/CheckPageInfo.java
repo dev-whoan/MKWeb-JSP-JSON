@@ -249,17 +249,19 @@ public class CheckPageInfo {
 		return (pageValues.contentEquals(requestValues));
 	}
 
-	public boolean isValidPageConnection(String requestControlName, String[] requestDir) {
+	
+	public boolean isValidPageConnection(String requestControlName) {
 		ArrayList<PageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
 			return false;
+		/*
 		PageJsonData jsonData = resultPageData.get(0);
 		/*
 		 * 오직허용: log_dir + page control name
 		 * requestDir = URI / 자른거.
 		 * mkPage = request page control name
-		 */
+		 
 		String AllowPath = jsonData.getLogicalDir();
 		String userLogicalDir = "";
 
@@ -276,7 +278,7 @@ public class CheckPageInfo {
 
 		if(!c1.equals(c2))
 			return false;
-
+		*/
 		return true;
 	}
 

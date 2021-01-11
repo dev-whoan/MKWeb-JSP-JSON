@@ -8,7 +8,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -57,6 +59,9 @@ public class MkPageConfigs extends MkPageConfigCan{
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
 		{
+			if(defaultFile.isDirectory())
+				continue;
+			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs Start*=*=*=*=*=*=*=*=");
 			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
@@ -132,7 +137,13 @@ public class MkPageConfigs extends MkPageConfigCan{
 						
 						String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
 						
+						String controlName = ctr_info[3] + "/" + ctr_info[0];
+						/*	 Add Index Page	*/
+						if(controlName.contentEquals("/")) 
+							controlName = "";
+						
 						PageJsonData curData = setPageJsonData(isPageStatic,
+								controlName,
 								serviceId,
 								serviceType,
 								ctr_info,
@@ -144,7 +155,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 						
 						printPageInfo(curData, "info");
 						pageJsonData.add(curData);
-						page_configs.put(ctr_info[0], pageJsonData);
+						page_configs.put(controlName, pageJsonData);
 					}
 				}else {
 					serviceId = "No Service";
@@ -156,8 +167,12 @@ public class MkPageConfigs extends MkPageConfigCan{
 					isApiService = false;
 					
 					String[] ctr_info = {pageName, pageDebugLevel, pageFilePath, pageURI, pageFile};
-					
+					/*	 Add Index Page	*/
+					String controlName = ctr_info[3] + "/" + ctr_info[0];
+					if(controlName.contentEquals("/")) 
+						controlName = "";
 					PageJsonData curData = setPageJsonData(isPageStatic,
+							controlName, 
 							serviceId,
 							serviceType,
 							ctr_info,
@@ -200,7 +215,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 			}
 		}
 		
-		String tempMsg = "\n=============================Page Control  :  " + jsonData.getControlName() + "=============================="
+		String tempMsg = "\n===============================Page Control================================="
+				+ "\n|Control Name:\t" + jsonData.getControlName()
 				+ "\n|View Dir:\t" + jsonData.getPageURI() + "\t\tView Page:\t" + jsonData.getPageName()
 				+ "\n|Logical Dir:\t" + jsonData.getLogicalDir() + "\t\tDebug Level:\t" + jsonData.getDebug()
 				+ "\n|Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
@@ -225,9 +241,11 @@ public class MkPageConfigs extends MkPageConfigCan{
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
+				defaultFiles[i].lastModified();
 				setPageConfigs(defaultFiles);
 				mklogger.info("==============Reload Page Config files==============");
 				mklogger.info("========Caused by  : different modified time========");
+				mklogger.info("File: " + defaultFiles[i].getName() + "|" + defaultFiles[i].lastModified());
 				mklogger.info("==============Reload Page Config files==============");
 				break;
 			}
@@ -247,11 +265,12 @@ public class MkPageConfigs extends MkPageConfigCan{
 	}
 
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
 		PageJsonData result = new PageJsonData();
 		
+		mklogger.debug(TAG, "new Control is registered : " + controlName + ")");
 		result.setPageStatic(pageStatic);
-		result.setControlName(ctr_info[0]);
+		result.setControlName(controlName);
 		result.setDebug(ctr_info[1]);
 		result.setPageURI(ctr_info[2]);
 		result.setLogicalDir(ctr_info[3]);

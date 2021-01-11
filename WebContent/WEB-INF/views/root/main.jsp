@@ -42,12 +42,28 @@ $(document).ready(function(){
 	         
 	    });
 	});
+	
+	$("#changeAJAX").click(function(){
+		$.ajax({
+	        type : "POST",
+	        url : "/data/receive",
+	        dataType : "text",
+	        data : {
+	        	"cu.user_name" : $("#newName").val(),
+	        	"cu.old_name" : $("#oldName").val()
+	        },
+	        error : function(a, b, c){
+	            console.log(a + "\n" + b + "\n" + c);
+	        },
+	        success : function(rd){
+	            console.log(rd);
+	        }
+	         
+	    });
+	});
 });
 </script>
 <style>
-#modify-user{
-	display: none;
-}
 
 #remove-user{
 	display: none;
@@ -148,12 +164,21 @@ $(document).ready(function(){
                 	</form>
                 </div>
                 
-                <div id="modify-user" style="display: block">
+                <div id="insert-user">
 					<label for="ucs.name">Name</label>
                 	<input type="text" id="Name" name="name" />
 					<label for="ucs.class">Class</label>
 	                <input type="text" id="Info" name="class"/>
 	                <button id="textAJAX">Insert</button>
+                </div>
+                
+                
+                <div id="modify-user">
+					<label for="cu.user_name">Name</label>
+                	<input type="text" id="newName" name="user_name" />
+					<label for="cu.old_name">조건</label>
+	                <input type="text" id="oldName" name="old_name"/>
+	                <button id="changeAJAX">수정</button>
                 </div>
             </div>
         </div>

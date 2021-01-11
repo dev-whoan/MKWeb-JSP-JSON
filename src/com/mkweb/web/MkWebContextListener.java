@@ -1,7 +1,7 @@
 package com.mkweb.web;
 
 import java.io.File;
-
+import java.util.ArrayList;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -51,7 +51,6 @@ public class MkWebContextListener implements ServletContextListener {
 		 */
 		File mkweb_sql_config = new File(new File(event.getServletContext().getRealPath("/")), sqlConfigsUri);
 		File[] config_sqls = mkweb_sql_config.listFiles();
-		
 		MkSQLConfigs sxc = MkSQLConfigs.Me();
 		sxc.setSqlConfigs(config_sqls);
 		
@@ -60,6 +59,30 @@ public class MkWebContextListener implements ServletContextListener {
 		 */
 		File mkweb_page_config = new File(new File(event.getServletContext().getRealPath("/")), pageConfigsUri);
 		File[] config_pages = mkweb_page_config.listFiles();
+
+		int size = config_pages.length;
+		for(int i = 0; i < size; i++) {
+			File currentFile = config_pages[i];
+			if(currentFile.isDirectory()) {
+				File[] oldFiles = new File[config_pages.length-1];
+				File[] newFiles = currentFile.listFiles();
+				int oldLength = oldFiles.length;
+				int newLength = newFiles.length;
+				
+				if(i == 0) {
+					System.arraycopy(config_pages, 1, oldFiles, 0, config_pages.length-1);
+				}else {
+					System.arraycopy(config_pages, 0, oldFiles, 0, i);
+					System.arraycopy(config_pages, i+1, oldFiles, i, config_pages.length-(i+1));
+				}
+				config_pages = new File[oldLength + newLength];
+				System.arraycopy(oldFiles, 0, config_pages, 0, oldLength);
+				System.arraycopy(newFiles, 0, config_pages, oldLength, newLength);
+
+				i--;
+				size = config_pages.length;
+			}
+		}
 		
 		MkPageConfigs pc = MkPageConfigs.Me();
 		pc.setPageConfigs(config_pages);
@@ -76,6 +99,30 @@ public class MkWebContextListener implements ServletContextListener {
 			
 			File mkweb_apipage_config = new File(new File(event.getServletContext().getRealPath("/")), apiPageConfigs);
 			File[] config_api_pages = mkweb_apipage_config.listFiles();
+			
+			size = config_api_pages.length;
+			for(int i = 0; i < size; i++) {
+				File currentFile = config_api_pages[i];
+				if(currentFile.isDirectory()) {
+					File[] oldFiles = new File[config_api_pages.length-1];
+					File[] newFiles = currentFile.listFiles();
+					int oldLength = oldFiles.length;
+					int newLength = newFiles.length;
+					if(i == 0) {
+						System.arraycopy(config_api_pages, 1, oldFiles, 0, config_api_pages.length-1);
+					}else {
+						System.arraycopy(config_api_pages, 0, oldFiles, 0, i);
+						System.arraycopy(config_api_pages, i+1, oldFiles, i, config_api_pages.length-(i+1));
+					}
+					config_api_pages = new File[oldLength + newLength];
+					System.arraycopy(oldFiles, 0, config_api_pages, 0, oldLength);
+					System.arraycopy(newFiles, 0, config_api_pages, oldLength, newLength);
+
+					i--;
+					size = config_api_pages.length;
+				}
+			}
+			
 			MkRestApiPageConfigs mrac = MkRestApiPageConfigs.Me();
 			mrac.setPageConfigs(config_api_pages);
 		}

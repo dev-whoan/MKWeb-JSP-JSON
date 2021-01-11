@@ -163,9 +163,10 @@ public class tagSEL extends SimpleTagSupport {
 		if(query == null)
 			query = befQuery;
 
+		String targetDB = sqlInfo.get(sqlControlIndex).getDB();
 		if(this.obj == "list")
 		{
-			DA = new MkDbAccessor();
+			DA = new MkDbAccessor(targetDB);
 			DA.setPreparedStatement(query);
 			if(requestValues != null) {
 				String[] reqs = new String[requestValues.size()];

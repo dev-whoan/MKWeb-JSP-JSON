@@ -26,17 +26,28 @@ public class MkDbAccessor {
 	private ArrayList<String> reqValue = null;
 	private String[] reqValueArr = null;
 	private String[] generateKeys = null;
-
+	private String targetDB = null;
 	private String TAG = "[MkDbAccessor]";
 
 	public MkDbAccessor() {
 		try {
 			dbCon = connectDB();
 		} catch (SQLException e) {
+			mklogger.debug(TAG, "Failed to connect DB : " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
 
+	public MkDbAccessor(String targetDB) {
+		try {
+			this.targetDB = targetDB;
+			dbCon = connectDB();
+		} catch(SQLException e) {
+			mklogger.debug(TAG, "Failed to connect DB : " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
 	protected Connection getDbCon() {	return this.dbCon;	}
 	public void setPreparedStatement(String qr) {
 		this.psmt = qr;
@@ -133,8 +144,8 @@ public class MkDbAccessor {
 			} catch (ClassNotFoundException e) {
 				mklogger.error(TAG, "(connectDB) ClassNotFoundException: " + e.getMessage());
 			}
-
-			String url = "jdbc:mysql://" + MkConfigReader.Me().get("mkweb.db.hostname") + ":" + MkConfigReader.Me().get("mkweb.db.port") + "/" + MkConfigReader.Me().get("mkweb.db.database")+ "?" + "characterEncoding=UTF-8&serverTimezone=UTC";
+			String db = (targetDB != null ? targetDB : MkConfigReader.Me().get("mkweb.db.database"));
+			String url = "jdbc:mysql://" + MkConfigReader.Me().get("mkweb.db.hostname") + ":" + MkConfigReader.Me().get("mkweb.db.port") + "/" + db + "?" + "characterEncoding=UTF-8&serverTimezone=UTC";
 			conn = DriverManager.getConnection(url, MkConfigReader.Me().get("mkweb.db.id"), MkConfigReader.Me().get("mkweb.db.pw"));
 		}catch(SQLException e){
 			mklogger.error(TAG, "(connectDB) SQLException : " + e.getMessage());

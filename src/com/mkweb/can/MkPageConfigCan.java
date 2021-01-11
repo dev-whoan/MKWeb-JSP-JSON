@@ -33,7 +33,7 @@ public abstract class MkPageConfigCan extends PageJsonData {
 	public abstract ArrayList<PageJsonData> getControl(String k);
 	public abstract void setPageConfigs(File[] pageConfigs);
 	public abstract void printPageInfo(PageJsonData jsonData, String type);
-	protected abstract PageJsonData setPageJsonData(boolean pageStatic, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi);
+	protected abstract PageJsonData setPageJsonData(boolean pageStatic, String controlName, String serviceName, String serviceType, String[] ctr_info, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi);
 
 	protected LinkedHashMap<String, Boolean> pageValueToHashMap(String[] pageValue){
     	LinkedHashMap<String, Boolean> result = null;

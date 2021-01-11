@@ -2,9 +2,9 @@
 	"Controller": {
 		"name":"users",
 		"debug":"error",
-		"path":"/views/root",
-		"file":"api_user.jsp",
-		"uri":"/",
+		"path":"",
+		"file":"",
+		"uri":"",
 		"api":"yes",
 		"services":[
 			{

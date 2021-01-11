@@ -63,13 +63,14 @@ public class defaultDispatcher extends HttpServlet {
 		if(!hostcheck.equals(host))
 		{
 			reqPage = requestURI.split("/");
-			mkPage = reqPage[reqPage.length - 1];
+			mkPage = requestURI;//reqPage[reqPage.length - 1];
 		}else {
 			reqPage = null;
 			mkPage = "";
 		}
-
-		if(!(new CheckPageInfo()).isValidPageConnection(mkPage, reqPage)) {
+		
+	//	if(!(new CheckPageInfo()).isValidPageConnection(mkPage, reqPage)) {
+		if(!(new CheckPageInfo()).isValidPageConnection(mkPage)) {
 			//에러페이지
 			response.sendError(404);
 			return;

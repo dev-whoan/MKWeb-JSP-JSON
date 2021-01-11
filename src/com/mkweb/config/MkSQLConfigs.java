@@ -46,6 +46,9 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
 		{
+			if(defaultFile.isDirectory())
+				continue;
+			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Sql  Configs Start*=*=*=*=*=*=*=*=");
 			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
