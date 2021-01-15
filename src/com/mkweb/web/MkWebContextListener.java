@@ -7,6 +7,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import com.mkweb.config.MkConfigReader;
+import com.mkweb.config.MkFTPConfigs;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
@@ -28,6 +29,7 @@ public class MkWebContextListener implements ServletContextListener {
 		String sqlConfigsUri = event.getServletContext().getInitParameter("MKWeb.SqlConfigs");
 		String MkLoggerUri = event.getServletContext().getInitParameter("MKWeb.LoggerConfigs");
 		String pageConfigsUri = event.getServletContext().getInitParameter("MKWeb.PageConfigs");
+		String ftpConfigsUri = event.getServletContext().getInitParameter("MKWeb.FTPConfigs");
 		String apiSqlConfigs = event.getServletContext().getInitParameter("MkWeb.ApiSqlConfigs");
 		String apiPageConfigs = event.getServletContext().getInitParameter("MkWeb.ApiPageConfigs");
 		
@@ -51,8 +53,8 @@ public class MkWebContextListener implements ServletContextListener {
 		 */
 		File mkweb_sql_config = new File(new File(event.getServletContext().getRealPath("/")), sqlConfigsUri);
 		File[] config_sqls = mkweb_sql_config.listFiles();
-		MkSQLConfigs sxc = MkSQLConfigs.Me();
-		sxc.setSqlConfigs(config_sqls);
+		MkSQLConfigs sjc = MkSQLConfigs.Me();
+		sjc.setSqlConfigs(config_sqls);
 		
 		/*
 		 * Setting Pages
@@ -88,10 +90,20 @@ public class MkWebContextListener implements ServletContextListener {
 		pc.setPageConfigs(config_pages);
 		
 		/*
+		 * FTP Server Settings
+		 */
+		if(MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
+			File mkweb_ftp_configs = new File(new File(event.getServletContext().getRealPath("/")), ftpConfigsUri);
+			File[] config_ftps = mkweb_ftp_configs.listFiles();
+			MkFTPConfigs fjc = MkFTPConfigs.Me();
+			fjc.setFtpConfigs(config_ftps);
+		}
+		
+		/*
 		 *  Rest Api Settings
 		*/
 		
-		if(MkConfigReader.Me().get("mkweb.restapi.use").equals("yes")) {
+		if(MkConfigReader.Me().get("mkweb.restapi.use").contentEquals("yes")) {
 			File mkweb_apisql_config = new File(new File(event.getServletContext().getRealPath("/")), apiSqlConfigs);
 			File[] config_api_sqls = mkweb_apisql_config.listFiles();
 			MkRestApiSqlConfigs mrasc = MkRestApiSqlConfigs.Me();

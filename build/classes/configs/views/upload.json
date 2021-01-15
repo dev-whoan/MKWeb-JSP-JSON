@@ -1,0 +1,45 @@
+{
+	"Controller": {
+		"name":"ftp-uploader",
+		"last_uri":"upload",
+		"device":{
+			"desktop":{
+				"default":{
+					"path":"/views/root",
+					"file":"upload.jsp",
+					"uri":""
+				}
+			}
+		},
+		"debug":"error",
+		"api":"no",
+		"services":[
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"ftp",
+					"id":"Image"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"ftp_img",
+				"value":{
+					"1":"testimg"
+				}
+			},
+			{
+				"page_static":"false",
+				"type":{
+					"kind":"ftp",
+					"id":"archieve"
+				},
+				"method":"post",
+				"obj":"list",
+				"parameter_name":"ftp_zip",
+				"value":{
+					"1":"testzip"
+				}
+			}
+		]
+	}
+}

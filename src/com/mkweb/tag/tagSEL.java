@@ -14,8 +14,8 @@ import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
-import com.mkweb.data.PageJsonData;
-import com.mkweb.data.SqlJsonData;
+import com.mkweb.data.MkPageJsonData;
+import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkPageConfigs;
@@ -50,7 +50,7 @@ public class tagSEL extends SimpleTagSupport {
 		return this.name;
 	}
 
-	private ArrayList<PageJsonData> getPageControl(HttpServletRequest request) {
+	private ArrayList<MkPageJsonData> getPageControl(HttpServletRequest request) {
 		Object o = request.getAttribute("mkPage");
 		if(o == null) {	return null;	}
 
@@ -58,7 +58,7 @@ public class tagSEL extends SimpleTagSupport {
 		return MkPageConfigs.Me().getControl(controlName);
 	}
 
-	private ArrayList<SqlJsonData> getSqlControl(String sqlControlName){
+	private ArrayList<MkSqlJsonData> getSqlControl(String sqlControlName){
 		return MkSQLConfigs.Me().getControl(sqlControlName);
 	}
 
@@ -75,11 +75,11 @@ public class tagSEL extends SimpleTagSupport {
 		String requestParams = null;
 		ArrayList<String> requestValues = new ArrayList<String>();
 
-		ArrayList<PageJsonData> pageInfo = getPageControl(request);
-		ArrayList<SqlJsonData> sqlInfo = getSqlControl(this.name);
+		ArrayList<MkPageJsonData> pageInfo = getPageControl(request);
+		ArrayList<MkSqlJsonData> sqlInfo = getSqlControl(this.name);
 
 		boolean isSet = (pageInfo == null || pageInfo.size() == 0) ? false : true;
-		PageJsonData pageStaticData = null;
+		MkPageJsonData pageStaticData = null;
 
 		if(isSet) {
 			for(int i = 0; i < pageInfo.size(); i++) {
@@ -92,7 +92,7 @@ public class tagSEL extends SimpleTagSupport {
 		
 		int pageServiceIndex = -1;
 		boolean pageServiceFound = false;
-		for(PageJsonData pjd : pageInfo) {
+		for(MkPageJsonData pjd : pageInfo) {
 			pageServiceIndex++;
 			if(this.id.contentEquals(pjd.getServiceName())) {
 				pageServiceFound = true;
@@ -104,7 +104,7 @@ public class tagSEL extends SimpleTagSupport {
 
 		int sqlControlIndex = -1;
 		boolean sqlControlFound = false;
-		for(SqlJsonData sjd : sqlInfo) {
+		for(MkSqlJsonData sjd : sqlInfo) {
 			sqlControlIndex++;
 			if(this.name.contentEquals(sjd.getControlName())) {
 				sqlControlFound = true;

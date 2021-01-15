@@ -15,6 +15,17 @@
 		<servlet-name>MkReceiveFormData</servlet-name>
 		<url-pattern>/data/receive</url-pattern>
 	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>MkFTPServlet</servlet-name>
+		<servlet-class>com.mkweb.web.MkFileReceiver</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	 
+	<servlet-mapping>
+		<servlet-name>MkFTPServlet</servlet-name>
+		<url-pattern>/ftp/receive</url-pattern>
+	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>MkWebRestApi</servlet-name>
@@ -52,6 +63,11 @@
 	</context-param>
 	
 	<context-param>
+		<param-name>MKWeb.PageConfigs</param-name>
+		<param-value>/WEB-INF/classes/configs/views</param-value>
+	</context-param>
+	
+	<context-param>
 		<param-name>MKWeb.SqlConfigs</param-name>
 		<param-value>/WEB-INF/classes/configs/sqls</param-value>
 	</context-param>
@@ -62,8 +78,8 @@
 	</context-param>
 
 	<context-param>
-		<param-name>MKWeb.PageConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/views</param-value>
+		<param-name>MKWeb.FTPConfigs</param-name>
+		<param-value>/WEB-INF/classes/configs/ftps</param-value>
 	</context-param>
 	
 	<context-param>

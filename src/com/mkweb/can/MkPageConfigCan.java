@@ -8,10 +8,10 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 
 import com.mkweb.data.Device;
-import com.mkweb.data.PageJsonData;
+import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 
-public abstract class MkPageConfigCan extends PageJsonData {
+public abstract class MkPageConfigCan extends MkPageJsonData {
 	protected String[] svc_list = null;
 	protected String[] ctr_list = null;
 	protected String[] ctr_info = null;
@@ -41,11 +41,11 @@ public abstract class MkPageConfigCan extends PageJsonData {
 			"uri"
 	};
 	
-	public abstract ArrayList<PageJsonData> getControl(String k);
+	public abstract ArrayList<MkPageJsonData> getControl(String k);
 	public abstract void setPageConfigs(File[] pageConfigs);
-	protected abstract PageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi);
+	protected abstract MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi);
 
-	public void printPageInfo(MkLogger mklogger, String TAG, PageJsonData jsonData, String type) {
+	public void printPageInfo(MkLogger mklogger, String TAG, MkPageJsonData jsonData, String type) {
 		String[] VAL_INFO = jsonData.getData();
 		String valMsg = "";
 		for(int i = 0; i < VAL_INFO.length; i++) {

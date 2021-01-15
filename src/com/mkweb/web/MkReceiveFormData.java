@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.mkweb.data.PageJsonData;
+import com.mkweb.data.MkPageJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkConfigReader;
@@ -31,11 +31,11 @@ public class MkReceiveFormData extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkReceiveFormData]";
-    private PageJsonData pjData = null;
+    private MkPageJsonData pjData = null;
     
-    private ArrayList<PageJsonData> pi = null;
+    private ArrayList<MkPageJsonData> pi = null;
     private boolean isPiSet = false;
-	PageJsonData pageStaticData = null;
+	MkPageJsonData pageStaticData = null;
 	ArrayList<String> requestServiceName = null;
 	ArrayList<String> pageParameter = null;
 	String pageObjectType = null;
@@ -50,9 +50,9 @@ public class MkReceiveFormData extends HttpServlet {
         cpi = new CheckPageInfo();
     }
 	
-	private ArrayList<PageJsonData> getPageControl(String url) {
+	private ArrayList<MkPageJsonData> getPageControl(String url) {
 		String[] requestUriList = url.split("/");
-		String mkPage = requestUriList[requestUriList.length - 1];
+		String mkPage = "/" + requestUriList[requestUriList.length - 1];
 		
 		if(mkPage.equals(MkConfigReader.Me().get("mkweb.web.hostname"))) {
 			mkPage = "";
@@ -87,20 +87,24 @@ public class MkReceiveFormData extends HttpServlet {
 		
 		requestParams = cpi.getRequestPageParameterName(request, false, pageStaticData);
 		
-		ArrayList<PageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
-		for(PageJsonData pj : pal) {
+		ArrayList<MkPageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
+		for(MkPageJsonData pj : pal) {
 			if(pj.getParameter().equals(requestParams)) {
 				pjData = pj;
 				break;
 			}
 		}
 		
-		mklogger.debug(TAG, " method: " + pjData.getMethod());
-		
-		if(!pjData.getMethod().toLowerCase().contentEquals(rqMethod)) {
+		try {
+			if(!pjData.getMethod().toLowerCase().contentEquals(rqMethod)) {
+				return false;
+			}
+		} catch (NullPointerException e) {
+			mklogger.error(TAG, "There is no service for request parameter. You can ignore 'Request method is not authorized.' error.");
+			mklogger.debug(TAG, "Page Json Data is Null");
 			return false;
 		}
-
+		
 		requestValues = cpi.getRequestParameterValues(request, pjData.getParameter(), pageStaticData);
 
     	return (pjData != null ? true : false);

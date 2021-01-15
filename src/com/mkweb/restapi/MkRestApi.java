@@ -27,8 +27,8 @@ import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
 import com.mkweb.data.MkJsonData;
-import com.mkweb.data.PageJsonData;
-import com.mkweb.data.SqlJsonData;
+import com.mkweb.data.MkPageJsonData;
+import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.security.CheckPageInfo;
@@ -55,8 +55,8 @@ public class MkRestApi extends HttpServlet {
 		cpi = new CheckPageInfo();
 	}
 
-	private boolean checkMethod(ArrayList<PageJsonData> pageJsonData, String requestMethod) {
-		for (PageJsonData pjd : pageJsonData) {
+	private boolean checkMethod(ArrayList<MkPageJsonData> pageJsonData, String requestMethod) {
+		for (MkPageJsonData pjd : pageJsonData) {
 			if (pjd.getMethod().toString().toLowerCase().contentEquals(requestMethod)) {
 				return true;
 			}
@@ -190,7 +190,7 @@ public class MkRestApi extends HttpServlet {
 			
 			mklogger.debug(TAG, "Request MKPage : " + mkPage + "| Method : " + REQUEST_METHOD);
 
-			ArrayList<PageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
+			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 
 			if (control == null) {
 				mklogger.error(TAG, "[API] Control " + mkPage + " is not exist.");
@@ -462,15 +462,15 @@ public class MkRestApi extends HttpServlet {
 				requestParameterJson.remove(MKWEB_SEARCH_KEY);
 			if(requestParameterJsonToModify != null)
 				requestParameterJsonToModify.remove(MKWEB_SEARCH_KEY);
-			PageJsonData pageService = null;
-			SqlJsonData sqlService = null;
+			MkPageJsonData pageService = null;
+			MkSqlJsonData sqlService = null;
 			if(!REQUEST_METHOD.contentEquals("options")) {
 				Set<String> requestKeySet = requestParameterJson.keySet();
 				Iterator<String> requestIterator = requestKeySet.iterator();
 
-				ArrayList<PageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
+				ArrayList<MkPageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
 
-				for (PageJsonData service : pageControl) {
+				for (MkPageJsonData service : pageControl) {
 					// mklogger.debug(TAG, " service method : " + service.getMethod());
 					if (REQUEST_METHOD.contentEquals(service.getMethod())) {
 						pageService = service;
@@ -485,7 +485,7 @@ public class MkRestApi extends HttpServlet {
 					break;
 				}
 
-				ArrayList<SqlJsonData> sqlControl = MkRestApiSqlConfigs.Me().getControlByServiceName(pageService.getServiceName());
+				ArrayList<MkSqlJsonData> sqlControl = MkRestApiSqlConfigs.Me().getControlByServiceName(pageService.getServiceName());
 
 				String[] sqlConditions = sqlControl.get(0).getCondition();
 
@@ -496,7 +496,7 @@ public class MkRestApi extends HttpServlet {
 					break;
 				}
 
-				for (SqlJsonData sqlServiceData : sqlControl) {
+				for (MkSqlJsonData sqlServiceData : sqlControl) {
 					if (sqlServiceData.getServiceName().contentEquals(pageService.getServiceName())) {
 						sqlService = sqlServiceData;
 						break;
@@ -580,7 +580,7 @@ public class MkRestApi extends HttpServlet {
 			String allowMethods = "";
 			if(apiResponse.getCode() < 400 && REQUEST_METHOD.contentEquals("options")) {
 				allowMethods = "  \"Allow\":\"";
-				ArrayList<PageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
+				ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 				for(int i = 0; i < control.size(); i++) {
 
 					allowMethods += control.get(i).getMethod().toString().toUpperCase();
@@ -615,7 +615,7 @@ public class MkRestApi extends HttpServlet {
 		out.close();
 	}
 
-	private JSONObject doTaskGet(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
+	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
 			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
 		JSONObject resultObject = null;
 	
@@ -704,7 +704,7 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskInput(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage,
+	private JSONObject doTaskInput(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
 			String requestMethod, MkRestApiResponse mkResponse) {
 
 		JSONObject resultObject = null;
@@ -766,7 +766,7 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskPut(PageJsonData pjData, SqlJsonData sqlData, JSONObject jsonObject, JSONObject modifyObject, String mkPage,
+	private JSONObject doTaskPut(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, JSONObject modifyObject, String mkPage,
 			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse) {
 		if(modifyObject == null) {
 			mklogger.error(TAG, "PUT method should wrapped by " + MkConfigReader.Me().get("mkweb.restapi.request.id") + ".");
@@ -844,7 +844,7 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskDelete(PageJsonData pxData, SqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
+	private JSONObject doTaskDelete(MkPageJsonData pxData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 

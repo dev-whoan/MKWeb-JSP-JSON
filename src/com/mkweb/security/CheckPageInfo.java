@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import com.mkweb.data.Device;
-import com.mkweb.data.PageJsonData;
-import com.mkweb.data.SqlJsonData;
+import com.mkweb.data.MkPageJsonData;
+import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.config.MkRestApiPageConfigs;
@@ -31,7 +31,7 @@ public class CheckPageInfo {
 	private MkLogger mklogger = MkLogger.Me();
 
 	public String regularQuery(String controlName, String serviceName, boolean isApi) {
-		ArrayList<SqlJsonData> resultSqlData = null;
+		ArrayList<MkSqlJsonData> resultSqlData = null;
 		if(isApi)
 			resultSqlData = MkRestApiSqlConfigs.Me().getControl(controlName);
 		else
@@ -53,7 +53,7 @@ public class CheckPageInfo {
 		 */
 		String[] result = null;
 		for(int i = 0; i < resultSqlData.size(); i++) {
-			SqlJsonData tempJsonData = resultSqlData.get(i);
+			MkSqlJsonData tempJsonData = resultSqlData.get(i);
 			if(tempJsonData.getServiceName().contentEquals(serviceName)) {
 				result = tempJsonData.getData();
 				break;
@@ -63,7 +63,7 @@ public class CheckPageInfo {
 		return result[0];
 	}
 
-	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, PageJsonData pageStaticData) {
+	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData) {
 		Enumeration<String> params = request.getParameterNames();
 		String requestParams = null;
 		String pageStaticParameterName = null;
@@ -93,14 +93,16 @@ public class CheckPageInfo {
 			} 
 			if (name.contains(".")) {
 				String userRequestParameterName = name.split("\\.")[0];
+				mklogger.debug(TAG, "name : " + name + ", urpn: " + userRequestParameterName + " :: pspn " + pageStaticParameterName);
 				if (requestParams != null) {
-					if (requestParams.contentEquals(userRequestParameterName) || requestParams.contentEquals(pageStaticParameterName))
+					if (requestParams.contentEquals(userRequestParameterName) || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName)))
 						continue; 
 					mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
 					mklogger.debug(this.TAG, " The parameter name is not same as previous parameter name.");
 					return null;
 				} 
-				if (userRequestParameterName.contentEquals(pageStaticParameterName))
+				
+				if (pageStaticParameterName != null && userRequestParameterName.contentEquals(pageStaticParameterName))
 					continue; 
 				requestParams = userRequestParameterName;
 				continue;
@@ -110,7 +112,7 @@ public class CheckPageInfo {
 				return null;
 			} 
 		} 
-		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || requestParams.contentEquals(pageStaticParameterName)) && 
+		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName))) && 
 				staticPassCount == pageStaticParameters.length) {
 			requestParams = "__MKWEB_STATIC_VALUE__";
 			mklogger.warn(this.TAG, "STATIC VALUE HAS SET");
@@ -118,14 +120,15 @@ public class CheckPageInfo {
 		return requestParams;
 	}
 
-	public ArrayList<String> getRequestParameterValues(HttpServletRequest request, String parameter, PageJsonData pageStaticData){
+	public ArrayList<String> getRequestParameterValues(HttpServletRequest request, String parameter, MkPageJsonData pageStaticData){
 		ArrayList<String> requestValues = new ArrayList<String>();
 
 		Enumeration<String> params = request.getParameterNames();
-		String pageStaticParameter = pageStaticData.getParameter();
-		String[] pageStaticParameters = null;
+		String pageStaticParameter = null;
+		String[] pageStaticParameterValues = null;
 		if(pageStaticData != null) {
-			pageStaticParameters = pageStaticData.getData();
+			pageStaticParameter = pageStaticData.getParameter();
+			pageStaticParameterValues = pageStaticData.getData();
 		}
 		/* static value면 static 요청이 아닐 경우 Skip 한다. */
 		/* static value가 아니면 static 요청일 때 Skip 한다. */
@@ -150,8 +153,8 @@ public class CheckPageInfo {
 			}else {
 				if(pageStaticParameter != null) {
 					if(parameter.contentEquals(pageStaticParameter)) {
-						for(int i = 0; i < pageStaticParameters.length; i++) {
-							if(name.contentEquals(pageStaticParameters[i])) {
+						for(int i = 0; i < pageStaticParameterValues.length; i++) {
+							if(name.contentEquals(pageStaticParameterValues[i])) {
 								requestValues.add(name);
 								continue;
 							}
@@ -205,8 +208,10 @@ public class CheckPageInfo {
 		return aftQuery;
 	}
 
-	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, PageJsonData pageStaticDatas, boolean isStaticService, boolean isApi) {
-		LinkedHashMap<String, Boolean> staticData = pageStaticDatas.getPageValue(); 
+	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, MkPageJsonData pageStaticDatas, boolean isStaticService, boolean isApi) {
+		LinkedHashMap<String, Boolean> staticData = null;
+		if(pageStaticDatas != null)
+			staticData = pageStaticDatas.getPageValue(); 
 
 		int pageSize = pageValue.size();
 		int requestSize = requestValue.size();
@@ -253,7 +258,7 @@ public class CheckPageInfo {
 	}
 
 	public boolean isValidPageConnection(String requestControlName) {
-		ArrayList<PageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
+		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
 			return false;
@@ -261,7 +266,7 @@ public class CheckPageInfo {
 		return true;
 	}
 	
-	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<PageJsonData> resultPageData) {
+	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<MkPageJsonData> resultPageData) {
 		String defaultLanguage = null;
 		if(userPlatform == null)
 			userPlatform = "desktop";
@@ -335,11 +340,11 @@ public class CheckPageInfo {
 	}
 
 	public boolean isValidApiPageConnection(String requestControlName, String[] requestDir) {
-		ArrayList<PageJsonData> resultPageData = MkRestApiPageConfigs.Me().getControl(requestControlName);
+		ArrayList<MkPageJsonData> resultPageData = MkRestApiPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
 			return false;
-		PageJsonData jsonData = resultPageData.get(0);
+		MkPageJsonData jsonData = resultPageData.get(0);
 
 		String userLogicalDir = "";
 

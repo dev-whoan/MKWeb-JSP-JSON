@@ -3,7 +3,7 @@ package com.mkweb.data;
 import java.util.ArrayList;
 
 
-public class SqlJsonData extends AbsJsonData {
+public class MkSqlJsonData extends AbsJsonData {
 	   private String db = null;
 	   private boolean allowSingle = false;
 	   private boolean allowLike = false;
@@ -45,5 +45,4 @@ public class SqlJsonData extends AbsJsonData {
 	   /* api */
 	   public void setApiSQL(boolean ias) {	this.isApi = ias;	}
 	   public void setCondition(String[] condition) {	this.condition = condition;	}
-	   
 }

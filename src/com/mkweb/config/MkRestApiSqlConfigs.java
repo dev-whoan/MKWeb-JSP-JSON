@@ -20,16 +20,16 @@ import org.w3c.dom.NodeList;
 
 import com.mkweb.can.MkSqlConfigCan;
 import com.mkweb.data.MkJsonData;
-import com.mkweb.data.SqlJsonData;
+import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiSqlConfigs extends MkSqlConfigCan {
-	private HashMap<String, ArrayList<SqlJsonData>> sql_configs = new HashMap<String, ArrayList<SqlJsonData>>();
+	private HashMap<String, ArrayList<MkSqlJsonData>> sql_configs = new HashMap<String, ArrayList<MkSqlJsonData>>();
 	private File[] defaultFiles = null;
 	private static MkRestApiSqlConfigs mrasc = null;
 	private long[] lastModified; 
 	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[MkRestApiSqlConfigs]";
+	private String TAG = "[MkRestSQLConfigs]";
 
 	public static MkRestApiSqlConfigs Me() {
 		if(mrasc == null)
@@ -40,7 +40,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 	public void setSqlConfigs(File[] sqlConfigs) {
 		sql_configs.clear();
 		defaultFiles = sqlConfigs;
-		ArrayList<SqlJsonData> sqlJsonData = null;
+		ArrayList<MkSqlJsonData> sqlJsonData = null;
 		lastModified = new long[sqlConfigs.length];
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
@@ -59,7 +59,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 			}
 
 			try(FileReader reader = new FileReader(defaultFile)){
-				sqlJsonData = new ArrayList<SqlJsonData>();
+				sqlJsonData = new ArrayList<MkSqlJsonData>();
 				JSONParser jsonParser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
 				JSONObject sqlObject = (JSONObject) jsonObject.get("Controller");
@@ -154,7 +154,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						return;
 					}
 
-					SqlJsonData sqlData = new SqlJsonData();
+					MkSqlJsonData sqlData = new MkSqlJsonData();
 					String[] finalQuery = createSQL(serviceQuery, true);
 					
 					sqlData.setRawSql(serviceQuery);
@@ -185,7 +185,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		}
 	}
 
-	public void printSqlInfo(SqlJsonData jsonData, String type) {
+	public void printSqlInfo(MkSqlJsonData jsonData, String type) {
 		String conditions = "";
 		int conditionLength = (jsonData.getCondition() != null ? jsonData.getCondition().length : -1);
 		
@@ -207,7 +207,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		mklogger.flush(type);
 	}
 	
-	public ArrayList<SqlJsonData> getControl(String controlName) {
+	public ArrayList<MkSqlJsonData> getControl(String controlName) {
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
@@ -222,7 +222,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		return sql_configs.get(controlName);
 	}
 	
-	public ArrayList<SqlJsonData> getControlByServiceName(String serviceName){
+	public ArrayList<MkSqlJsonData> getControlByServiceName(String serviceName){
 		for(int i = 0; i < defaultFiles.length; i++) {
 			if(lastModified[i] != defaultFiles[i].lastModified()){
 				setSqlConfigs(defaultFiles);
@@ -236,11 +236,11 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		Set iter = sql_configs.keySet();
 		Iterator sqlIterator = iter.iterator();
 		String resultControlName = null;
-		ArrayList<SqlJsonData> jsonData = null;
+		ArrayList<MkSqlJsonData> jsonData = null;
 		while(sqlIterator.hasNext()) {
 			String controlName = sqlIterator.next().toString();
 			jsonData = getControl(controlName);
-			for(SqlJsonData curData : jsonData) {
+			for(MkSqlJsonData curData : jsonData) {
 				if(serviceName.contentEquals(curData.getServiceName())) {
 					resultControlName = controlName;
 					break;

@@ -1,0 +1,26 @@
+{
+	"Controller": {
+		"name":"freeboard",
+		"path":"/mkweb/board",
+		"debug":"error",
+		"services":[
+			{
+				"id":"Image",
+				"servicepath":"/img",
+				"format":{
+					"1":"jpg",
+					"2":"png",
+					"3":"gif"
+				}
+			},
+			{
+				"id":"archieve",
+				"servicepath":"/archieve",
+				"format":{
+					"1":"zip",
+					"2":"7z"
+				}
+			}
+		]
+	}
+}

@@ -11,7 +11,6 @@ public class AbsJsonData implements JsonData {
 	protected String Tag = null;
 	protected static String absPath = "/WEB-INF";
 	
-	public String getTag() { return this.Tag; }
 	
 	public void setServiceName(String serviceName) { this.serviceName = serviceName; }
 	public String getServiceName() {	return this.serviceName;	}
@@ -26,5 +25,4 @@ public class AbsJsonData implements JsonData {
 	public String[] getData() {	return this.data;	}
 	
 	public static String getAbsPath()	{	return absPath;	}
-	public String getMyInfo() {	return "Control: " + (this.controlName) + " | Service: " + (this.serviceName) + " | Tag: " + (getTag());	}   
 }

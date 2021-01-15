@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.data.Device;
-import com.mkweb.data.PageJsonData;
+import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.security.CheckPageInfo;
 import com.mkweb.config.MkPageConfigs;
@@ -65,7 +65,7 @@ public class MkDispatcher extends HttpServlet {
 			response.sendError(404);
 			return;
 		}
-		ArrayList<PageJsonData> resultPageData = MkPageConfigs.Me().getControl(mkPage);
+		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(mkPage);
 		String userAcceptLanguage = request.getHeader("Accept-Language");
 		String userAgent = request.getHeader("User-Agent").toLowerCase();
 		String userPlatform = null;
@@ -83,7 +83,7 @@ public class MkDispatcher extends HttpServlet {
 		if(userPlatform == null)
 			userPlatform = "desktop";
 		
-		String targetURI = PageJsonData.getAbsPath() + (new CheckPageInfo()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
+		String targetURI = MkPageJsonData.getAbsPath() + (new CheckPageInfo()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
 		
 		if(targetURI.contains("error_")) {
 			response.sendError(Integer.parseInt(targetURI.split("error_")[1]));

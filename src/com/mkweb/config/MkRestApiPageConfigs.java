@@ -19,18 +19,18 @@ import org.json.simple.parser.ParseException;
 import com.mkweb.can.MkPageConfigCan;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkJsonData;
-import com.mkweb.data.PageJsonData;
+import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiPageConfigs extends MkPageConfigCan{
-	private HashMap<String, ArrayList<PageJsonData>> page_configs = new HashMap<String, ArrayList<PageJsonData>>();
+	private HashMap<String, ArrayList<MkPageJsonData>> page_configs = new HashMap<String, ArrayList<MkPageJsonData>>();
 	private File[] defaultFiles = null;
 
 	private static MkRestApiPageConfigs pc = null;
 	private long lastModified[]; 
 	private MkLogger mklogger = MkLogger.Me();
 
-	private String TAG = "[PageConfigs]";
+	private String TAG = "[MkRestPageConfigs]";
 
 	public static MkRestApiPageConfigs Me() {
 		if(pc == null)
@@ -55,7 +55,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	public void setPageConfigs(File[] pageConfigs) {
 		page_configs.clear();
 		defaultFiles = pageConfigs;
-		ArrayList<PageJsonData> pageJsonData = null;
+		ArrayList<MkPageJsonData> pageJsonData = null;
 		lastModified = new long[pageConfigs.length];
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
@@ -74,7 +74,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 			}
 
 			try(FileReader reader = new FileReader(defaultFile)){
-				pageJsonData = new ArrayList<PageJsonData>();
+				pageJsonData = new ArrayList<MkPageJsonData>();
 				JSONParser jsonParser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
 				JSONObject pageObject = (JSONObject) jsonObject.get("Controller");
@@ -187,7 +187,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 						return;
 					}
 					
-					PageJsonData curData = setPageJsonData(isPageStatic,
+					MkPageJsonData curData = setPageJsonData(isPageStatic,
 							controlName,
 							lastURI,
 							serviceId,
@@ -219,7 +219,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	public ArrayList<PageJsonData> getControl(String k) {
+	public ArrayList<MkPageJsonData> getControl(String k) {
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
@@ -245,8 +245,8 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected PageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
-		PageJsonData result = new PageJsonData();
+	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+		MkPageJsonData result = new MkPageJsonData();
 		
 		result.setPageStatic(pageStatic);
 		result.setControlName(controlName);

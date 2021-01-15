@@ -3,8 +3,8 @@
 		"name":"api_user",
 		"debug":"error",
 		"db":"mkwiki",
-		"api":"yes",
 		"table":"User",
+		"api":"yes",
 		"condition":{
 			"1":"name",
 			"2":"u_class",

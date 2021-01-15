@@ -20,17 +20,17 @@ import org.w3c.dom.NodeList;
 
 import com.mkweb.can.MkSqlConfigCan;
 import com.mkweb.data.MkJsonData;
-import com.mkweb.data.PageJsonData;
-import com.mkweb.data.SqlJsonData;
+import com.mkweb.data.MkPageJsonData;
+import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkSQLConfigs extends MkSqlConfigCan {
-	private HashMap<String, ArrayList<SqlJsonData>> sql_configs = new HashMap<String, ArrayList<SqlJsonData>>();
+	private HashMap<String, ArrayList<MkSqlJsonData>> sql_configs = new HashMap<String, ArrayList<MkSqlJsonData>>();
 	private File[] defaultFiles = null;
 	private static MkSQLConfigs sxc = null;
 	private long[] lastModified = null;
 	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[SQLXmlConfigs]";
+	private String TAG = "[MkSQLConfigs]";
 
 	public static MkSQLConfigs Me() {
 		if(sxc == null)
@@ -41,7 +41,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 	public void setSqlConfigs(File[] sqlConfigs) {
 		sql_configs.clear();
 		defaultFiles = sqlConfigs;
-		ArrayList<SqlJsonData> sqlJsonData = null;
+		ArrayList<MkSqlJsonData> sqlJsonData = null;
 		lastModified = new long[sqlConfigs.length];
 		int lmi = 0;
 		for(File defaultFile : defaultFiles)
@@ -60,7 +60,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 			}
 
 			try(FileReader reader = new FileReader(defaultFile)){
-				sqlJsonData = new ArrayList<SqlJsonData>();
+				sqlJsonData = new ArrayList<MkSqlJsonData>();
 				JSONParser jsonParser = new JSONParser();
 				JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
 				JSONObject sqlObject = (JSONObject) jsonObject.get("Controller");
@@ -135,7 +135,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						return;
 					}
 
-					SqlJsonData sqlData = new SqlJsonData();
+					MkSqlJsonData sqlData = new MkSqlJsonData();
 					
 					String[] finalQuery = createSQL(serviceQuery, false);
 					sqlData.setRawSql(serviceQuery);
@@ -166,19 +166,20 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		}
 	}
 
-	public void printSqlInfo(SqlJsonData jsonData, String type) {
-		String tempMsg = "\n===========================SQL Control  :  " + jsonData.getControlName() + "============================="
+	public void printSqlInfo(MkSqlJsonData jsonData, String type) {
+		String tempMsg = "\n===============================SQL  Control================================="
+				+ "\n|Controller: \t" + jsonData.getControlName()
 				+ "\n|SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
 				+ "\n|SQL DB:\t" + jsonData.getDB()
-				+ "\n|SQL Debug:\t" + jsonData.getDebugLevel()
-				+ "\n|sql Query:\t" + jsonData.getData()[0].trim()
+				+ "\n|SQL Query:\t" + jsonData.getData()[0].trim()
+				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
 				+ "\n============================================================================";
 		
 		mklogger.temp(tempMsg, false);
 		mklogger.flush(type);
 	}
 	
-	public ArrayList<SqlJsonData> getControl(String controlName) {
+	public ArrayList<MkSqlJsonData> getControl(String controlName) {
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
@@ -193,7 +194,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		return sql_configs.get(controlName);
 	}
 	
-	public ArrayList<SqlJsonData> getControlByServiceName(String serviceName){
+	public ArrayList<MkSqlJsonData> getControlByServiceName(String serviceName){
 		for(int i = 0; i < defaultFiles.length; i++) {
 			if(lastModified[i] != defaultFiles[i].lastModified()){
 				setSqlConfigs(defaultFiles);
@@ -207,12 +208,12 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		Set iter = sql_configs.keySet();
 		Iterator sqlIterator = iter.iterator();
 		String resultControlName = null;
-		ArrayList<SqlJsonData> jsonData = null;
+		ArrayList<MkSqlJsonData> jsonData = null;
 		while(sqlIterator.hasNext()) {
 			String controlName = sqlIterator.next().toString();
 			jsonData = getControl(controlName);
 			
-			for(SqlJsonData curData : jsonData) {
+			for(MkSqlJsonData curData : jsonData) {
 				if(serviceName.contentEquals(curData.getServiceName())) {
 					resultControlName = controlName;
 					break;
