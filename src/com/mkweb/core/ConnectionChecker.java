@@ -1,4 +1,4 @@
-package com.mkweb.security;
+package com.mkweb.core;
 
 import java.util.ArrayList;
 
@@ -26,8 +26,8 @@ import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
 import com.mkweb.config.MkSQLConfigs;
 
-public class CheckPageInfo {
-	private String TAG = "[CheckPageInfo]";
+public class ConnectionChecker {
+	private String TAG = "[ConnectionChecker]";
 	private MkLogger mklogger = MkLogger.Me();
 
 	public String regularQuery(String controlName, String serviceName, boolean isApi) {
@@ -48,9 +48,7 @@ public class CheckPageInfo {
 				return null;	
 			}
 		}
-		/*
-		 * n개의 SQL 파일 중 해당하는 Control 찾음!
-		 */
+
 		String[] result = null;
 		for(int i = 0; i < resultSqlData.size(); i++) {
 			MkSqlJsonData tempJsonData = resultSqlData.get(i);

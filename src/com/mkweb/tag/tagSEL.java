@@ -20,7 +20,7 @@ import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.config.MkSQLConfigs;
-import com.mkweb.security.CheckPageInfo;
+import com.mkweb.core.ConnectionChecker;
 
 public class tagSEL extends SimpleTagSupport {
 	private String obj;
@@ -64,7 +64,7 @@ public class tagSEL extends SimpleTagSupport {
 
 	public void doTag() throws JspException, IOException{
 		MkDbAccessor DA;
-		CheckPageInfo cpi = new CheckPageInfo();
+		ConnectionChecker cpi = new ConnectionChecker();
 		ArrayList<Object> dbResult = new ArrayList<Object>();
 
 		HttpServletRequest request = (HttpServletRequest) ((PageContext)getJspContext()).getRequest();

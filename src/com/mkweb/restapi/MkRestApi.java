@@ -26,12 +26,12 @@ import org.json.simple.JSONObject;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
+import com.mkweb.core.ConnectionChecker;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.security.CheckPageInfo;
 
 /**
  * Servlet implementation class MkRestApi
@@ -45,14 +45,14 @@ public class MkRestApi extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkRestApi]";
-	private CheckPageInfo cpi = null;
+	private ConnectionChecker cpi = null;
 
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
 	public MkRestApi() {
 		super();
-		cpi = new CheckPageInfo();
+		cpi = new ConnectionChecker();
 	}
 
 	private boolean checkMethod(ArrayList<MkPageJsonData> pageJsonData, String requestMethod) {

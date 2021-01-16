@@ -21,8 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.security.CheckPageInfo;
 import com.mkweb.config.MkPageConfigs;
+import com.mkweb.core.ConnectionChecker;
 
 /**
  * Servlet implementation class testMkDispatcher
@@ -60,7 +60,7 @@ public class MkDispatcher extends HttpServlet {
 			return;
 		}
 		String mkPage = request.getAttribute("mkPage").toString();
-		if(!(new CheckPageInfo()).isValidPageConnection(mkPage)) {
+		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
 			//에러페이지
 			response.sendError(404);
 			return;
@@ -83,7 +83,7 @@ public class MkDispatcher extends HttpServlet {
 		if(userPlatform == null)
 			userPlatform = "desktop";
 		
-		String targetURI = MkPageJsonData.getAbsPath() + (new CheckPageInfo()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
+		String targetURI = MkPageJsonData.getAbsPath() + (new ConnectionChecker()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
 		
 		if(targetURI.contains("error_")) {
 			response.sendError(Integer.parseInt(targetURI.split("error_")[1]));

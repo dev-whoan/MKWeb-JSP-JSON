@@ -3,10 +3,10 @@ package com.mkweb.web;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkFTPConfigs;
 import com.mkweb.config.MkPageConfigs;
+import com.mkweb.core.ConnectionChecker;
 import com.mkweb.data.MkFtpData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.security.CheckPageInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,12 +38,12 @@ public class MkFileReceiver extends HttpServlet {
 
 	private String requestParameterName = null;
 	private ArrayList<String> requestValues = null;
-	private CheckPageInfo cpi = null;
+	private ConnectionChecker cpi = null;
 	
 	private List<Part> fileParts = null;
 
 	public MkFileReceiver() {
-		this.cpi = new CheckPageInfo();
+		this.cpi = new ConnectionChecker();
 	}
 
 	private ArrayList<MkPageJsonData> getPageControl(String url) {

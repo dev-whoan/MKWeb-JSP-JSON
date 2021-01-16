@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkConfigReader;
-import com.mkweb.security.CheckPageInfo;
+import com.mkweb.core.ConnectionChecker;
 
 /**
  * Servlet implementation class testDefDispatcher
@@ -67,7 +67,7 @@ public class defaultDispatcher extends HttpServlet {
 		}
 		
 	//	if(!(new CheckPageInfo()).isValidPageConnection(mkPage, reqPage)) {
-		if(!(new CheckPageInfo()).isValidPageConnection(mkPage)) {
+		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
 			//에러페이지
 			response.sendError(404);
 			return;

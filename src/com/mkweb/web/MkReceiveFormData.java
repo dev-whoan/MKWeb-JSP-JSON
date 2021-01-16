@@ -16,7 +16,7 @@ import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkPageConfigs;
-import com.mkweb.security.CheckPageInfo;
+import com.mkweb.core.ConnectionChecker;
 
 /**
  * Servlet implementation class MkReceiveFormData
@@ -44,10 +44,10 @@ public class MkReceiveFormData extends HttpServlet {
 	
     private String requestParams = null;
     private ArrayList<String> requestValues = null;
-    private CheckPageInfo cpi = null;
+    private ConnectionChecker cpi = null;
     public MkReceiveFormData() {
         super();
-        cpi = new CheckPageInfo();
+        cpi = new ConnectionChecker();
     }
 	
 	private ArrayList<MkPageJsonData> getPageControl(String url) {

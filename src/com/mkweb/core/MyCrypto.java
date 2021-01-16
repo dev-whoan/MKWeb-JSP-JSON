@@ -1,4 +1,4 @@
-package com.mkweb.security;
+package com.mkweb.core;
 
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
