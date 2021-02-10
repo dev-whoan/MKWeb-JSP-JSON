@@ -690,6 +690,7 @@ public class MkRestApi extends HttpServlet {
 				mkResponse.setCode(400);
 				mkResponse.setMessage(e.getMessage());
 				mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+				return null;
 			}
 		} else {
 			try {
@@ -698,6 +699,7 @@ public class MkRestApi extends HttpServlet {
 				mkResponse.setCode(400);
 				mkResponse.setMessage(e.getMessage());
 				mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+				return null;
 			}
 		}
 

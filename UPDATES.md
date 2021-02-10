@@ -17,6 +17,12 @@
 
 - You need to set directory inside of 'ftp controller' :
 
+3. RESTful API Bug fixed
+
+- When error occured while GET method on DBA, it returned 204. Now returns the origin error. 
+
+- Error was didn't exit the method right after error have occured.
+
 <pre>
 
 {
