@@ -26,12 +26,12 @@ import org.json.simple.JSONObject;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.core.ConnectionChecker;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.database.MkDbAccessor;
 import com.mkweb.logger.MkLogger;
+import com.mkweb.utils.ConnectionChecker;
 
 /**
  * Servlet implementation class MkRestApi
@@ -159,7 +159,11 @@ public class MkRestApi extends HttpServlet {
 				: false;
 		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
 		final String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
+		final String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
 
+		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
+		mklogger.debug(TAG, "customtable name : " + MKWEB_CUSTOM_TABLE);
+		mklogger.debug(TAG, "requested customTable : " + customTable);
 		String requestURI = request.getRequestURI();
 		String[] reqPage = null;
 		String mkPage = null;
@@ -458,10 +462,19 @@ public class MkRestApi extends HttpServlet {
 					break;
 				}
 			}
-			if(requestParameterJson != null)
+			if(requestParameterJson != null) {
 				requestParameterJson.remove(MKWEB_SEARCH_KEY);
-			if(requestParameterJsonToModify != null)
+				if(customTable != null)
+					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
+			}
+				
+			if(requestParameterJsonToModify != null) {
 				requestParameterJsonToModify.remove(MKWEB_SEARCH_KEY);
+				if(customTable != null)
+					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
+			}
+				
+			
 			MkPageJsonData pageService = null;
 			MkSqlJsonData sqlService = null;
 			if(!REQUEST_METHOD.contentEquals("options")) {
@@ -547,18 +560,18 @@ public class MkRestApi extends HttpServlet {
 
 				switch (REQUEST_METHOD) {
 				case "get": case "head": case "options":
-					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse);
+					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, customTable);
 					break;
 				case "post":
-					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse);
+					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse, customTable);
 					break;
 				case "put":
 					mklogger.debug(TAG, " putting ... ");
-					resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse);
+					resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse, customTable);
 					break;
 
 				case "delete":
-					resultObject = doTaskDelete(pageService, sqlService, requestParameterJson, mkPage, apiResponse);
+					resultObject = doTaskDelete(pageService, sqlService, requestParameterJson, mkPage, apiResponse, customTable);
 					break;
 				}
 				break;
@@ -616,7 +629,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
+			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse, String customTable) {		
 		JSONObject resultObject = null;
 	
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
@@ -625,20 +638,27 @@ public class MkRestApi extends HttpServlet {
 		String control = sqlData.getControlName();
 		String befQuery = cpi.regularQuery(control, service, true);
 		String query = null;
-
+		String[] searchKeys = pjData.getData();
 		int requestSize = jsonObject.size();
 		boolean searchAll = false;
-
-		query = cpi.setApiQuery(befQuery).split("WHERE")[0];
-
+		
+		for(int i = 0; i < searchKeys.length; i++) {
+			mklogger.debug(TAG, "searchkeys :" + searchKeys[i]);
+		}
+		
+		query = (customTable == null) ? 
+				createSQL("get", searchKeys, jsonObject, null, null, sqlData.getRawSql()[2]) :
+				createSQL("get", searchKeys, jsonObject, null, null, customTable);
+		
 		Set<String> keySet = jsonObject.keySet();
 		Iterator<String> iter = keySet.iterator();
 		ArrayList<String> sqlKey = new ArrayList<String>();
-		String condition = "WHERE ";
+		String condition = " WHERE ";
 		int i = 0;
 
 		while (iter.hasNext()) {
 			String key = iter.next();
+			mklogger.debug(TAG, "key : " + key);
 			if (requestSize == 1) {
 				if (key.contentEquals(MKWEB_SEARCH_ALL)) {
 					searchAll = true;
@@ -650,11 +670,13 @@ public class MkRestApi extends HttpServlet {
 			if (i < requestSize - 1) {
 				condition += " AND ";
 			}
-
 			i++;
 		}
 		if (condition.contains("?"))
 			query += condition;
+
+		mklogger.debug(TAG, "condition : " + query);
+		mklogger.debug(TAG, "query : " + query);
 		
 		DA.setPreparedStatement(query);
 		if (!searchAll)
@@ -705,7 +727,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskInput(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String requestMethod, MkRestApiResponse mkResponse) {
+			String requestMethod, MkRestApiResponse mkResponse, String customTable) {
 
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
@@ -734,10 +756,14 @@ public class MkRestApi extends HttpServlet {
 			}
 			inputValues[i] = jsonObject.get(inputKey[i]).toString();
 		}
-
+		
+		query = (customTable == null) ? 
+				createSQL("post", inputKey, null, inputValues, null, sqlData.getRawSql()[2]) :
+				createSQL("post", inputKey, null, inputValues, null, customTable);
+		
 		DA.setRequestValue(inputValues);
 		query = cpi.setQuery(befQuery);
-		mklogger.debug(TAG, "그래서 쿼리는 : " +query);
+		mklogger.debug(TAG, "그래서 쿼리는 : " + query);
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");
@@ -767,7 +793,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskPut(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, JSONObject modifyObject, String mkPage,
-			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse) {
+			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse, String customTable) {
 		if(modifyObject == null) {
 			mklogger.error(TAG, "PUT method should wrapped by " + MkConfigReader.Me().get("mkweb.restapi.request.id") + ".");
 			mkResponse.setMessage("PUT method should wrapped by " + MkConfigReader.Me().get("mkweb.restapi.request.id") + ".");
@@ -777,7 +803,7 @@ public class MkRestApi extends HttpServlet {
 		JSONObject resultObject = null;
 		String[] inputKey = pjData.getData();
 
-		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse);
+		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, customTable);
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
@@ -808,7 +834,9 @@ public class MkRestApi extends HttpServlet {
 
 		String tempCrud = (getResult == null ? "insert" : "update");
 
-		query = (createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getRawSql()[2]));
+		query = (customTable == null) ?
+				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getRawSql()[2])):
+				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, customTable));
 
 		if(query == null) {
 			mkResponse.setCode(500);
@@ -844,16 +872,14 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskDelete(MkPageJsonData pxData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
+	private JSONObject doTaskDelete(MkPageJsonData pxData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse, String customTable) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
 		String service = pxData.getServiceName();
 		String control = pxData.getControlName();
-		String befQuery = cpi.regularQuery(control, service, true);
 		String query = null;
 
-		query = cpi.setQuery(befQuery);
 		String[] searchKeys = new String[jsonObject.size()];
 
 		Set<String> jSet = jsonObject.keySet();
@@ -864,7 +890,10 @@ public class MkRestApi extends HttpServlet {
 			searchKeys[i++] = jKey.next();
 		}
 
-		query = createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getRawSql()[2]);
+		query = (customTable == null) ? 
+						createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getRawSql()[2]) :
+						createSQL("delete", searchKeys, jsonObject, null, null, customTable);
+						
 		mklogger.debug(TAG, "delete query: " + query);
 		DA.setPreparedStatement(query);
 
@@ -887,19 +916,67 @@ public class MkRestApi extends HttpServlet {
 	private String createSQL(String crud, String[] searchKey, JSONObject searchObject, String[] modifyKey, JSONObject modifyObject, String Table) {
 		String result = null;
 		switch(crud.toLowerCase()) {
+		case "get":
+		{
+			/*
+			String whereClause = (searchKey.length > 0 ? " WHERE " : "");
+			for(int i = 0; i < searchKey.length; i++) {
+				whereClause += searchKey[i] + "=" + "'" + searchObject.get(searchKey[i]) + "'";
+				if(i < searchKey.length -1) {
+					whereClause += " AND ";
+				}
+			}
+			*/
+			
+			String valueClause = "*";
+			if(searchKey != null && searchKey.length > 0) {
+				valueClause = "";
+				for(int i = 0; i < searchKey.length; i++) {
+					valueClause += searchKey[i];
+					
+					if(i < searchKey.length-1) {
+						valueClause += ", ";
+					}
+				}
+			}
+	//		result = "SELECT * FROM TABLE WHERE ?";
+			result = "SELECT " + valueClause + " FROM `" + Table +"`";
+
+			break;	
+		}
+		case "post":
+		{
+			String targetColumns = "";
+			String targetValues = "";
+			for(int i = 0; i < searchKey.length; i++) {
+				targetColumns += searchKey[i];
+				if(i < searchKey.length - 1)
+					targetColumns += ", ";
+			}
+			for(int i = 0; i < modifyKey.length; i++) {
+				targetValues = "'" + modifyKey[i] + "'";
+				if( i < modifyKey.length - 1)
+					targetValues += ", ";
+			}
+			result = "INSERT INTO `" + Table + "` (" + targetColumns + ") VALUE(" + targetValues + ");";
+
+			break;	
+		}
 		case "insert":
 		{
+			
 			String targetColumns = "";
 			String targetValues = "";
 			for(int i = 0; i < modifyKey.length; i++) {
 				targetColumns += modifyKey[i];
-				targetValues += "'" + modifyObject.get(modifyKey[i]) + "'";
+				targetValues += "'" + modifyObject.get(modifyKey[i]).toString() + "'";
 				if(i < modifyKey.length-1) {
 					targetColumns += ",";
 					targetValues += ",";
 				}
 			}
-			result = "INSERT INTO " + Table + "(" + targetColumns + ") VALUE(" + targetValues + ");";
+			
+			result = "INSERT INTO `" + Table + "` (" + targetColumns + ") VALUE(" + targetValues + ");";
 
 			break;	
 		}
@@ -921,7 +998,7 @@ public class MkRestApi extends HttpServlet {
 					dataField += ", ";
 				}
 			}
-			result = "UPDATE " + Table + " SET " + dataField + whereClause + ";";
+			result = "UPDATE `" + Table + "` SET " + dataField + whereClause + ";";
 			break;
 		}
 		case "delete":
@@ -938,7 +1015,7 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 
-			result = "DELETE FROM " + Table + " WHERE " + whereClause + ";";
+			result = "DELETE FROM `" + Table + "` WHERE " + whereClause + ";";
 			break;
 		}
 		/*	Switch parentheses	*/

@@ -1,12 +1,14 @@
 package com.mkweb.data;
 
-import com.mkweb.impl.JsonData;
+import com.mkweb.entity.JsonData;
 
 public class AbsJsonData implements JsonData {
 	
 	protected String serviceName = null;
 	protected String serviceType = null;
 	protected String controlName = null;
+	protected String dirPrefix = null;
+	protected boolean hashDirPrefix = false;
 	protected String[] data = null;
 	protected String Tag = null;
 	protected static String absPath = "/WEB-INF";
@@ -23,6 +25,12 @@ public class AbsJsonData implements JsonData {
 	
 	public void setData(String[] data) {	this.data = data;	}
 	public String[] getData() {	return this.data;	}
+	
+	public void setDirPrefix(String dirPrefix) {	this.dirPrefix = dirPrefix;	}
+	public String getDirPrefix() {	return this.dirPrefix;	}
+	
+	public void setHashDirPrefix(boolean hash) {	this.hashDirPrefix = hash;	}
+	public boolean getHashDirPrefix() {	return this.hashDirPrefix;	}
 	
 	public static String getAbsPath()	{	return absPath;	}
 }

@@ -30,12 +30,20 @@ public class MkFTPConfigs {
 	private long[] lastModified = null;
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[FTP Configs]";
+	private String filePrefix = null;
 
 	public static MkFTPConfigs Me() {
 		if(mfd == null)
 			mfd = new MkFTPConfigs();
 		return mfd;
 	}
+	
+	public void setPrefix(String filePrefix) {
+		if(this.filePrefix == null)
+			this.filePrefix = filePrefix;
+	}
+	
+	public String getPrefix() {	return this.filePrefix;	}
 	
 	public void setFtpConfigs(File[] ftpConfigs) {
 		ftp_configs.clear();
@@ -75,11 +83,16 @@ public class MkFTPConfigs {
 					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
 					String serviceId = null;
 					String servicePath = null;
+					String serviceDirPrefix = null;	//"dir"
+					boolean serviceHashDirPrefix = false;
 					
 					String[] serviceAllowFileFormat = null;
 					try {
 						serviceId = serviceObject.get("id").toString();
 						servicePath = serviceObject.get("servicepath").toString();
+						Object prefix = serviceObject.get("dir");
+						serviceDirPrefix = (prefix == null) ? null : prefix.toString();
+						serviceHashDirPrefix = (serviceObject.get("hash_dir").toString().contentEquals("true"));
 						
 						if(ftpControllerPath.charAt(ftpControllerPath.length() -1) == '/') {
 							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath.substring(0, ftpControllerPath.length()-1) + servicePath) : (ftpControllerPath + servicePath));
@@ -104,12 +117,9 @@ public class MkFTPConfigs {
 							serviceAllowFileFormat[j] = serviceFormatData.get("" + (j+1)).toString();
 						}
 						
-					} catch(NullPointerException e) {
-						
-					} catch(ArrayIndexOutOfBoundsException e) {
-						
 					} catch(Exception e) {
-						
+						mklogger.debug(TAG, "Failed to create ftp controller. " + e.getMessage());
+						return;
 					}
 					
 					MkFtpData result = new MkFtpData();
@@ -118,11 +128,15 @@ public class MkFTPConfigs {
 					result.setDebugLevel(ftpDebugLevel);
 					result.setServiceName(serviceId);
 					result.setData(serviceAllowFileFormat);
+					result.setDirPrefix(serviceDirPrefix);
+					result.setHashDirPrefix(serviceHashDirPrefix);
 					
 					ftpJsonData.add(result);
+					printFTPInfo(result, "info");
 				}
 				
 				ftp_configs.put(ftpName, ftpJsonData);
+				
 			} catch (FileNotFoundException e) {
 				mklogger.error(e.getMessage());
 				e.printStackTrace();
@@ -142,6 +156,7 @@ public class MkFTPConfigs {
 				+ "\n|Controller:\t" + jsonData.getControlName()
 				+ "\n|FTP ID:\t" + jsonData.getServiceName()
 				+ "\n|FTP Path:\t" + jsonData.getPath()
+				+ "\n|FTP Prefix:\t" + jsonData.getDirPrefix()
 				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
 				+ "\n|File Formats:\t" + jsonData.getData()
 				+ "\n============================================================================";
@@ -194,20 +209,17 @@ public class MkFTPConfigs {
 		return jsonData;
 	}
 	
-	private boolean createDirectory(String path, boolean isAbsolute){
-		String targetDir = (isAbsolute ? path : "/WEB-INF/" + path);
+	private boolean createDirectory(String path, boolean useAbsolute){
+		String targetDir = (useAbsolute) ? path : (filePrefix + path);
 		File folder = new File(targetDir);
 		boolean isDirExists = folder.exists();
 		if(!isDirExists)
 		{
 			mklogger.info(TAG, "The directory is not exists. Creating new one...");
-			
 			try {		
 				isDirExists = folder.mkdirs();
-				Runtime.getRuntime().exec("chmod -R 755 " + targetDir);
-			//	Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-xr-x");
-			//	Files.setPosixFilePermissions(folder.toPath(), perms);
-				mklogger.debug(TAG, "Permissions: " +Files.getPosixFilePermissions(folder.toPath()));
+				folder.setReadable(true, false);
+				folder.setExecutable(true, false);
 				if(!isDirExists) {
 					mklogger.error(TAG, "Failed to create path. [" + targetDir +"]");
 					return false;

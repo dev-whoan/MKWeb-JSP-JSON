@@ -24,7 +24,8 @@
 				"obj":"list",
 				"parameter_name":"ftp_img",
 				"value":{
-					"1":"testimg"
+					"1":"testimg",
+					"2":"user_prefix"
 				}
 			},
 			{

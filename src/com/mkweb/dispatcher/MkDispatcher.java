@@ -21,8 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
+import com.mkweb.utils.ConnectionChecker;
 import com.mkweb.config.MkPageConfigs;
-import com.mkweb.core.ConnectionChecker;
 
 /**
  * Servlet implementation class testMkDispatcher
@@ -53,6 +53,7 @@ public class MkDispatcher extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String requestURI = request.getRequestURI();
 		String clientAddress = request.getAttribute("client-host").toString();
+
 		Object o = request.getAttribute("mkPage");
 		if(o == null) {
 			mklogger.error(TAG, "Request URI is invalid. ( Unauthorzied connection [" + requestURI + "] )");

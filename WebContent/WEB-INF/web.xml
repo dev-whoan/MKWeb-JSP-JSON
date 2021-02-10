@@ -7,7 +7,7 @@
 	
 	<servlet>
 		<servlet-name>MkReceiveFormData</servlet-name>
-		<servlet-class>com.mkweb.web.MkReceiveFormData</servlet-class>
+		<servlet-class>com.mkweb.core.MkReceiveFormData</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	 
@@ -18,7 +18,7 @@
 	
 	<servlet>
 		<servlet-name>MkFTPServlet</servlet-name>
-		<servlet-class>com.mkweb.web.MkFileReceiver</servlet-class>
+		<servlet-class>com.mkweb.core.MkFileReceiver</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	 
@@ -40,18 +40,21 @@
 	
 	<servlet-mapping>
 	    <servlet-name>default</servlet-name>
-	    <url-pattern>*.jpg</url-pattern>
 	    <url-pattern>*.png</url-pattern>
+	    <url-pattern>*.jpg</url-pattern>
+	    <url-pattern>*.gif</url-pattern>
+	    <url-pattern>*.jpeg</url-pattern>
+	    <url-pattern>*.PNG</url-pattern>
+	    <url-pattern>*.zip</url-pattern>
 	    <url-pattern>*.css</url-pattern>
 	    <url-pattern>*.js</url-pattern>
 	    <url-pattern>*.ico</url-pattern>
 	</servlet-mapping>
 	<!-- MkWeb Dispatcher Settings -->
 	
-	
 	<!-- Context:: MkWeb Initializer-->
 	<listener>
-		<listener-class>com.mkweb.web.MkWebContextListener</listener-class>
+		<listener-class>com.mkweb.context.MkWebContextListener</listener-class>
 	</listener>
 	<!-- Context:: MkWeb Initializer-->
 	

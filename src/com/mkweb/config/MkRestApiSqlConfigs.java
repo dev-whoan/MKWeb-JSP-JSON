@@ -18,9 +18,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.mkweb.can.MkSqlConfigCan;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkSqlJsonData;
+import com.mkweb.entity.MkSqlConfigCan;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiSqlConfigs extends MkSqlConfigCan {

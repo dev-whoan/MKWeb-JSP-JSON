@@ -2,8 +2,6 @@ package com.mkweb.dispatcher;
 
 import java.io.IOException;
 
-
-
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -12,8 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.logger.MkLogger;
+import com.mkweb.utils.ConnectionChecker;
 import com.mkweb.config.MkConfigReader;
-import com.mkweb.core.ConnectionChecker;
 
 /**
  * Servlet implementation class testDefDispatcher
@@ -52,8 +50,8 @@ public class defaultDispatcher extends HttpServlet {
 		if (ipAddress == null) {  
 		    ipAddress = request.getRemoteAddr();  
 		}
-		
-		String requestURI = request.getRequestURI();	// /main
+
+		String requestURI = request.getRequestURI();	// /main		
 		String mkPage = null;
 		
 		String hostcheck = request.getRequestURL().toString().split("://")[1];
@@ -66,7 +64,6 @@ public class defaultDispatcher extends HttpServlet {
 			mkPage = "";
 		}
 		
-	//	if(!(new CheckPageInfo()).isValidPageConnection(mkPage, reqPage)) {
 		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
 			//에러페이지
 			response.sendError(404);
@@ -74,6 +71,7 @@ public class defaultDispatcher extends HttpServlet {
 		}
 		
 		request.setAttribute("mkPage", mkPage);
+	//	request.setAttribute(controller.getName("id:sessionid"), mkSessionData);
 		request.setAttribute("client-host", ipAddress);
 		RequestDispatcher dispatcher = this.getServletContext().getRequestDispatcher(requestURI + ".mkw");
 		dispatcher.forward(request, response);

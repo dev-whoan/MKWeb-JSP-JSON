@@ -16,10 +16,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.mkweb.can.MkPageConfigCan;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
+import com.mkweb.entity.MkPageConfigCan;
 import com.mkweb.logger.MkLogger;
 
 public class MkRestApiPageConfigs extends MkPageConfigCan{

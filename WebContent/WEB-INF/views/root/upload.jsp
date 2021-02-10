@@ -70,10 +70,28 @@ $(document).ready(function(){
 					<button id="testFTP">제출</button>
 					
 					<form action="/ftp/receive" method="POST" enctype="multipart/form-data">
-						<label for="form-file">[Form]Select a file:</label>
+						<label for="form-file">[Form]Select a Image file:</label>
+						<input type="file" id="form-file" name="ftp_img.testimg">
+						<input type="hidden" name="ftp_img.user_prefix" value="1195872506^1" />
+						<input type="submit" />
+					</form>
+					
+					<form action="/ftp/receive" method="POST" enctype="multipart/form-data">
+						<label for="form-file">[Form]Select a ZIP file:</label>
 						<input type="file" id="form-file" name="ftp_zip.testzip">
 						<input type="submit" />
 					</form>
+					
+					<h1 id="title">MKWeb Test FTP - Image</h1>
+					<mkw:ftp name="freeboard" id="Image" obj="list" img="yes" dir='<%= request.getParameter("ftp_img.user_prefix") %>'>
+						<p>name : ${mkw.name} </p>
+						<img src="${mkw.result}" />
+					</mkw:ftp>
+					
+					<h1 id="title">MKWeb Test FTP - Zip</h1>
+					<mkw:ftp name="freeboard" id="archieve" obj="list" img="no">
+						<a href="${mkw.result}">name : ${mkw.name}</a>
+					</mkw:ftp>
 				</div>
 			</div>
 

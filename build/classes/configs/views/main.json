@@ -34,6 +34,19 @@
 			{
 				"page_static":"true",
 				"type":{
+					"kind":"session",
+					"id":"sessiondata"
+				},
+				"method":"don'tcare",
+				"obj":"",
+				"parameter_name":"none",
+				"value":{
+				
+				}
+			},
+			{
+				"page_static":"true",
+				"type":{
 					"kind":"sql",
 					"id":"selectName"
 				},

@@ -56,11 +56,11 @@ $(document).ready(function(){
 	});
 	
 	$("#test-put").click(function(){
-		var jsonInfo = '{"u_class":"1", "name":"Trump", "CNT_IP":"8.8.8.8", "SEQ":"11"}';
+		var jsonInfo = '{"u_class":"1", "name":"keyopen", "CNT_IP":"1.1.1.1", "SEQ":"20"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
 	        type : "put",
-	        url : "/mk_api_key/users/name/Trump?search_key=apple",
+	        url : "/mk_api_key/users/name/keyopen?search_key=apple",
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
 	        data : {
@@ -79,14 +79,14 @@ $(document).ready(function(){
 	});
 	
 	$("#test-delete").click(function(){
-		var jsonInfo = '{"name":"Trump"}';
+		var jsonInfo = '{"name":"keyopen"}';
 		$.ajax({
 	        type : "delete",
-	        url : "/mk_api_key/users?search_key=apple",
+	        url : "/mk_api_key/users/name/openkey?search_key=apple",
 	        dataType : "json",
 	        //apiData : {"search_key":"apple", "person" : {"name":"Eugene","age":24}} 
 	        data : {
-	        	"apiData":jsonInfo
+	        	
 	        },
 	        error : function(a, b, c){
 	            alert("통신실패!!!!");
@@ -116,7 +116,7 @@ $(document).ready(function(){
 	}
 	
 	$("#test-post").click(function(){
-		var jsonInfo = '{"search_key":"apple", "name":"Park", "u_class":"1", "CNT_IP":"4.4.4.4", "SEQ":"' + (lastSEQ+1) + '"}';
+		var jsonInfo = '{"search_key":"openkey", "name":"openkey", "u_class":"1", "CNT_IP":"4.4.4.4", "SEQ":"' + (lastSEQ+1) + '"}';
 		var queryInfo = "search_key=apple&name=dev.whoan";
 		$.ajax({
 	        type : "post",

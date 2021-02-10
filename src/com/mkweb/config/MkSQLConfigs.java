@@ -18,10 +18,10 @@ import org.json.simple.parser.ParseException;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
-import com.mkweb.can.MkSqlConfigCan;
 import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
+import com.mkweb.entity.MkSqlConfigCan;
 import com.mkweb.logger.MkLogger;
 
 public class MkSQLConfigs extends MkSqlConfigCan {
