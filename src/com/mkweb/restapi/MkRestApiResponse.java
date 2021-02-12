@@ -68,6 +68,7 @@ public class MkRestApiResponse {
 			{
 				if(!prefix.contentEquals("")) {
 					result = "{\n" +
+							"  \"code\":\"" + getCode() + "\",\n" +
 							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 							prefix +"\n" +
@@ -75,6 +76,7 @@ public class MkRestApiResponse {
 					break;
 				}else {
 					result = "{\n" +
+							"  \"code\":\"" + getCode() + "\",\n" +
 							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 							"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
 							"}";
@@ -89,6 +91,7 @@ public class MkRestApiResponse {
 						"    \"info\":\"" + getDocs() + "\"\n  }";
 				contentLength = temp.length();
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
@@ -101,6 +104,7 @@ public class MkRestApiResponse {
 			switch(method) {
 			case "put":
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
@@ -108,6 +112,7 @@ public class MkRestApiResponse {
 				break;
 			case "delete":
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
@@ -115,6 +120,7 @@ public class MkRestApiResponse {
 				break;
 			default:
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
@@ -137,6 +143,7 @@ public class MkRestApiResponse {
 					"    \"info\":\"" + getDocs() + "\"\n  }";
 			contentLength = temp.length();
 			result = "{\n" +
+					"  \"code\":\"" + getCode() + "\",\n" +
 					"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 					"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 					"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
@@ -146,6 +153,7 @@ public class MkRestApiResponse {
 			switch(method) {
 			case "put":
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
@@ -153,6 +161,7 @@ public class MkRestApiResponse {
 				break;
 			case "delete":
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
@@ -162,6 +171,7 @@ public class MkRestApiResponse {
 			{
 				if(!prefix.contentEquals("")) {
 					result = "{\n" +
+							"  \"code\":\"" + getCode() + "\",\n" +
 							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 							prefix +"\n" +
@@ -169,6 +179,7 @@ public class MkRestApiResponse {
 					break;
 				}else {
 					result = "{\n" +
+							"  \"code\":\"" + getCode() + "\",\n" +
 							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 							"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
 							"}";
@@ -176,6 +187,7 @@ public class MkRestApiResponse {
 			}
 			default:
 				result = "{\n" +
+						"  \"code\":\"" + getCode() + "\",\n" +
 						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
 						"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +

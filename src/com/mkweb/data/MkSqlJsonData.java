@@ -9,6 +9,9 @@ public class MkSqlJsonData extends AbsJsonData {
 	   private boolean allowLike = false;
 	   private String debugLevel = null;
 	   private String[] rawSQL = null;
+	   /* 검색 시 반드시 포함해야 하는 파라미터 저장 없으면 "1":"*" */
+	   private String[] parameter = null;
+	   /* 검색 시 반드시 포함해야 하는 파라미터 저장 없으면 "1":"*" */
 	   /*
 	    *"query":{
 					"crud":"select",
@@ -31,6 +34,7 @@ public class MkSqlJsonData extends AbsJsonData {
 	   public boolean getAllowSingle() {	return this.allowSingle;	}
 	   public boolean getAllowLike() {	return this.allowLike;	}
 	   public String getDebugLevel() {	return this.debugLevel;	}
+	   public String[] getParameters() {	return this.parameter;	}
 	   
 	   public boolean IsApiSql() {	return this.isApi;	}
 	   public String[] getCondition() {	return this.condition;	}
@@ -40,6 +44,7 @@ public class MkSqlJsonData extends AbsJsonData {
 	   public void setAllowSingle(String as) {	this.allowSingle = (as.equals("yes") ? true : false);	}
 	   public void setAllowLike(String al) {	this.allowLike = (al.equals("yes") ? true : false);	}
 	   public void setDebugLevel(String dl) {	this.debugLevel = dl;	}
+	   public void setParameters(String[] parameter){	this.parameter = parameter;	}
 	   public void setRawSql(String[] rs) {		this.rawSQL = rs;		}
 	   
 	   /* api */

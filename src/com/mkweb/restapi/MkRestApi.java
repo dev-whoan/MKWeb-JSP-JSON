@@ -6,13 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -515,14 +519,14 @@ public class MkRestApi extends HttpServlet {
 						break;
 					}
 				}
-
+				
 				if (sqlService == null) {
 					mklogger.error("요청한 SQL Service가 없습니다.");
 					apiResponse.setMessage("The method you requested is not allowed.");
 					apiResponse.setCode(405);
 					break;
 				}
-
+				
 				String[] pageValues = pageService.getData();
 
 				requestIterator = requestKeySet.iterator();
@@ -548,12 +552,26 @@ public class MkRestApi extends HttpServlet {
 
 					if (passed != 2) {
 						mklogger.error(TAG, "요청한 Value에 대한 검색이 불가능합니다. " + requestKey);
-						apiResponse.setMessage("The column you entered is not allowed. (" + requestKey + ")");
+						apiResponse.setMessage("The column client entered is not allowed. (" + requestKey + ")");
 						apiResponse.setCode(400);
 						break;
 					}
+					
+					String[] requireParameters = sqlService.getParameters();
+					
+					if(requireParameters != null && requireParameters.length > 0) {
+						List<String> tempRequireParams = Arrays.asList(requireParameters);
+						if( tempRequireParams.indexOf(requestKey) == -1 ) {
+							mklogger.error(TAG, "Client must request with essential parameters.");
+							apiResponse.setCode(400);
+							apiResponse.setMessage("You must request with essential parameters.");
+							break;
+						}
+					}
 				}
 
+				
+				
 				if(apiResponse.getCode() >= 400 && apiResponse.getCode() != -1){
 					break;
 				}
@@ -666,7 +684,21 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 			condition += key + " = ?";
-			sqlKey.add(jsonObject.get(key).toString());
+			String temp = jsonObject.get(key).toString();
+			try {
+				String decodeResult = URLDecoder.decode(temp, "UTF-8");
+				String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+				
+				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+			} catch (UnsupportedEncodingException e) {
+				//
+				mklogger.error(TAG, "(doTaskGet - jsonObject key) given data (" + temp + ") is invalid! " + e.getMessage());
+				mkResponse.setCode(400);
+				mkResponse.setMessage(e.getMessage());
+				return null;
+			}
+			
+			sqlKey.add(temp);
 			if (i < requestSize - 1) {
 				condition += " AND ";
 			}
@@ -934,7 +966,18 @@ public class MkRestApi extends HttpServlet {
 			if(searchKey != null && searchKey.length > 0) {
 				valueClause = "";
 				for(int i = 0; i < searchKey.length; i++) {
-					valueClause += searchKey[i];
+					String temp = searchKey[i];
+					try {
+						String decodeResult = URLDecoder.decode(temp, "UTF-8");
+						String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+						
+						temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+					} catch (UnsupportedEncodingException e) {
+						//
+						mklogger.error(TAG, "(createSQL get) given data (" + temp + ") is invalid! " + e.getMessage());
+						return null;
+					}
+					valueClause += temp;
 					
 					if(i < searchKey.length-1) {
 						valueClause += ", ";
@@ -951,12 +994,36 @@ public class MkRestApi extends HttpServlet {
 			String targetColumns = "";
 			String targetValues = "";
 			for(int i = 0; i < searchKey.length; i++) {
-				targetColumns += searchKey[i];
+				String temp = searchKey[i];
+				try {
+					String decodeResult = URLDecoder.decode(temp, "UTF-8");
+					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+					
+					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+				} catch (UnsupportedEncodingException e) {
+					//
+					mklogger.error(TAG, "(createSQL post) given searchKey (" + temp + ") is invalid! " + e.getMessage());
+					return null;
+				}
+				
+				targetColumns += temp;
 				if(i < searchKey.length - 1)
 					targetColumns += ", ";
 			}
 			for(int i = 0; i < modifyKey.length; i++) {
-				targetValues = "'" + modifyKey[i] + "'";
+				String temp = modifyKey[i];
+				try {
+					String decodeResult = URLDecoder.decode(temp, "UTF-8");
+					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+					
+					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+				} catch (UnsupportedEncodingException e) {
+					//
+					mklogger.error(TAG, "(createSQL post) given modifyKey (" + temp + ") is invalid! " + e.getMessage());
+					return null;
+				}
+				
+				targetValues = "'" + temp + "'";
 				if( i < modifyKey.length - 1)
 					targetValues += ", ";
 			}
@@ -966,12 +1033,35 @@ public class MkRestApi extends HttpServlet {
 		}
 		case "insert":
 		{
-			
 			String targetColumns = "";
 			String targetValues = "";
 			for(int i = 0; i < modifyKey.length; i++) {
-				targetColumns += modifyKey[i];
-				targetValues += "'" + modifyObject.get(modifyKey[i]).toString() + "'";
+				String temp = modifyKey[i];
+				try {
+					String decodeResult = URLDecoder.decode(temp, "UTF-8");
+					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+					
+					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+				} catch (UnsupportedEncodingException e) {
+					//
+					mklogger.error(TAG, "(createSQL insert) given modify Key (" + temp + ") is invalid! " + e.getMessage());
+					return null;
+				}
+				
+				targetColumns += temp;
+				
+				temp = modifyObject.get(modifyKey[i]).toString();
+				try {
+					String decodeResult = URLDecoder.decode(temp, "UTF-8");
+					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+					
+					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+				} catch (UnsupportedEncodingException e) {
+					//
+					mklogger.error(TAG, "(createSQL insert) given modify Object (" + temp + ") is invalid! " + e.getMessage());
+					return null;
+				}
+				targetValues += "'" + temp + "'";
 				if(i < modifyKey.length-1) {
 					targetColumns += ",";
 					targetValues += ",";

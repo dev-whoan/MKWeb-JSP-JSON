@@ -70,6 +70,21 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 				String sqlAPI = sqlObject.get("api").toString();
 				String sqlTable = sqlObject.get("table").toString();
 				
+				Object sqlParamObject = sqlObject.get("parameter");
+				String[] sqlParameters = null;
+				if(sqlParamObject != null) {
+					JSONObject sqlParameterObject = (JSONObject) sqlParamObject;
+					sqlParameters = new String[sqlParameterObject.size()];
+					for(int j = 0; j < sqlParameterObject.size(); j++) {
+						sqlParameters[j] = sqlParameterObject.get("" + (j+1)).toString();
+					}
+					
+					if(sqlParameters.length == 1 && sqlParameters[0].contentEquals("*")) {
+						sqlParameters = null;
+					}
+				}
+				
+				
 				MkJsonData mkJsonData = new MkJsonData(sqlObject.get("condition").toString());
 				JSONObject tempValues = null;
 				String[] serviceConditions = null;
@@ -159,6 +174,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					
 					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
+					sqlData.setParameters(sqlParameters);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);
 					sqlData.setDB(sqlDB);

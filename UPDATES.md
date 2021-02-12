@@ -1,4 +1,37 @@
 
+# 02/10/2021 (KST) 0.0.6 commit
+
+1. SQL service on RESTful API, you can add essential parameters.
+
+- For example, if you want let client request at least one essential parameter, use this parameter.
+
+- If you don't want to use it, please let it "1":"*"
+
+<pre>
+
+{
+	"Controller": {
+		"name":"api_user",
+		"debug":"error",
+		"db":"mkwiki",
+		"table":"User",
+		"api":"yes",
+		"condition":{
+			"1":"name",
+			"2":"u_class",
+			"3":"SEQ",
+			"4":"CNT_IP"
+		},
+	<span>
+			
+		"parameter":{
+			"1":"*"
+		},
+	</span>
+
+</pre>
+		
+
 # 02/10/2021 (KST) 0.0.6 Commit
 
 1. RESTful API allowed to search in custom Table.
