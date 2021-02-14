@@ -1,6 +1,9 @@
 package com.mkweb.customtag;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -29,7 +32,7 @@ public class tagSEL extends SimpleTagSupport {
 	private String id = "id";
 	private String TAG = "[tagSEL]";
 	private MkLogger mklogger = MkLogger.Me();
-	//Log ?•˜ê¸?
+	//Log ?ï¿½ï¿½ï¿½?
 	public void setObj(String obj) {
 		this.obj = obj;
 	}
@@ -69,7 +72,7 @@ public class tagSEL extends SimpleTagSupport {
 
 		HttpServletRequest request = (HttpServletRequest) ((PageContext)getJspContext()).getRequest();
 		HttpServletResponse response = (HttpServletResponse) ((PageContext)getJspContext()).getResponse();
-
+		
 		request.setCharacterEncoding("UTF-8");
 
 		String requestParams = null;
@@ -176,6 +179,19 @@ public class tagSEL extends SimpleTagSupport {
 					if(tempValue == null)
 						tempValue = request.getParameter(requestValues.get(i));
 
+					String temp = tempValue;
+					try {
+						String decodeResult = URLDecoder.decode(temp, "UTF-8");
+						String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+						
+						tempValue = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+					} catch (UnsupportedEncodingException e) {
+						//
+						mklogger.error(TAG, "(obj == list) given data (" + temp + ") is invalid! " + e.getMessage());
+					}
+					
+					mklogger.debug(TAG, "temp : " + temp);
+					
 					mklogger.debug(TAG, "requestParams : " + requestParams + "tempValue : " + tempValue);
 					
 					if(this.like.equals("no"))

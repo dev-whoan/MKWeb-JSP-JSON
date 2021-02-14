@@ -42,7 +42,7 @@ import com.mkweb.utils.ConnectionChecker;
  */
 
 /*
- * 1. ¼ø¼­ Á¤·Ä 2. ÀüÃ¼ Á¶È¸ 3. ÀÀ´ä Á¤¸® ( ÄÚµå, ÄÜÅÙÃ÷ Å¸ÀÔ, ½ÇÆÐ »çÀ¯ µî. )
+ * 1. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 2. ï¿½ï¿½Ã¼ ï¿½ï¿½È¸ 3. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ( ï¿½Úµï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½. )
  */
 
 public class MkRestApi extends HttpServlet {
@@ -184,7 +184,7 @@ public class MkRestApi extends HttpServlet {
 			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
 
 			if (reqPage.length < 2) {
-				// ¿¹¿Ü
+				// ï¿½ï¿½ï¿½ï¿½
 				apiResponse.setMessage("Please enter the conditions to search.");
 				apiResponse.setCode(401);
 				break;
@@ -228,7 +228,7 @@ public class MkRestApi extends HttpServlet {
 					int shouldCheckQuery = -1;
 					int mkPageIndex = -1;
 					/*
-					 * -1 : do Nothing 0 : ÀüÃ¼ Á¶È¸ 1 : String check
+					 * -1 : do Nothing 0 : ï¿½ï¿½Ã¼ ï¿½ï¿½È¸ 1 : String check
 					 */
 					if (tempURI[(tempURI.length - 1)].contentEquals(mkPage)) {
 						if (request.getParameterMap().size() == 1) {
@@ -237,18 +237,18 @@ public class MkRestApi extends HttpServlet {
 							if (element.contentEquals(MKWEB_API_ID)) {
 								elementValue = request.getParameter(element);
 								if (elementValue.contains("=") && elementValue.contains(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "°æ¿ì 1°ú °°À½(/mk_api_key/users Ã³·³) 1 ");
+									// mklogger.debug(TAG, "ï¿½ï¿½ï¿½ 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(/mk_api_key/users Ã³ï¿½ï¿½) 1 ");
 									shouldCheckQuery = 0;
 								} else if (!elementValue.contains(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "(1) °æ¿ì 2 - /mk_api_key/users?queryString~");
+									// mklogger.debug(TAG, "(1) ï¿½ï¿½ï¿½ 2 - /mk_api_key/users?queryString~");
 									shouldCheckQuery = 1;
 								}
 							} else {
 								if (!element.contentEquals(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "(1) °æ¿ì 2 - /mk_api_key/users?queryString~");
+									// mklogger.debug(TAG, "(1) ï¿½ï¿½ï¿½ 2 - /mk_api_key/users?queryString~");
 									shouldCheckQuery = 1;
 								} else {
-									// mklogger.debug(TAG, "°æ¿ì 1°ú °°À½ (/mk_api_key/users Ã³·³) 2 ");
+									// mklogger.debug(TAG, "ï¿½ï¿½ï¿½ 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (/mk_api_key/users Ã³ï¿½ï¿½) 2 ");
 									shouldCheckQuery = 0;
 								}
 							}
@@ -271,12 +271,12 @@ public class MkRestApi extends HttpServlet {
 
 						String tempAPIID = request.getParameter(MKWEB_API_ID);
 						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
-						mklogger.debug(TAG, "APIData°¡ Á¸Àç ÇÏ´Â°¡? " + request.getParameter(MKWEB_API_ID));
+						mklogger.debug(TAG, "APIDataï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ï´Â°ï¿½? " + request.getParameter(MKWEB_API_ID));
 
 						if (tempAPIID != null) {
 							String[] tempArr = null;
 							if (tempAPIID.contains("&")) {
-								mklogger.debug(TAG, " & ÀÖÀ½ ");
+								mklogger.debug(TAG, " & ï¿½ï¿½ï¿½ï¿½ ");
 								tempArr = tempAPIID.split("&");
 								result = (LinkedHashMap<String, String>) stringToMap(tempArr);
 							} else {
@@ -313,9 +313,9 @@ public class MkRestApi extends HttpServlet {
 						 * 
 						 * 4. /users/u_class/5 4. /users/name/dev.whoan/class
 						 * 
-						 * È¦¼ö¹ø¿¡´Â Column Â¦¼ö¹ø¿¡´Â µ¥ÀÌÅÍ
+						 * È¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Column Â¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 						 */
-						// mkPageIndex = users¸¦ Ã£À½
+						// mkPageIndex = usersï¿½ï¿½ Ã£ï¿½ï¿½
 						ArrayList<String> searchColumns = new ArrayList<>();
 						ArrayList<String> searchValues = new ArrayList<>();
 						boolean isColumn = true;
@@ -335,7 +335,7 @@ public class MkRestApi extends HttpServlet {
 						if (searchColumns.size() != searchValues.size()) {
 							mklogger.error(TAG, "API Request is not valid.");
 							mklogger.debug(TAG, "searchColumns size != searchValues.size");
-							apiResponse.setMessage("ºÎºÐ Á¶°Ç¿¡ ´ëÇØ ÀüÃ¼°Ë»öÀ» ¼öÇàÇÒ ¼ö ¾ø½À´Ï´Ù.(¾ÆÁ÷ °³¹ßµÇÁö ¾ÊÀº ±â´É)");
+							apiResponse.setMessage("You need to set all conditions to search.");
 							apiResponse.setCode(400);
 							break;
 						}
@@ -403,8 +403,8 @@ public class MkRestApi extends HttpServlet {
 						}
 					} else {
 						if(requestParameterJson == null) {
-							mklogger.error(TAG, "API »ç¿ë¹ýÀÌ Æ²·È½À´Ï´Ù. MKWEB_API_ID°¡ Æ÷ÇÔµÇ¾î¾ß ÇÕ´Ï´Ù.");
-							apiResponse.setMessage("API »ç¿ë¹ýÀÌ Æ²·È½À´Ï´Ù. MKWEB_API_ID°¡ Æ÷ÇÔµÇ¾î¾ß ÇÕ´Ï´Ù.");
+							mklogger.error(TAG, "Request does not include MKWEB_API_ID.");
+							apiResponse.setMessage("You need to request with mkweb_api_id");
 							apiResponse.setCode(400);
 							break;
 						}
@@ -415,7 +415,7 @@ public class MkRestApi extends HttpServlet {
 						requestParameterJsonToModify = mkJsonData.getJsonObject();
 					else {
 						if(REQUEST_METHOD.contentEquals("delete") && requestParameterJson != null) {
-							/*	 DELETE´Â Body Parameter È¤Àº URI Áß ÇÏ³ª·Î¸¸ µ¥ÀÌÅÍ¸¦ Àü´ÞÇØ¾ß ÇÑ´Ù. */
+							/*	 DELETEï¿½ï¿½ Body Parameter È¤ï¿½ï¿½ URI ï¿½ï¿½ ï¿½Ï³ï¿½ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½Ñ´ï¿½. */
 							mklogger.error(TAG, "Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
 							apiResponse.setMessage("Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
 							apiResponse.setCode(400);
@@ -496,7 +496,7 @@ public class MkRestApi extends HttpServlet {
 				}
 
 				if (pageService == null) {
-					mklogger.error(TAG, "¿äÃ»ÇÑ ¼­ºñ½º´Â Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù. (Method¿¡ ´ëÇÑ Service °¡ nullÀÓ)");
+					mklogger.error(TAG, "There is no service executed by requested method.");
 					apiResponse.setMessage("The method you requested is not allowed.");
 					apiResponse.setCode(405);
 					break;
@@ -507,7 +507,7 @@ public class MkRestApi extends HttpServlet {
 				String[] sqlConditions = sqlControl.get(0).getCondition();
 
 				if (sqlConditions.length == 0) {
-					mklogger.error(TAG, "SQL Config ¼³Á¤ÀÌ Àß¸øµÆ½À´Ï´Ù. conditionÀÌ ºñ¾îÀÖ½À´Ï´Ù. ÀüÃ¼Á¶È¸¸¦ Èñ¸ÁÇÒ °æ¿ì \"1\":\"*\"À» Ãß°¡ÇØ ÁÖ¼¼¿ä.");
+					mklogger.error(TAG, "Something wrong in SQL Config. Condition is not entered. If you want to allow search whole datas, please set \"1\":\"*\"");
 					apiResponse.setMessage("SERVER ERROR. Please contact admin.");
 					apiResponse.setCode(500);
 					break;
@@ -521,7 +521,7 @@ public class MkRestApi extends HttpServlet {
 				}
 				
 				if (sqlService == null) {
-					mklogger.error("¿äÃ»ÇÑ SQL Service°¡ ¾ø½À´Ï´Ù.");
+					mklogger.error("There is no SQL Service what client requested.");
 					apiResponse.setMessage("The method you requested is not allowed.");
 					apiResponse.setCode(405);
 					break;
@@ -530,7 +530,10 @@ public class MkRestApi extends HttpServlet {
 				String[] pageValues = pageService.getData();
 
 				requestIterator = requestKeySet.iterator();
-
+				String[] requireParameters = sqlService.getParameters();
+				List<String> tempRequireParams = new ArrayList<>(Arrays.asList(requireParameters));
+				
+				int catchedParams = 0;
 				while (requestIterator.hasNext()) {
 					String requestKey = requestIterator.next().toString();
 					int passed = -1;
@@ -551,26 +554,25 @@ public class MkRestApi extends HttpServlet {
 					}
 
 					if (passed != 2) {
-						mklogger.error(TAG, "¿äÃ»ÇÑ Value¿¡ ´ëÇÑ °Ë»öÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù. " + requestKey);
+						mklogger.error(TAG, "The value client requested is not allowed. " + requestKey);
 						apiResponse.setMessage("The column client entered is not allowed. (" + requestKey + ")");
 						apiResponse.setCode(400);
 						break;
 					}
 					
-					String[] requireParameters = sqlService.getParameters();
-					
 					if(requireParameters != null && requireParameters.length > 0) {
-						List<String> tempRequireParams = Arrays.asList(requireParameters);
-						if( tempRequireParams.indexOf(requestKey) == -1 ) {
-							mklogger.error(TAG, "Client must request with essential parameters.");
-							apiResponse.setCode(400);
-							apiResponse.setMessage("You must request with essential parameters.");
-							break;
-						}
+						int id = tempRequireParams.indexOf(requestKey);
+						if( id != -1 )
+							tempRequireParams.remove(id);
 					}
 				}
-
 				
+				if(tempRequireParams.size() > 0) {
+					mklogger.error(TAG, "Client must request with essential parameters.");
+					apiResponse.setCode(400);
+					apiResponse.setMessage("You must request with essential parameters.");
+					break;
+				}
 				
 				if(apiResponse.getCode() >= 400 && apiResponse.getCode() != -1){
 					break;
@@ -775,7 +777,7 @@ public class MkRestApi extends HttpServlet {
 		int requestSize = jsonObject.size();
 
 		if(inputKey.length != requestSize) {
-			mklogger.error(TAG, "ÀÎÇ²ÀÌ ´Ù¸¨´Ï´Ù.");
+			mklogger.error(TAG, "ï¿½ï¿½Ç²ï¿½ï¿½ ï¿½Ù¸ï¿½ï¿½Ï´ï¿½.");
 			mkResponse.setCode(400);
 			mkResponse.setMessage("You must enter every column data.");
 			return null;
@@ -797,7 +799,7 @@ public class MkRestApi extends HttpServlet {
 		
 		DA.setRequestValue(inputValues);
 		query = cpi.setQuery(befQuery);
-		mklogger.debug(TAG, "±×·¡¼­ Äõ¸®´Â : " + query);
+		mklogger.debug(TAG, "ï¿½×·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : " + query);
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");

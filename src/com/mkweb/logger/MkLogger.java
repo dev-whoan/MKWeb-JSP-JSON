@@ -47,8 +47,13 @@ public class MkLogger{
 				TAG += temp;
 			}
 
-			if(log_configs.get("use_catalina").toString().equals("yes"))
-				System.out.println(TAG + msg.toString());
+			if(log_configs.get("use_catalina").toString().equals("yes")) {
+				if(caller.contentEquals("error")) {
+					System.err.println(TAG + msg.toString());
+				}else {
+					System.out.println(TAG + msg.toString());
+				}
+			}
 			else {
 				File logFile = new File(log_configs.get("log_location").toString());
 				BufferedWriter bw = new BufferedWriter(new FileWriter(logFile, true));
@@ -147,7 +152,7 @@ public class MkLogger{
 		switch(log_configs.get("level").toString())
 		{
 		case "debug":
-			Log("[^_^ DEBUG ^_^]\n" + TAG + " " + msg, "debug");
+			Log("[-DEBUG-]" + TAG + " " + msg, "debug");
 			break;
 		}
 	}
