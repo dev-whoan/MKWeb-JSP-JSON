@@ -50,6 +50,15 @@ public class MkRestApi extends HttpServlet {
 	private MkLogger mklogger = MkLogger.Me();
 	private String TAG = "[MkRestApi]";
 	private ConnectionChecker cpi = null;
+	
+	private final String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
+	private final String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
+	private final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.searchkey.exp");
+	private final boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.usekey").contentEquals("yes") ? true
+			: false;
+	private final String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
+	private final String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
+	private final String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
 
 	/**
 	 * @see HttpServlet#HttpServlet()
@@ -150,24 +159,17 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		long START_MILLIS = System.currentTimeMillis();
 		request.setCharacterEncoding("UTF-8");
 		if (!MkConfigReader.Me().get("mkweb.restapi.use").equals("yes")) {
 			response.sendError(404);
 			return;
 		}
-
-		final String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
-		final String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
-		final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.searchkey.exp");
-		final boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.usekey").contentEquals("yes") ? true
-				: false;
 		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
-		final String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
-		final String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
-
+		
 		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
-		mklogger.debug(TAG, "customtable name : " + MKWEB_CUSTOM_TABLE);
-		mklogger.debug(TAG, "requested customTable : " + customTable);
+		String prettyParam = request.getParameter(MKWEB_PRETTY_OPT);
+		
 		String requestURI = request.getRequestURI();
 		String[] reqPage = null;
 		String mkPage = null;
@@ -184,7 +186,6 @@ public class MkRestApi extends HttpServlet {
 			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
 
 			if (reqPage.length < 2) {
-				// ����
 				apiResponse.setMessage("Please enter the conditions to search.");
 				apiResponse.setCode(401);
 				break;
@@ -196,8 +197,6 @@ public class MkRestApi extends HttpServlet {
 				mkPage = mkPage.split("/")[0];
 			}
 			
-			mklogger.debug(TAG, "Request MKPage : " + mkPage + "| Method : " + REQUEST_METHOD);
-
 			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 
 			if (control == null) {
@@ -271,12 +270,10 @@ public class MkRestApi extends HttpServlet {
 
 						String tempAPIID = request.getParameter(MKWEB_API_ID);
 						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
-						mklogger.debug(TAG, "APIData�� ���� �ϴ°�? " + request.getParameter(MKWEB_API_ID));
 
 						if (tempAPIID != null) {
 							String[] tempArr = null;
 							if (tempAPIID.contains("&")) {
-								mklogger.debug(TAG, " & ���� ");
 								tempArr = tempAPIID.split("&");
 								result = (LinkedHashMap<String, String>) stringToMap(tempArr);
 							} else {
@@ -304,18 +301,7 @@ public class MkRestApi extends HttpServlet {
 							break;
 						}
 					} else if (shouldCheckQuery == -1) {
-						/*
-						 * 1. /users/u_class/5 1. /users/name/dev.whoan/
-						 * 
-						 * 2. /users/name/dev.whoan/u_class/5 2. /users/u_class/5/name/gildong
-						 * 
-						 * 3. /users/name/dev.whoan/class/5/seq/1
-						 * 
-						 * 4. /users/u_class/5 4. /users/name/dev.whoan/class
-						 * 
-						 * Ȧ�������� Column ¦�������� ������
-						 */
-						// mkPageIndex = users�� ã��
+						// 
 						ArrayList<String> searchColumns = new ArrayList<>();
 						ArrayList<String> searchValues = new ArrayList<>();
 						boolean isColumn = true;
@@ -415,7 +401,6 @@ public class MkRestApi extends HttpServlet {
 						requestParameterJsonToModify = mkJsonData.getJsonObject();
 					else {
 						if(REQUEST_METHOD.contentEquals("delete") && requestParameterJson != null) {
-							/*	 DELETE�� Body Parameter Ȥ�� URI �� �ϳ��θ� �����͸� �����ؾ� �Ѵ�. */
 							mklogger.error(TAG, "Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
 							apiResponse.setMessage("Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
 							apiResponse.setCode(400);
@@ -466,16 +451,22 @@ public class MkRestApi extends HttpServlet {
 					break;
 				}
 			}
+			
 			if(requestParameterJson != null) {
 				requestParameterJson.remove(MKWEB_SEARCH_KEY);
 				if(customTable != null)
 					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
+				
+				if(prettyParam != null)
+					requestParameterJson.remove(MKWEB_PRETTY_OPT);
 			}
 				
 			if(requestParameterJsonToModify != null) {
 				requestParameterJsonToModify.remove(MKWEB_SEARCH_KEY);
 				if(customTable != null)
 					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
+				if(prettyParam != null)
+					requestParameterJson.remove(MKWEB_PRETTY_OPT);
 			}
 				
 			
@@ -503,7 +494,10 @@ public class MkRestApi extends HttpServlet {
 				}
 
 				ArrayList<MkSqlJsonData> sqlControl = MkRestApiSqlConfigs.Me().getControlByServiceName(pageService.getServiceName());
-
+				mklogger.debug(TAG, "service Name : " + pageService.getServiceName());
+				mklogger.debug(TAG, "sql control size : " +sqlControl.size());
+				
+				mklogger.debug(TAG, "service control : " +sqlControl.get(0));
 				String[] sqlConditions = sqlControl.get(0).getCondition();
 
 				if (sqlConditions.length == 0) {
@@ -531,7 +525,10 @@ public class MkRestApi extends HttpServlet {
 
 				requestIterator = requestKeySet.iterator();
 				String[] requireParameters = sqlService.getParameters();
-				List<String> tempRequireParams = new ArrayList<>(Arrays.asList(requireParameters));
+				List<String> tempRequireParams = null;
+				if(requireParameters != null)
+					tempRequireParams = new ArrayList<>(Arrays.asList(requireParameters));
+				
 				
 				int catchedParams = 0;
 				while (requestIterator.hasNext()) {
@@ -567,7 +564,7 @@ public class MkRestApi extends HttpServlet {
 					}
 				}
 				
-				if(tempRequireParams.size() > 0) {
+				if(tempRequireParams != null && tempRequireParams.size() > 0) {
 					mklogger.error(TAG, "Client must request with essential parameters.");
 					apiResponse.setCode(400);
 					apiResponse.setMessage("You must request with essential parameters.");
@@ -609,10 +606,15 @@ public class MkRestApi extends HttpServlet {
 		PrintWriter out = response.getWriter();
 
 		String result = null;
+		boolean pretty = false;
+		pretty = (prettyParam != null);
 		if(resultObject == null) {
 			String allowMethods = "";
 			if(apiResponse.getCode() < 400 && REQUEST_METHOD.contentEquals("options")) {
-				allowMethods = "  \"Allow\":\"";
+				if(pretty)
+					allowMethods = "  \"Allow\":\"";
+				else
+					allowMethods = "\"Allow\":\"";
 				ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 				for(int i = 0; i < control.size(); i++) {
 
@@ -624,10 +626,14 @@ public class MkRestApi extends HttpServlet {
 				}
 				allowMethods += "\"";
 			}
-			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods);
+			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods, pretty, START_MILLIS);
 			out.print(result);
 		}else {
-			result = mkJsonData.jsonToPretty(resultObject);
+			if(pretty)
+				result = mkJsonData.jsonToPretty(resultObject);
+			else
+				result = resultObject.toString();
+			
 			result = result.substring(1, result.length()-1);
 			Object roPut = resultObject.get("PUT_UPDATE_DONE");
 			Object roPost = resultObject.get("PUT_INSERT_DONE");
@@ -641,7 +647,7 @@ public class MkRestApi extends HttpServlet {
 			}
 			apiResponse.setContentLength(resultObject.toString().length());
 			
-			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result);
+			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result, pretty, START_MILLIS);
 			out.print(temp);
 		}
 		out.flush();
@@ -667,7 +673,7 @@ public class MkRestApi extends HttpServlet {
 		}
 		
 		query = (customTable == null) ? 
-				createSQL("get", searchKeys, jsonObject, null, null, sqlData.getRawSql()[2]) :
+				createSQL("get", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 				createSQL("get", searchKeys, jsonObject, null, null, customTable);
 		
 		Set<String> keySet = jsonObject.keySet();
@@ -794,7 +800,7 @@ public class MkRestApi extends HttpServlet {
 		}
 		
 		query = (customTable == null) ? 
-				createSQL("post", inputKey, null, inputValues, null, sqlData.getRawSql()[2]) :
+				createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 				createSQL("post", inputKey, null, inputValues, null, customTable);
 		
 		DA.setRequestValue(inputValues);
@@ -871,7 +877,7 @@ public class MkRestApi extends HttpServlet {
 		String tempCrud = (getResult == null ? "insert" : "update");
 
 		query = (customTable == null) ?
-				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getRawSql()[2])):
+				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getTableData().get("from").toString())) : //sqlData.getRawSql()[2])):
 				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, customTable));
 
 		if(query == null) {
@@ -927,7 +933,7 @@ public class MkRestApi extends HttpServlet {
 		}
 
 		query = (customTable == null) ? 
-						createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getRawSql()[2]) :
+						createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 						createSQL("delete", searchKeys, jsonObject, null, null, customTable);
 						
 		mklogger.debug(TAG, "delete query: " + query);

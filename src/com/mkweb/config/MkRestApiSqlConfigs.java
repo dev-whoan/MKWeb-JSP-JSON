@@ -110,6 +110,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
 					String serviceId = null;
 					String[] serviceQuery = new String[1];
+					HashMap<String, Object> tableData = new HashMap<>();;
 
 					try {
 						serviceId = serviceObject.get("id").toString();
@@ -130,8 +131,9 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						serviceQuery[0] = serviceQueryData.get("crud").toString();
-						serviceQuery[2] = sqlTable;
-						serviceQuery[4] = serviceQueryData.get("where").toString();
+						tableData.put("from", sqlTable);
+				//		serviceQuery[2] = sqlTable;
+						serviceQuery[3] = serviceQueryData.get("where").toString();
 						
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
 						if(!serviceColumn.setJsonObject()) {
@@ -163,20 +165,21 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						}
 						
 						serviceQuery[1] = serviceColumns;
-						serviceQuery[3] = serviceDatas;
+						serviceQuery[2] = serviceDatas;
 					}catch(NullPointerException npe) {
 						mklogger.error("[Controller: " + sqlName + "] Some service of the SQL doesn't have attributes. Please check the SQL config.");
 						return;
 					}
 
 					MkSqlJsonData sqlData = new MkSqlJsonData();
-					String[] finalQuery = createSQL(serviceQuery, true);
+					String[] finalQuery = createSQL(serviceQuery, tableData, true);
 					
 					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
 					sqlData.setParameters(sqlParameters);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);
+					sqlData.setTableData(tableData);
 					sqlData.setDB(sqlDB);
 					sqlData.setData(finalQuery);
 					sqlData.setDebugLevel(sqlDebugLevel);
@@ -250,6 +253,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		}
 		
 		Set iter = sql_configs.keySet();
+		mklogger.debug(TAG, "my iter : " + iter);
 		Iterator sqlIterator = iter.iterator();
 		String resultControlName = null;
 		ArrayList<MkSqlJsonData> jsonData = null;

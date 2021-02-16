@@ -76,11 +76,13 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
 					String serviceId = null;
 					String[] serviceQuery = null;
+					HashMap<String, Object> tableData = null;
 					try {
 						serviceId = serviceObject.get("id").toString();
 
 						String serviceColumns = null;
 						String serviceDatas = null;
+						
 						MkJsonData mjd = new MkJsonData(serviceObject.get("query").toString());
 						if(!mjd.setJsonObject()) {
 							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId);
@@ -88,21 +90,38 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						}
 						
 						JSONObject serviceQueryData = mjd.getJsonObject();
-						serviceQuery = new String[serviceQueryData.size()];
+						// -1 for table object
+						serviceQuery = new String[serviceQueryData.size()-1];
 						
-						if(serviceQuery.length != 5) {
+						//serviceQuery.length != 5
+						if(serviceQueryData.size() != 5) {
 							mklogger.error(TAG, "[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
-							return;
+							continue;
 						}
 						
 						serviceQuery[0] = serviceQueryData.get("crud").toString();
-						serviceQuery[2] = serviceQueryData.get("table").toString();
-						serviceQuery[4] = serviceQueryData.get("where").toString();
+					//	serviceQuery[2] = serviceQueryData.get("table").toString();
+						serviceQuery[3] = serviceQueryData.get("where").toString();	// [4]
+						
+						//존재 안하면!! table이 없는거니까 잘못된거임!
+						if(serviceQueryData.get("table") == null) {
+							mklogger.error(TAG, "Failed to set Table data. Service name " + serviceId );
+							continue;
+						}
+						
+						if(serviceQueryData.get("table") instanceof JSONObject) {
+							mklogger.debug(TAG, "JSONObject!!");
+						}else {
+							mklogger.error(TAG, "Failed to set Table data. Table must be instance of JSONObject. Service name : " + serviceId);
+							continue;
+						}
+						
+						tableData = (HashMap<String, Object>) serviceQueryData.get("table");
 						
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
 						if(!serviceColumn.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(column)");
-							return;
+							mklogger.error(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(column)");
+							continue;
 						}
 						JSONObject jsonColumns = serviceColumn.getJsonObject();
 						serviceColumns = "";
@@ -117,7 +136,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						
 						if(!serviceData.setJsonObject()) {
 							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
-							return;
+							continue;
 						}
 						JSONObject jsonDatas = serviceData.getJsonObject();
 						serviceDatas = "";
@@ -129,19 +148,35 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						}
 						
 						serviceQuery[1] = serviceColumns;
-						serviceQuery[3] = serviceDatas;
+						serviceQuery[2] = serviceDatas;		// [3]
 					}catch(NullPointerException npe) {
-						mklogger.error("[Controller: " + controlName + "] Some service of the SQL doesn't have attributes. Please check the SQL config.");
-						return;
+						mklogger.error("[Controller: " + controlName + "("+serviceId+")] The service SQL doesn't have attributes. Please check the SQL config.");
+						continue;
 					}
 
 					MkSqlJsonData sqlData = new MkSqlJsonData();
 					
-					String[] finalQuery = createSQL(serviceQuery, false);
+					Object join = tableData.get("join");
+					
+					if(join != null) {
+						JSONObject joinObject = (JSONObject) join;
+						String[] catchme = {"type", "joinfrom", "on"};
+						for(int cm = 0; cm < catchme.length; cm++) {
+							try {
+								tableData.put(catchme[cm], joinObject.get(catchme[cm]).toString());
+							} catch (NullPointerException e) {
+								mklogger.error(TAG, "[Controller: " + controlName + "(" + serviceId +")] You must to set \"" + catchme[cm] + "\" in \"table\" to use join. This controller will not be registered.");
+								return;
+							}
+						}
+					}
+					
+					String[] finalQuery = createSQL(serviceQuery, tableData, false);
 					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);
+					sqlData.setTableData(tableData);
 					sqlData.setDB(sqlDB);
 					sqlData.setData(finalQuery);
 					sqlData.setDebugLevel(sqlDebugLevel);
@@ -171,6 +206,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 				+ "\n|Controller: \t" + jsonData.getControlName()
 				+ "\n|SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
 				+ "\n|SQL DB:\t" + jsonData.getDB()
+				+ "\n|SQL Table:\t" + jsonData.getTableData()
 				+ "\n|SQL Query:\t" + jsonData.getData()[0].trim()
 				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
 				+ "\n============================================================================";

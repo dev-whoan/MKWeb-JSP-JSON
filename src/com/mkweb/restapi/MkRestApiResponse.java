@@ -132,70 +132,148 @@ public class MkRestApiResponse {
 		return result;
 	}
 
-	public String generateResult(int code, String method, String prefix) {
+	public String generateResult(int code, String method, String prefix, boolean pretty, long startMillis) {
 		String result = null;
 		String temp = null;
-		if(code >= 400) {
-			temp = "  \"error\":{\n" +
-					"    \"message\":\"" + getMessage() + "\",\n" +
-					"    \"code\":\"" + getCode() + "\",\n" +
-					"    \"status\":\"" + getStatus() + "\",\n" +
-					"    \"info\":\"" + getDocs() + "\"\n  }";
-			contentLength = temp.length();
-			result = "{\n" +
-					"  \"code\":\"" + getCode() + "\",\n" +
-					"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
-					"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-					"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
-					temp + "\n" +
-					"}";
-		}else {
-			switch(method) {
-			case "put":
-				result = "{\n" +
+		long took = System.currentTimeMillis() - startMillis;
+		if(pretty) {
+			if(code >= 400) {
+				temp = "  \"error\":{\n" +
+						"  \"message\":\"" + getMessage() + "\",\n" +
 						"  \"code\":\"" + getCode() + "\",\n" +
-						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
-						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
-						"}";
-				break;
-			case "delete":
+						"  \"status\":\"" + getStatus() + "\",\n" +
+						"  \"info\":\"" + getDocs() + "\"\n  }";
+				contentLength = temp.length();
 				result = "{\n" +
+						"  \"took\":\"" + took + "\",\n" +
 						"  \"code\":\"" + getCode() + "\",\n" +
-						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+						"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
 						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-						"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
+						"  \"Content-Length\":" + "\"" + getContentLength() + "\",\n" +
+						temp + "\n" +
 						"}";
-				break;
-			case "options":
-			{
-				if(!prefix.contentEquals("")) {
+			}else {
+				switch(method) {
+				case "put":
 					result = "{\n" +
+							"  \"took\":\"" + took + "\",\n" +
 							"  \"code\":\"" + getCode() + "\",\n" +
-							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
 							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-							prefix +"\n" +
+							"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
 							"}";
 					break;
-				}else {
+				case "delete":
 					result = "{\n" +
+							"  \"took\":\"" + took + "\",\n" +
 							"  \"code\":\"" + getCode() + "\",\n" +
-							"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
-							"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
+							"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+							"  \"Content-Length\":" + "\"" + getContentLength() + "\"\n" +
 							"}";
+					break;
+				case "options":
+				{
+					if(!prefix.contentEquals("")) {
+						result = "{\n" +
+								"  \"took\":\"" + took + "\",\n" +
+								"  \"code\":\"" + getCode() + "\",\n" +
+								"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+								"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+								prefix +"\n" +
+								"}";
+						break;
+					}else {
+						result = "{\n" +
+								"  \"took\":\"" + took + "\",\n" +
+								"  \"code\":\"" + getCode() + "\",\n" +
+								"  \"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\",\n" +
+								"  \"Content-Type\":" + "\"" + getContentType() + "\"\n" +
+								"}";
+					}
+				}
+				default:
+					result = "{\n" +
+							"  \"took\":\"" + took + "\",\n" +
+							"  \"code\":\"" + getCode() + "\",\n" +
+							"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
+							"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
+							"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
+							prefix +
+							"}";
+					break;
 				}
 			}
-			default:
-				result = "{\n" +
-						"  \"code\":\"" + getCode() + "\",\n" +
-						"  \"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\",\n" +
-						"  \"Content-Type\":" + "\"" + getContentType() + "\",\n" +
-						"  \"Content-Length\":" + "\"" + getContentLength() + "\"," +
-						prefix +
+		}else {
+			if(code >= 400) {
+				temp = "\"error\":{" +
+						"\"message\":\"" + getMessage() + "\"," +
+						"\"code\":\"" + getCode() + "\"," +
+						"\"status\":\"" + getStatus() + "\"," +
+						"\"info\":\"" + getDocs() + "\"}";
+				contentLength = temp.length();
+				result = "{" +
+						"\"took\":\"" + took + "\"," +
+						"\"code\":\"" + getCode() + "\"," +
+						"\"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\"," +
+						"\"Content-Type\":" + "\"" + getContentType() + "\"," +
+						"\"Content-Length\":" + "\"" + getContentLength() + "\"," +
+						temp + 
 						"}";
-				break;
+			}else {
+				switch(method) {
+				case "put":
+					result = "{" +
+							"\"took\":\"" + took + "\"," +
+							"\"code\":\"" + getCode() + "\"," +
+							"\"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\"," +
+							"\"Content-Type\":" + "\"" + getContentType() + "\"," +
+							"\"Content-Length\":" + "\"" + getContentLength() + "\"" +
+							"}";
+					break;
+				case "delete":
+					result = "{" +
+							"\"took\":\"" + took + "\"," +
+							"\"code\":\"" + getCode() + "\"," +
+							"\"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\"," +
+							"\"Content-Type\":" + "\"" + getContentType() + "\"," +
+							"\"Content-Length\":" + "\"" + getContentLength() + "\"" +
+							"}";
+					break;
+				case "options":
+				{
+					if(!prefix.contentEquals("")) {
+						result = "{" +
+								"\"took\":\"" + took + "\"," +
+								"\"code\":\"" + getCode() + "\"," +
+								"\"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\"," +
+								"\"Content-Type\":" + "\"" + getContentType() + "\"," +
+								prefix +
+								"}";
+						break;
+					}else {
+						result = "{" +
+								"\"took\":\"" + took + "\"," +
+								"\"code\":\"" + getCode() + "\"," +
+								"\"response\":\"HTTP/1.1 " + getCode() + " " + getStatus() + "\"," +
+								"\"Content-Type\":" + "\"" + getContentType() + "\"" +
+								"}";
+					}
+				}
+				default:
+					result = "{" +
+							"\"took\":\"" + took + "\"," +
+							"\"code\":\"" + getCode() + "\"," +
+							"\"response\":\"HTTP 1.1 " + getCode() + " " + getStatus() + "\"," +
+							"\"Content-Type\":" + "\"" + getContentType() + "\"," +
+							"\"Content-Length\":" + "\"" + getContentLength() + "\"," +
+							prefix +
+							"}";
+					break;
+				}
 			}
 		}
+		
 		return result;
 	}
 

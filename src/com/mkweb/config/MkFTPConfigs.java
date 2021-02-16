@@ -91,9 +91,12 @@ public class MkFTPConfigs {
 						serviceId = serviceObject.get("id").toString();
 						servicePath = serviceObject.get("servicepath").toString();
 						Object prefix = serviceObject.get("dir");
-						serviceDirPrefix = (prefix == null) ? null : prefix.toString();
-						serviceHashDirPrefix = (serviceObject.get("hash_dir").toString().contentEquals("true"));
-						
+						mklogger.debug(TAG, "prefix : " + prefix);
+						if(prefix != null) {
+							serviceDirPrefix = prefix.toString();
+							serviceHashDirPrefix = serviceObject.get("hash_dir").toString().contentEquals("true");
+						}
+
 						if(ftpControllerPath.charAt(ftpControllerPath.length() -1) == '/') {
 							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath.substring(0, ftpControllerPath.length()-1) + servicePath) : (ftpControllerPath + servicePath));
 						}else {
@@ -119,6 +122,7 @@ public class MkFTPConfigs {
 						
 					} catch(Exception e) {
 						mklogger.debug(TAG, "Failed to create ftp controller. " + e.getMessage());
+						e.printStackTrace();
 						return;
 					}
 					

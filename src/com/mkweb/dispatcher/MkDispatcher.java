@@ -62,7 +62,6 @@ public class MkDispatcher extends HttpServlet {
 		}
 		String mkPage = request.getAttribute("mkPage").toString();
 		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
-			//에러페이지
 			response.sendError(404);
 			return;
 		}
@@ -80,12 +79,11 @@ public class MkDispatcher extends HttpServlet {
 				}
 			}
 		}
-		
 		if(userPlatform == null)
 			userPlatform = "desktop";
 		
 		String targetURI = MkPageJsonData.getAbsPath() + (new ConnectionChecker()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
-		
+
 		if(targetURI.contains("error_")) {
 			response.sendError(Integer.parseInt(targetURI.split("error_")[1]));
 			return;

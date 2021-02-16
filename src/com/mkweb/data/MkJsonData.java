@@ -93,11 +93,8 @@ public class MkJsonData {
 
 		reqData = new HashMap<>();
 		reqParams = new ArrayList<>();
-		//Àß¶ó¾ßÇØ
+		//ï¿½ß¶ï¿½ï¿½ï¿½ï¿½
 		requestParams = data.split("&");
-		//'{"search_key":"apple", "person":{"name":"¹ÎÈ¯","age":24}}';
-		// {"search_key":"apple", "person":{"name":"¹ÎÈ¯", "age":"24"}}
-		//'{"search_key":"apple", "name":"¹ÎÈ¯"}';
 		for(int i = 0; i <requestParams.length; i++) {
 			String[] splits = requestParams[i].split("=");
 			String secondKey = null;
@@ -106,7 +103,6 @@ public class MkJsonData {
 				String key = splits[0];
 				if(splits[0].contains("[")) {
 					if(!splits[0].contains("]")) {
-						//¿¹¿Ü
 						mklogger.error(TAG, " Given data Parentheses not matching!");
 						return null;
 					}else {
@@ -137,11 +133,6 @@ public class MkJsonData {
 				mklogger.error(TAG, " Given data is not valid." + requestParams[i]);
 				return null;
 			}
-			//search_key=apple
-			//name=¹ÎÈ¯
-			//[]ÀÌ ÀÖ´ÂÁö È®ÀÎ
-			//person[name]=¹ÎÈ¯
-			//person[age]=24
 		}
 		
 		if(reqParams != null) {
@@ -154,18 +145,13 @@ public class MkJsonData {
 			for(int i = 0; i < reqParams.size(); i++) {
 				ArrayList<String> list = reqData.get(reqParams.get(i));
 				
-				//ÇÑ°³¿ä¼Ò¶ó¸é
 				if(list.size() == 1) {
 					reqToJson += "\"" + reqParams.get(i) + "\":\"" + list.get(0) + "\"";
 				}
-				//2°³ ÀÌ»óÀÌ¶ó¸é
 				else if(list.size() > 1) {
-					//person[name]=¹ÎÈ¯
-					//person[age]=24
-					//, "person":{"name":"¹ÎÈ¯","age":24}              }';
 					reqToJson += "\"" + reqParams.get(i) + "\":{";
 					for(int j = 0; j < list.size(); j++) {
-					//	&·Î Àß¶ó¾ßÇÔ
+					//	&ï¿½ï¿½ ï¿½ß¶ï¿½ï¿½ï¿½ï¿½
 						String secondKey = list.get(j).split("&")[0];
 						String value = list.get(j).split("&")[1];
 						reqToJson += "\"" + secondKey + "\":" + "\"" + value + "\"";

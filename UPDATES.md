@@ -1,4 +1,31 @@
 
+# 02/17/2021 (KST) 0.0.7 commit
+
+1. Bug fix
+
+- Device Controller Error Fixed. ( For unsupported device, couldn't reach to right uri which is not same as the default language, but now it does. It was reached to default language page of the device.) 
+
+2. Some attributes of SQL Controller have changed.
+
+- Attribute of "table" have changed into JSONObject to support JOIN. There is a "join" attribute inside of "table", however you can ignore writing "join" attribute if you don't use.
+
+- Every attribute must be written in lower case. If you don't, it can cause some errors.
+
+- Example: "table":{ "from":"User" } OR
+
+<pre>
+
+"table":{
+	"from":"User",
+	"join":{
+		"type":"INNER",
+		"joinfrom":"Place",
+		"on":""
+	}
+},
+
+</pre>
+
 # 02/10/2021 (KST) 0.0.6 commit
 
 1. SQL service on RESTful API, you can add essential parameters.

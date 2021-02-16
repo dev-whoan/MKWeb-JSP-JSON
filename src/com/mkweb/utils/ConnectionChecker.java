@@ -129,9 +129,9 @@ public class ConnectionChecker {
 			pageStaticParameter = pageStaticData.getParameter();
 			pageStaticParameterValues = pageStaticData.getData();
 		}
-		/* static value¸é static ¿äÃ»ÀÌ ¾Æ´Ò °æ¿ì Skip ÇÑ´Ù. */
-		/* static value°¡ ¾Æ´Ï¸é static ¿äÃ»ÀÏ ¶§ Skip ÇÑ´Ù. */
-		/* --> Parameter°¡ °°Àº°Í¸¸ ¹Þ´Â´Ù. */
+		/* static valueï¿½ï¿½ static ï¿½ï¿½Ã»ï¿½ï¿½ ï¿½Æ´ï¿½ ï¿½ï¿½ï¿½ Skip ï¿½Ñ´ï¿½. */
+		/* static valueï¿½ï¿½ ï¿½Æ´Ï¸ï¿½ static ï¿½ï¿½Ã»ï¿½ï¿½ ï¿½ï¿½ Skip ï¿½Ñ´ï¿½. */
+		/* --> Parameterï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½Þ´Â´ï¿½. */
 		while(params.hasMoreElements()) {
 			String name = params.nextElement().toString().trim();
 			if(name.contains(".")) {
@@ -288,35 +288,43 @@ public class ConnectionChecker {
 		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
 		Device userDevice = null;
 		int desktopIndex = -1;
-		boolean isDone = false;
+		mklogger.debug(TAG, "device size : " + devices.size());
+		int deviceIndex = -1;
+		int gotcha = 0;
 		for(int i = 0; i < devices.size(); i++) {
 			Device currentDevice = devices.get(i);
-			if(currentDevice.getControlName().contentEquals("desktop"))
-				desktopIndex = i;
+			String currentName = currentDevice.getControlName();
 			
-			if(currentDevice.getControlName().contentEquals(userPlatform)) {
-				/* Language ¼±ÅÃ ÇÒ ¶§, URI°¡ ¿Ïº®È÷ ÀÏÄ¡ÇÏ¸é ±× language ¼±ÅÃ */
-				HashMap<String, String[]> currentDeviceInfo = currentDevice.getDeviceInfo();
-				Set<String> key = currentDeviceInfo.keySet();
-				Iterator<String> iter = key.iterator();
-				int sameCount = 0;
-				while(iter.hasNext()) {
-					String cService = iter.next();
-					if(requestServiceURI.contentEquals(currentDeviceInfo.get(cService)[2])) {
-						userDevice = currentDevice;
-						if(!cService.contentEquals("default"))
-							defaultLanguage = cService;
-						isDone = true;
-						break;
-					}
-				}
-				
-				if(isDone)
-					break;
-				
-				if(!isDone && userDevice != null) {
-					defaultLanguage = "default";
-				}
+			if(currentName.contentEquals("desktop")) {
+				desktopIndex = i;
+				gotcha++;
+			}
+			if(currentName.contentEquals(userPlatform)) {
+				deviceIndex = i;
+				gotcha++;
+			}
+			/* Found Desktop and UserPlatform */
+			if(gotcha > 1)
+				break;
+		}
+		
+		Device currentDevice = null;
+		if(deviceIndex != -1) {
+			currentDevice = devices.get(deviceIndex);
+		} else {
+			currentDevice = devices.get(desktopIndex);
+		}
+		
+		HashMap<String, String[]> currentDeviceInfo = currentDevice.getDeviceInfo();
+		Set<String> key = currentDeviceInfo.keySet();
+		Iterator<String> iter = key.iterator();
+		while(iter.hasNext()) {
+			String cService = iter.next();
+			if(requestServiceURI.contentEquals(currentDeviceInfo.get(cService)[2])) {
+				userDevice = currentDevice;
+				if(!cService.contentEquals("default"))
+					defaultLanguage = cService;
+				break;
 			}
 		}
 		
@@ -333,6 +341,9 @@ public class ConnectionChecker {
 			if(userDevice.getDeviceInfo(defaultLanguage) == null)
 				defaultLanguage = "default";
 		}
+		
+
+		mklogger.debug(TAG, "dl 2 : " + defaultLanguage);
 		String[] uriInfo = userDevice.getDeviceInfo(defaultLanguage);
 		
 		return uriInfo[0] + "/" + uriInfo[1];
