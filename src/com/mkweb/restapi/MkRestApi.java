@@ -53,8 +53,8 @@ public class MkRestApi extends HttpServlet {
 	
 	private final String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
 	private final String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
-	private final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.searchkey.exp");
-	private final boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.usekey").contentEquals("yes") ? true
+	private final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
+	private final boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true
 			: false;
 	private final String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
 	private final String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
