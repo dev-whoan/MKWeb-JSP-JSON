@@ -51,6 +51,7 @@ public class ConnectionChecker {
 		}
 
 		String[] result = null;
+		
 		for(int i = 0; i < resultSqlData.size(); i++) {
 			MkSqlJsonData tempJsonData = resultSqlData.get(i);
 			if(tempJsonData.getServiceName().contentEquals(serviceName)) {

@@ -51,7 +51,6 @@ public class MkFTPConfigs {
 		ArrayList<MkFtpData> ftpJsonData = null;
 		lastModified = new long[ftpConfigs.length];
 		int lmi = 0;
-		boolean useAbsolute = (MkConfigReader.Me().get("mkweb.ftp.absolute").contentEquals("yes") ? true : false);
 		for(File defaultFile : defaultFiles)
 		{
 			if(defaultFile.isDirectory())
@@ -103,7 +102,7 @@ public class MkFTPConfigs {
 							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath + servicePath) : (ftpControllerPath + "/" + servicePath));
 						}
 						
-						if(!createDirectory(servicePath, useAbsolute)) {
+						if(!createDirectory(servicePath)) {
 							mklogger.error("Failed to create directory. Please check your IO permissions. [" + servicePath +"]");
 							return;
 						}
@@ -213,8 +212,8 @@ public class MkFTPConfigs {
 		return jsonData;
 	}
 	
-	private boolean createDirectory(String path, boolean useAbsolute){
-		String targetDir = (useAbsolute) ? path : (filePrefix + path);
+	private boolean createDirectory(String path){
+		String targetDir = (filePrefix + path);
 		File folder = new File(targetDir);
 		boolean isDirExists = folder.exists();
 		if(!isDirExists)

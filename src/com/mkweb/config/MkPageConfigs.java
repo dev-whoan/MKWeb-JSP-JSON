@@ -82,12 +82,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 				String controlName = pageObject.get("name").toString();
 				String lastURI = pageObject.get("last_uri").toString();
 				String pageDebugLevel = pageObject.get("debug").toString();
-				/*
-				Device로 이전 사항
-				String pageFilePath = pageObject.get("path").toString();
-				String pageFile = pageObject.get("file").toString();
-				String pageURI = pageObject.get("uri").toString();
-				*/
+
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 				
@@ -101,12 +96,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 				String[] page_value = null;
 				boolean isApiService = false;
 				
-				/*
-				 * device태그는 무조건 있고 JSONObject
-				 */
 				JSONObject pageDevice = (JSONObject) pageObject.get("device");
 				
-				/*	디바이스 구분 : desktop, android, ios 최대 3개*/
 				ArrayList<Device> deviceConfig = new ArrayList<>();
 				
 				Set<String> deviceConfigKey = pageDevice.keySet();
@@ -117,17 +108,12 @@ public class MkPageConfigs extends MkPageConfigCan{
 					
 					Object dO = pageDevice.get(deviceControlName);
 					if(dO != null) {
-						//desktop, android, ios에 대한 JSONObject
 						JSONObject deviceObject = (JSONObject) dO;
 						
-						//만들기 위한 Device 설정
 						Device tempDevice = new Device();
-						// tempDeviceInfo(language, JSONObject(path, file, uri));
 						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
 						
-						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
-						
-						//Device Controller가 갖고있는 key를 찾아야 합니다.
+						tempDevice.setControlName(deviceControlName);	
 						Set<String> deviceObjectKey = deviceObject.keySet();
 						Iterator<String> iterator = deviceObjectKey.iterator();
 						while(iterator.hasNext()) {
@@ -149,7 +135,6 @@ public class MkPageConfigs extends MkPageConfigCan{
 										}
 									}
 									
-									//lastURI만 잇어도 /붙여주기
 									if(deviceURI.contentEquals("") || deviceURI == null) {
 										if(!lastURI.contentEquals("") && lastURI != null) {
 											if(  lastURI.charAt(lastURI.length()-1) != '/' ) {
@@ -280,7 +265,18 @@ public class MkPageConfigs extends MkPageConfigCan{
 	}
 
 	private String getURIControl(String requestURI) {
-		return allowURI.get(requestURI);	}
+		/*
+		Set<String> keys = allowURI.keySet();
+		Iterator<String> iter = keys.iterator();
+		mklogger.temp(TAG + "my allwed pages", false);
+		while(iter.hasNext()) {
+			String key = iter.next();
+			mklogger.temp(key + ":" + allowURI.get(key), false);
+		}
+		mklogger.flush("debug");
+		*/
+		return allowURI.get(requestURI);
+	}
 	
 	@Override
 	public ArrayList<MkPageJsonData> getControl(String requestURI) {

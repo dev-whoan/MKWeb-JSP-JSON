@@ -1,4 +1,19 @@
 
+# 02/22/2021 (KST) 0.0.7 updated
+
+1. Mk RESTful API updated
+
+- MkWeb.conf property added : mkweb.restapi.refonly.host
+
+- Which set allow CORS or not. If yes, only RESTful API accessed via "mkweb.web.hostname".
+
+# 02/21/2021 (KST) 0.0.7 updated
+
+1. Bug fix
+
+- File Receiver Error Fixed.
+MkFileTransfer couldn't get service by uri, but now fixed. 
+
 # 02/17/2021 (KST) 0.0.7 commit
 
 1. Bug fix

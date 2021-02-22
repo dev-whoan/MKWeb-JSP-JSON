@@ -36,7 +36,7 @@ public class MkFileReceiver extends HttpServlet {
 	private ArrayList<MkPageJsonData> pi = null;
 	private boolean isPiSet = false;
 	MkPageJsonData pageStaticData = null;
-
+	private static final String HASH_PREFIX = "__TRIP_!!_DIARY__";
 	private String requestParameterName = null;
 	private ArrayList<String> requestValues = null;
 	private ConnectionChecker cpi = null;
@@ -48,12 +48,24 @@ public class MkFileReceiver extends HttpServlet {
 	}
 
 	private ArrayList<MkPageJsonData> getPageControl(String url) {
+		/*
 		String[] requestUriList = url.split("/");
 		String mkPage = "/" + requestUriList[requestUriList.length - 1];
 		mklogger.debug(this.TAG, "mkPage : " + mkPage);
 		if (mkPage.equals(MkConfigReader.Me().get("mkweb.web.hostname")))
 			mkPage = ""; 
+		
 		mklogger.debug(this.TAG, "receive mkpage : " + mkPage);
+		*/
+		String mkPage = null;
+		String hostcheck = url.split("://")[1];
+		String host = MkConfigReader.Me().get("mkweb.web.hostname") + "/";
+		if(hostcheck.contentEquals(host)) {
+			mkPage = "";
+		}else {
+			mkPage = "/" + hostcheck.split(host)[1];
+		}
+		mklogger.debug(TAG, "mkpage :" + mkPage);
 		return MkPageConfigs.Me().getControl(mkPage);
 	}
 
@@ -74,7 +86,7 @@ public class MkFileReceiver extends HttpServlet {
 		if (this.pi == null || !this.isPiSet) {
 			this.mklogger.error(this.TAG, " PageInfo is not set!");
 			return false;
-		} 
+		}
 		
 		ArrayList<MkPageJsonData> pal = MkPageConfigs.Me().getControl(mkPage);
 		for (MkPageJsonData pj : pal) {
@@ -120,7 +132,7 @@ public class MkFileReceiver extends HttpServlet {
 			}
 		}
 		
-		/* È®ÀåÀÚ È®ÀÎ */
+		/* È®ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ */
 		String[] allowFormats = ftpService.getData();
 		int size = fileParts.size();
 		ArrayList<InputStream> fileContents = new ArrayList<>();
@@ -150,19 +162,17 @@ public class MkFileReceiver extends HttpServlet {
 					}
 				}
 				if(!passed) {
-					mklogger.error(TAG, "³Ê ÀÌ»óÇÑ È®ÀåÀÚ ¿Ã¸²");
+					mklogger.error(TAG, "The received file have format which is not supported.");
 					return;
 				}
 			}
 			currentIndex++;
 		}
-		/* È®ÀåÀÚ Åë°úÇÔ! ÀÌÁ¦ ÆÄÀÏ ¾²¸é µÊ */
+		
 		String filePath = ftpService.getPath();
 		
 		currentIndex = 0;
-		/*
-		 * For TripDiary
-		 */
+
 		String ftpDirPrefix = ftpService.getDirPrefix();
 		String[] dirs = null;
 		boolean ftpDirHash = ftpService.getHashDirPrefix();
@@ -181,7 +191,7 @@ public class MkFileReceiver extends HttpServlet {
 				String tempDir = "";
 				for(String dir : dirs) {
 					if(ftpDirHash)
-						tempDir += "/" + new MyCrypto().MD5(dir + "__TRIP_!!_DIARY__");
+						tempDir += "/" + new MyCrypto().MD5(dir + HASH_PREFIX);
 					else
 						tempDir += "/" + dir;
 				}
@@ -189,24 +199,16 @@ public class MkFileReceiver extends HttpServlet {
 				ftpDirPrefix = tempDir;
 			}else {
 				if(ftpDirHash) 
-					ftpDirPrefix = "/" + new MyCrypto().MD5(ftpDirPrefix + "__TRIP_!!_DIARY__");
+					ftpDirPrefix = "/" + new MyCrypto().MD5(ftpDirPrefix + HASH_PREFIX);
 				else
 					ftpDirPrefix = "/" + ftpDirPrefix;
 			}
-			
-			mklogger.debug(TAG, "ftpDirPrefix 3 : " + ftpDirPrefix);
 		}else {
 			ftpDirPrefix = "";
 		}
 		
 		filePath = filePath + ftpDirPrefix;
-		mklogger.debug(TAG, "final filePath 1 : " + filePath);
-		if(!(MkConfigReader.Me().get("mkweb.ftp.absolute").contentEquals("yes")))
-			filePath = MkFTPConfigs.Me().getPrefix() + filePath; 
-		
-		/*
-		 * For TripDiary
-		 */
+		filePath = MkFTPConfigs.Me().getPrefix() + filePath; 
 		mklogger.debug(TAG, "file Path : " + filePath + "/ fileNames /" + fileNames[currentIndex]);
 		
 		/*
@@ -306,6 +308,7 @@ public class MkFileReceiver extends HttpServlet {
 		}
 
 		String refURL = request.getHeader("Referer");
+		
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);
 		pageStaticData = null;
@@ -344,6 +347,7 @@ public class MkFileReceiver extends HttpServlet {
 
 
 	private String getSubmittedParameterName(String datas) {
+		mklogger.debug(TAG, "datas : " + datas);
 		return datas.substring(0, datas.indexOf('.'));
 	}
 
@@ -377,7 +381,7 @@ public class MkFileReceiver extends HttpServlet {
 		
 		HashMap<String, ArrayList<String>> requestPartsParameters = new HashMap<>();
 		
-		/* À¯È¿¼º °Ë»ç */
+		/* ï¿½ï¿½È¿ï¿½ï¿½ ï¿½Ë»ï¿½ */
 		for(Part part : fileParts) {
 			String partParameter = getSubmittedParameters(part);
 			String partParameterName = getSubmittedParameterName(partParameter);
@@ -391,10 +395,10 @@ public class MkFileReceiver extends HttpServlet {
 		}
 		
 		if(requestPartsParameters.size() != 1) {
-			mklogger.error(TAG, "µÎ °³ ¼­ºñ½º°¡ µ¿½Ã¿¡ ¿äÃ»µÊ~");
+			mklogger.error(TAG, "ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ñ½º°ï¿½ ï¿½ï¿½ï¿½Ã¿ï¿½ ï¿½ï¿½Ã»ï¿½ï¿½~");
 			return false;
 		}
-		/* À¯È¿¼º °Ë»ç */
+		/* ï¿½ï¿½È¿ï¿½ï¿½ ï¿½Ë»ï¿½ */
 	
 		requestParameterName = requestPartsParameters.keySet().iterator().next();
 		requestValues = requestPartsParameters.get(requestParameterName);

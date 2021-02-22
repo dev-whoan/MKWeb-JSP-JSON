@@ -51,14 +51,15 @@ public class MkRestApi extends HttpServlet {
 	private String TAG = "[MkRestApi]";
 	private ConnectionChecker cpi = null;
 	
-	private final String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
-	private final String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
-	private final String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
-	private final boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true
+	private static String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
+	private static String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
+	private static String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
+	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true
 			: false;
-	private final String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
-	private final String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
-	private final String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
+	private static String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
+	private static String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
+	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
+	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.refonly.host");
 
 	/**
 	 * @see HttpServlet#HttpServlet()
@@ -165,6 +166,7 @@ public class MkRestApi extends HttpServlet {
 			response.sendError(404);
 			return;
 		}
+		
 		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
 		
 		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
@@ -182,7 +184,30 @@ public class MkRestApi extends HttpServlet {
 		JSONObject resultObject = null;
 		apiResponse.setCode(200);
 
+		if(MKWEB_REFONLY_HOST.toLowerCase().contentEquals("yes")) {
+			String previousURL = request.getHeader("referer");
+			String hostcheck = request.getRequestURL().toString().split("://")[1];
+			String host = MkConfigReader.Me().get("mkweb.web.hostname") + "/";
+			
+			if(previousURL == null) {
+				previousURL = "null";
+			} else {
+				previousURL = previousURL.split("://")[1];
+				if(previousURL.contains("/")) {
+					previousURL = previousURL.split("/")[0] + "/";
+				}
+			}
+			if(!previousURL.contentEquals(host)) {
+				mklogger.error(TAG, "User blocked by CORS policy: No 'Access-Control-Allow-Origin'.");
+				apiResponse.setCode(401);
+				apiResponse.setMessage("You violated CORS policy: No 'Access-Control-Allow-Origin'.");
+			}
+		}
+		
 		while(true) {
+			if(apiResponse.getCode() == 401) {
+				break;
+			}
 			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
 
 			if (reqPage.length < 2) {
@@ -494,10 +519,6 @@ public class MkRestApi extends HttpServlet {
 				}
 
 				ArrayList<MkSqlJsonData> sqlControl = MkRestApiSqlConfigs.Me().getControlByServiceName(pageService.getServiceName());
-				mklogger.debug(TAG, "service Name : " + pageService.getServiceName());
-				mklogger.debug(TAG, "sql control size : " +sqlControl.size());
-				
-				mklogger.debug(TAG, "service control : " +sqlControl.get(0));
 				String[] sqlConditions = sqlControl.get(0).getCondition();
 
 				if (sqlConditions.length == 0) {
@@ -668,10 +689,6 @@ public class MkRestApi extends HttpServlet {
 		int requestSize = jsonObject.size();
 		boolean searchAll = false;
 		
-		for(int i = 0; i < searchKeys.length; i++) {
-			mklogger.debug(TAG, "searchkeys :" + searchKeys[i]);
-		}
-		
 		query = (customTable == null) ? 
 				createSQL("get", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 				createSQL("get", searchKeys, jsonObject, null, null, customTable);
@@ -779,11 +796,11 @@ public class MkRestApi extends HttpServlet {
 		String befQuery = cpi.regularQuery(control, service, true);
 		String query = null;
 		String[] inputKey = pjData.getData();
-
+		
 		int requestSize = jsonObject.size();
 
 		if(inputKey.length != requestSize) {
-			mklogger.error(TAG, "��ǲ�� �ٸ��ϴ�.");
+			mklogger.error(TAG, "You must eneter every column data.");
 			mkResponse.setCode(400);
 			mkResponse.setMessage("You must enter every column data.");
 			return null;
