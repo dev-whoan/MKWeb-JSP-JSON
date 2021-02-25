@@ -36,8 +36,7 @@ public class MkWebContextListener implements ServletContextListener {
 		 * Setting Mk Logger Configure
 		 */
 		File mkweb_logger_config = new File(new File(event.getServletContext().getRealPath("/")), MkLoggerUri);
-		MkLogger ml = MkLogger.Me();
-		ml.setLogConfig(mkweb_logger_config);
+		MkLogger ml = new MkLogger(mkweb_logger_config);
 		
 		/*
 		 * Read Mk Configs

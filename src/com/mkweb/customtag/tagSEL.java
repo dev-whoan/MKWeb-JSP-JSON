@@ -30,8 +30,8 @@ public class tagSEL extends SimpleTagSupport {
 	private String like = "yes";
 	private String name = "name";
 	private String id = "id";
-	private String TAG = "[tagSEL]";
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[tagSEL]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	//Log ?���?
 	public void setObj(String obj) {
 		this.obj = obj;
@@ -118,17 +118,19 @@ public class tagSEL extends SimpleTagSupport {
 			sqlControlIndex = -1;
 
 		if(pageServiceIndex == -1) {
-			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any page service 'type:id'.");
+			mklogger.error(" Tag 'id(" + this.id + ")' is not matched with any page service 'type:id'.");
 			//	response.sendError(500);
 			return;
 		}
 
 		if(sqlControlIndex == -1) {
-			mklogger.error(TAG, " Tag 'name(" + this.name + ")' is not matched with any SQL controller. Please check SQL configs.");
+			mklogger.error(" Tag 'name(" + this.name + ")' is not matched with any SQL controller. Please check SQL configs.");
 			return;
 		}
 
-		requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData);
+		requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData,
+				pageInfo.get(pageServiceIndex).getParameter(), pageInfo.get(pageServiceIndex).getData().length);
+	//	requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData);
 		requestValues = cpi.getRequestParameterValues(request, pageInfo.get(pageServiceIndex).getParameter(), pageStaticData);
 
 		if(!cpi.comparePageValueWithRequestValue(
@@ -138,7 +140,7 @@ public class tagSEL extends SimpleTagSupport {
 				pageInfo.get(pageServiceIndex).getPageStatic(),
 				false)
 				){
-			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
+			mklogger.error(" Request Value is not authorized. Please check page config.");
 			//	response.sendError(500);
 			return;
 		}
@@ -167,6 +169,7 @@ public class tagSEL extends SimpleTagSupport {
 			query = befQuery;
 
 		String targetDB = sqlInfo.get(sqlControlIndex).getDB();
+		mklogger.info("=====Service[" + this.id +"]=====");
 		if(this.obj == "list")
 		{
 			DA = new MkDbAccessor(targetDB);
@@ -181,18 +184,15 @@ public class tagSEL extends SimpleTagSupport {
 
 					String temp = tempValue;
 					try {
+						mklogger.debug("temp : " + temp + " | tempValue : " + tempValue);
 						String decodeResult = URLDecoder.decode(temp, "UTF-8");
 						String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
 						
 						tempValue = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 					} catch (UnsupportedEncodingException e) {
 						//
-						mklogger.error(TAG, "(obj == list) given data (" + temp + ") is invalid! " + e.getMessage());
+						mklogger.error("(obj == list) given data (" + temp + ") is invalid! " + e.getMessage());
 					}
-					
-					mklogger.debug(TAG, "temp : " + temp);
-					
-					mklogger.debug(TAG, "requestParams : " + requestParams + "tempValue : " + tempValue);
 					
 					if(this.like.equals("no"))
 					{
@@ -208,18 +208,19 @@ public class tagSEL extends SimpleTagSupport {
 				DA.setRequestValue(reqs);
 				reqs = null;
 			}
+			
 			if(this.like.equals("no")) {
 				try {
 					dbResult = DA.executeSEL(false);
 				}catch (SQLException e) {
-					mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+					mklogger.error("(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
 				}
 			}
 			else {
 				try {
 					dbResult = DA.executeSELLike(false);
 				}catch (SQLException e) {
-					mklogger.error(TAG, "(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+					mklogger.error("(executeSELLike) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
 				}	
 			}
 			

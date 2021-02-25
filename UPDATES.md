@@ -1,4 +1,20 @@
 
+# 02/23/2021 (KST) 0.0.8a updated
+
+1. MkFileTransfer now supports remove mode.
+
+- FTP service, there is a new attribute "type" which have values : ["ftp-receiver", "ftp-remover"].
+
+- As its' type, one for receiving files, and another for removing files.
+
+- Default ftp.uri changed into /ftp/execute
+
+2. Preparing Features
+
+- Supports MkLogger for logging each controller's debug level.
+
+- For this update, MkLogger is no longer singleton designed.
+
 # 02/22/2021 (KST) 0.0.7 updated
 
 1. Mk RESTful API updated

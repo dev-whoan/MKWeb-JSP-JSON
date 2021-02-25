@@ -28,8 +28,8 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 	private File[] defaultFiles = null;
 	private static MkRestApiSqlConfigs mrasc = null;
 	private long[] lastModified; 
-	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[MkRestSQLConfigs]";
+	private static final String TAG = "[MkRestSQLConfigs]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public static MkRestApiSqlConfigs Me() {
 		if(mrasc == null)
@@ -50,7 +50,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb API Sql  Configs Start*=*=*=*=*=*=*=*=");
-			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
+			mklogger.info("File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
 			{
@@ -65,7 +65,9 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 				JSONObject sqlObject = (JSONObject) jsonObject.get("Controller");
 				
 				String sqlName = sqlObject.get("name").toString();
+				
 				String sqlDebugLevel = sqlObject.get("debug").toString();
+				
 				String sqlDB = sqlObject.get("db").toString();
 				String sqlAPI = sqlObject.get("api").toString();
 				String sqlTable = sqlObject.get("table").toString();
@@ -93,8 +95,8 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 					tempValues = mkJsonData.getJsonObject();
 				}
 				if(tempValues.size() == 0) {
-					mklogger.error(TAG, "[Controller: " + controlName + " | Service ID: " + serviceName + "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
-					mklogger.debug(TAG, "{\"1\":\"\"}");
+					mklogger.error("[Controller: " + controlName + " | Service ID: " + serviceName + "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+					mklogger.debug("{\"1\":\"\"}");
 					continue;
 				}
 				
@@ -118,7 +120,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						String serviceDatas = null;
 						MkJsonData mjd = new MkJsonData(serviceObject.get("query").toString());
 						if(!mjd.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId);
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
 							return;
 						}
 						
@@ -126,7 +128,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						serviceQuery = new String[serviceQueryData.size()+1];
 						
 						if(serviceQuery.length != 5) {
-							mklogger.error(TAG, "[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
+							mklogger.error("[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
 							return;
 						}
 						
@@ -137,7 +139,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
 						if(!serviceColumn.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(column)");
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId +"(column)");
 							return;
 						}
 						JSONObject jsonColumns = serviceColumn.getJsonObject();
@@ -152,7 +154,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
 
 						if(!serviceData.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId +"(data)");
 							return;
 						}
 						JSONObject jsonDatas = serviceData.getJsonObject();
@@ -253,7 +255,7 @@ public class MkRestApiSqlConfigs extends MkSqlConfigCan {
 		}
 		
 		Set iter = sql_configs.keySet();
-		mklogger.debug(TAG, "my iter : " + iter);
+		mklogger.debug("my iter : " + iter);
 		Iterator sqlIterator = iter.iterator();
 		String resultControlName = null;
 		ArrayList<MkSqlJsonData> jsonData = null;

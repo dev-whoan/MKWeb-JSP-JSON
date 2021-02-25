@@ -13,7 +13,8 @@ public class MkConfigReader {
 	private Properties properties = null;
 	private File configFile = null;
 	private long lastModified = 0L;
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[MkConfigReader]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	
 	public static MkConfigReader Me() {
 		if(mcr == null)

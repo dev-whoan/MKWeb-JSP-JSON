@@ -17,13 +17,13 @@ public class MkRestApiResponse {
 	private String documentURL = null;
 	private String contentType = null;
 	private int contentLength = -1; 
-	private String TAG = "[MkRestApiResponse]";
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[MkRestApiResponse]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	private long lifeTime = -1L;
 
 	MkRestApiResponse(){	documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";	lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;}
 	MkRestApiResponse(String jsonString, int code, int count){
-		mklogger.debug(TAG, " Called");
+		mklogger.debug(" Called");
 		responseResult = jsonString;
 		setLife();
 		responseCount = count;

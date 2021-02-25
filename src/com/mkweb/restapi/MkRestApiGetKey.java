@@ -15,9 +15,9 @@ import com.mkweb.logger.MkLogger;
 
 public class MkRestApiGetKey extends MkDbAccessor {
 	private Connection dbCon = null;
-	private MkLogger mklogger = MkLogger.Me();
 	private String psmt = null;
-	private String TAG = "[MkRestApiGetKey]";
+	private static final String TAG = "[MkRestApiGetKey]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	public MkRestApiGetKey() {
 		super();
 		dbCon = super.getDbCon();
@@ -69,10 +69,10 @@ public class MkRestApiGetKey extends MkDbAccessor {
 				if(rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				mklogger.error(TAG, "(GetKey) psmt = this.dbCon.prepareStatement(" + psmt + ") :" + e.getMessage());
+				mklogger.error("(GetKey) psmt = this.dbCon.prepareStatement(" + psmt + ") :" + e.getMessage());
 			}
 		}else {
-			mklogger.error(TAG, " dbCon is null");
+			mklogger.error(" dbCon is null");
 		}
 		return rst;
 	}

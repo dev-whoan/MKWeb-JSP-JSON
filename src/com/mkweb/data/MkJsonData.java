@@ -22,8 +22,8 @@ public class MkJsonData {
 	private JSONArray jsonArray = null;
 	private String data = null;
 
-	private String TAG = "[MkJsonData]";
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[MkJsonData]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public MkJsonData() {
 		data = null;
@@ -46,11 +46,11 @@ public class MkJsonData {
 			isDone = true;
 			return jo;
 		} catch (ParseException e) {
-			mklogger.error(TAG, "(func isValidDataForJson) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
+			mklogger.error("(func isValidDataForJson) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
 		} catch(NullPointerException e) {
-			mklogger.error(TAG, "(func isValidDataForJson) NullPoitnerException:: " + e + "\nGiven data is not valid for JSONObject.\n" + data);
+			mklogger.error("(func isValidDataForJson) NullPoitnerException:: " + e + "\nGiven data is not valid for JSONObject.\n" + data);
 		} catch(Exception e){
-			mklogger.error(TAG, "(func isValidDataForJson) error : " + e);
+			mklogger.error("(func isValidDataForJson) error : " + e);
 		} finally {
 			if(!isDone) {
 				return null;
@@ -68,15 +68,15 @@ public class MkJsonData {
 			
 			Object obj = parser.parse(temp);
 			ja = (JSONArray) obj;
-			mklogger.debug(TAG, "ja : " +ja);
+			mklogger.debug("ja : " +ja);
 			isDone = true;
 			return ja;
 		} catch (ParseException e) {
-			mklogger.error(TAG, "(func isValidDataForJsonArray) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
+			mklogger.error("(func isValidDataForJsonArray) ParseException:: " + e + " Given data is not valid for JSONObject.\n" + data);
 		} catch(NullPointerException e2) {
-			mklogger.error(TAG, "(func isValidDataForJsonArray) NullPoitnerException:: " + e2 + "\nGiven data is not valid for JSONObject.\n" + data);
+			mklogger.error("(func isValidDataForJsonArray) NullPoitnerException:: " + e2 + "\nGiven data is not valid for JSONObject.\n" + data);
 		} catch(Exception e){
-			mklogger.error(TAG, "(func isValidDataForJsonArray) error : " + e);
+			mklogger.error("(func isValidDataForJsonArray) error : " + e);
 		} finally {
 			if(!isDone) {
 				return null;
@@ -103,7 +103,7 @@ public class MkJsonData {
 				String key = splits[0];
 				if(splits[0].contains("[")) {
 					if(!splits[0].contains("]")) {
-						mklogger.error(TAG, " Given data Parentheses not matching!");
+						mklogger.error(" Given data Parentheses not matching!");
 						return null;
 					}else {
 						key = splits[0].split("\\[")[0];
@@ -130,7 +130,7 @@ public class MkJsonData {
 				reqData.put(key, list);
 				reqParams.add(key);
 			}else {
-				mklogger.error(TAG, " Given data is not valid." + requestParams[i]);
+				mklogger.error(" Given data is not valid." + requestParams[i]);
 				return null;
 			}
 		}
@@ -151,7 +151,7 @@ public class MkJsonData {
 				else if(list.size() > 1) {
 					reqToJson += "\"" + reqParams.get(i) + "\":{";
 					for(int j = 0; j < list.size(); j++) {
-					//	&�� �߶����
+					
 						String secondKey = list.get(j).split("&")[0];
 						String value = list.get(j).split("&")[1];
 						reqToJson += "\"" + secondKey + "\":" + "\"" + value + "\"";
@@ -174,7 +174,7 @@ public class MkJsonData {
 	
 	public void printObject(JSONObject jsonObject) {
 		if(jsonObject == null) {
-			mklogger.error(TAG, "(func printObject) JSONObject is null");
+			mklogger.error("(func printObject) JSONObject is null");
 			return;
 		}
 	    Set entrySet = jsonObject.keySet();
@@ -185,12 +185,12 @@ public class MkJsonData {
 			String key = (String) iter.next();
 			result += "{'"+key+"':'"+jsonObject.get(key) + "'}";
 		}
-		mklogger.info(TAG, "[JSONObject]: "+result);
+		mklogger.info("[JSONObject]: "+result);
 	}
 	
 	public boolean setJsonObject() {
 		if(this.data == null) {
-			mklogger.error(TAG, "(func setJsonObject) No given data.");
+			mklogger.error("(func setJsonObject) No given data.");
 			return false;
 		}
 
@@ -213,7 +213,7 @@ public class MkJsonData {
 	
 	public boolean setJsonArray() {
 		if(this.data == null) {
-			mklogger.error(TAG, "(func setJsonArray) No given data.");
+			mklogger.error("(func setJsonArray) No given data.");
 			return false;
 		}
 

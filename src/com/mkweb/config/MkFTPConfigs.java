@@ -28,13 +28,14 @@ public class MkFTPConfigs {
 	private File[] defaultFiles = null;
 	private static MkFTPConfigs mfd = null;
 	private long[] lastModified = null;
-	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[FTP Configs]";
+	private static final String TAG = "[FTP Configs]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	private String filePrefix = null;
 
 	public static MkFTPConfigs Me() {
-		if(mfd == null)
+		if(mfd == null) 
 			mfd = new MkFTPConfigs();
+	
 		return mfd;
 	}
 	
@@ -58,7 +59,7 @@ public class MkFTPConfigs {
 			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb FTP  Configs Start*=*=*=*=*=*=*=*=");
-			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
+			mklogger.info("File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
 			{
@@ -73,7 +74,8 @@ public class MkFTPConfigs {
 				JSONObject ftpObject = (JSONObject) jsonObject.get("Controller");
 				
 				String ftpName = ftpObject.get("name").toString();
-				String ftpControllerPath = ftpObject.get("path").toString();				
+				String ftpControllerPath = ftpObject.get("path").toString();		
+				
 				String ftpDebugLevel = ftpObject.get("debug").toString();
 				
 				JSONArray serviceArray = (JSONArray) ftpObject.get("services");
@@ -83,14 +85,16 @@ public class MkFTPConfigs {
 					String serviceId = null;
 					String servicePath = null;
 					String serviceDirPrefix = null;	//"dir"
+					String serviceType = null;
 					boolean serviceHashDirPrefix = false;
 					
 					String[] serviceAllowFileFormat = null;
 					try {
 						serviceId = serviceObject.get("id").toString();
+						serviceType = serviceObject.get("type").toString();
 						servicePath = serviceObject.get("servicepath").toString();
 						Object prefix = serviceObject.get("dir");
-						mklogger.debug(TAG, "prefix : " + prefix);
+						mklogger.debug("prefix : " + prefix);
 						if(prefix != null) {
 							serviceDirPrefix = prefix.toString();
 							serviceHashDirPrefix = serviceObject.get("hash_dir").toString().contentEquals("true");
@@ -109,7 +113,7 @@ public class MkFTPConfigs {
 						
 						MkJsonData mjd = new MkJsonData(serviceObject.get("format").toString());
 						if(!mjd.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId);
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
 							return;
 						}
 						
@@ -120,13 +124,14 @@ public class MkFTPConfigs {
 						}
 						
 					} catch(Exception e) {
-						mklogger.debug(TAG, "Failed to create ftp controller. " + e.getMessage());
+						mklogger.debug("Failed to create ftp controller. " + e.getMessage());
 						e.printStackTrace();
 						return;
 					}
 					
 					MkFtpData result = new MkFtpData();
 					result.setControlName(ftpName);
+					result.setServiceType(serviceType);
 					result.setPath(servicePath);
 					result.setDebugLevel(ftpDebugLevel);
 					result.setServiceName(serviceId);
@@ -157,7 +162,7 @@ public class MkFTPConfigs {
 	public void printFTPInfo(MkFtpData jsonData, String type) {
 		String tempMsg = "\n===============================FTP  Control================================="
 				+ "\n|Controller:\t" + jsonData.getControlName()
-				+ "\n|FTP ID:\t" + jsonData.getServiceName()
+				+ "\n|FTP ID:\t" + jsonData.getServiceName() + "\t\tFTP Type:\t" + jsonData.getServiceType()
 				+ "\n|FTP Path:\t" + jsonData.getPath()
 				+ "\n|FTP Prefix:\t" + jsonData.getDirPrefix()
 				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
@@ -218,23 +223,23 @@ public class MkFTPConfigs {
 		boolean isDirExists = folder.exists();
 		if(!isDirExists)
 		{
-			mklogger.info(TAG, "The directory is not exists. Creating new one...");
+			mklogger.info("The directory is not exists. Creating new one...");
 			try {		
 				isDirExists = folder.mkdirs();
 				folder.setReadable(true, false);
 				folder.setExecutable(true, false);
 				if(!isDirExists) {
-					mklogger.error(TAG, "Failed to create path. [" + targetDir +"]");
+					mklogger.error("Failed to create path. [" + targetDir +"]");
 					return false;
 				}
 			} catch (Exception e) {
-				mklogger.error(TAG, "Failed to create path. [" + targetDir +"] " + e.getMessage());
+				mklogger.error("Failed to create path. [" + targetDir +"] " + e.getMessage());
 				return false;
 			}
 		}
 		
 		if(isDirExists) {
-			mklogger.info(TAG, "Success to create path. [" + targetDir +"]");
+			mklogger.info("Success to create path. [" + targetDir +"]");
 		}
 		
 		return isDirExists;

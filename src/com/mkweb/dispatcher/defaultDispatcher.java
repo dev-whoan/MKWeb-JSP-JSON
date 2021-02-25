@@ -23,8 +23,9 @@ import com.mkweb.config.MkConfigReader;
 )
 public class defaultDispatcher extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-    private MkLogger mklogger = MkLogger.Me();
-    private String TAG = "[defaultDispatcher]";
+    
+    private static final String TAG = "[defaultDispatcher]";
+    private static final MkLogger mklogger = new MkLogger(TAG);
     /**
      * @see HttpServlet#HttpServlet()
      */

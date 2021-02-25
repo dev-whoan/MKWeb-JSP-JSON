@@ -18,20 +18,47 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class MkLogger{
-	private HashMap<String, String> log_configs = new HashMap<String, String>();
-
-	private File defaultFile = null;
+	private static HashMap<String, String> log_configs = new HashMap<String, String>();
+	private static File defaultFile = null;
+	private static boolean printStarter = true;
 	private String TAG = null;
+	private String printTAG = null;
 	private String temp = null;
-
 	private String logMsg = null;
-	private static MkLogger ml = null;
+	private String debugLevel = null;
 	
-	public static MkLogger Me() {
-		if(ml == null)
-			ml = new MkLogger();
-
-		return ml;
+	public MkLogger(String printTAG) {
+		checkConfig();
+		this.printTAG = printTAG;
+		this.debugLevel = "debug";
+	}
+	
+	public MkLogger(File defaultFile) {
+		if(this.defaultFile == null) {
+			this.defaultFile = defaultFile;
+			this.setLogConfig();
+		}
+		
+		this.printTAG = "[MkStarter]";
+		this.debugLevel = "debug";
+	}
+	
+	public MkLogger(String printTAG, String debugLevel) {
+		checkConfig();
+		this.printTAG = printTAG;
+		this.debugLevel = debugLevel;
+	}
+	
+	private boolean checkConfig() {
+		if(defaultFile != null) {
+			setLogConfig();
+		}
+		
+		return (defaultFile != null);
+	}
+	
+	public void setLevel(String level) {
+		this.debugLevel = level;
 	}
 	
 	private void Log(Object msg, String caller) {
@@ -58,7 +85,7 @@ public class MkLogger{
 				File logFile = new File(log_configs.get("log_location").toString());
 				BufferedWriter bw = new BufferedWriter(new FileWriter(logFile, true));
 				PrintWriter pw = new PrintWriter(bw, true);
-
+				
 				pw.println(TAG + msg.toString());
 			}
 		}catch (IOException e){
@@ -74,41 +101,23 @@ public class MkLogger{
 		if(logMsg != null)
 		{
 			if(msgType == "info")
-				info("", logMsg);
+				info(logMsg);
 			else if(msgType == "warn")
-				warn("", logMsg);
+				warn(logMsg);
 			else if(msgType == "error")
-				error("", logMsg);
+				error(logMsg);
 			else if(msgType == "debug")
-				debug("", logMsg);
+				debug(logMsg);
 
 			logMsg = null;
 		}
 	}
 
-	public void debug(Object msg) {
-		debug("", msg);
-	}
-	public void warn(Object msg) {
-		warn("", msg);
-	}
-
-	public void error(Object msg) {
-		error("", msg);
-	}
 	public void temp(Object msg, boolean doFlush) {
-		temp("", msg, doFlush);
-	}
-
-	public void info(Object msg) {
-		info("", msg);
-	}
-
-	public void temp(String TAG, Object msg, boolean doFlush) {
 		if(logMsg != null) {
 			if(doFlush)
 			{
-				warn(TAG, "--AUTO FLUSHING--: " + logMsg);
+				warn(printTAG + " --AUTO FLUSHING--: " + logMsg);
 				logMsg = null;
 				return;
 			}
@@ -117,42 +126,63 @@ public class MkLogger{
 				logMsg += "\n" + msg.toString();
 		}else {
 			if(msg != null)
-				logMsg = TAG + " " + msg.toString();
+				logMsg = " " + msg.toString();
 		}
 	}
 
-	public void info(String TAG, Object msg)  {
-		switch(log_configs.get("level").toString())
-		{
-		case "info": case "debug":
-			Log("[INFO]" + TAG + " " + msg, "info");
-			break;
+	public void debug(Object msg) {
+		if(debugLevel != null) {
+			switch(debugLevel) {
+			case "info": case "warn": case "error":
+				return;
+			}
 		}
-	}
-
-	public void warn(String TAG, Object msg)  {
-		switch(log_configs.get("level").toString())
-		{
-		case "info": case "warn": case "debug":
-			Log("[*WARN*]" + TAG + " " + msg, "warn");
-			break;
-		}
-	}
-
-	public void error(String TAG, Object msg) {
-		switch(log_configs.get("level").toString())
-		{
-		case "info": case "warn": case "error": case "debug":
-			Log("[**ERROR**]" + TAG + " " + msg, "error");
-			break;
-		}
-	}
-
-	public void debug(String TAG, Object msg) {
+		
 		switch(log_configs.get("level").toString())
 		{
 		case "debug":
-			Log("[-DEBUG-]" + TAG + " " + msg, "debug");
+			Log("[-DEBUG-]" + printTAG + " " + msg, "debug");
+			break;
+		}
+	}
+	
+	public void info(Object msg)  {
+		if(debugLevel != null) {
+			switch(debugLevel) {
+			case "warn": case "error":
+				return;
+			}
+		}
+		
+		switch(log_configs.get("level").toString())
+		{
+		case "info": case "debug":
+			Log("[INFO]" + printTAG + " " + msg, "info");
+			break;
+		}
+	}
+
+	public void warn(Object msg)  {
+		if(debugLevel != null) {
+			switch(debugLevel) {
+			case "error":
+				return;
+			}
+		}
+		
+		switch(log_configs.get("level").toString())
+		{
+		case "info": case "warn": case "debug":
+			Log("[*WARN*]" + printTAG + " " + msg, "warn");
+			break;
+		}
+	}
+
+	public void error(Object msg) {
+		switch(log_configs.get("level").toString())
+		{
+		case "info": case "warn": case "error": case "debug":
+			Log("[**ERROR**]" + printTAG + " " + msg, "error");
 			break;
 		}
 	}
@@ -198,11 +228,15 @@ public class MkLogger{
 		}
 	}
 	
-	public void setLogConfig(File logConfigs) {
+	public void setLogConfig() {
+		
+		if(defaultFile == null) {
+			System.err.println("[MkLogger] There is no file defined to set MkLogger.");
+			return;
+		}
 		log_configs.clear();
 		logMsg = "";
 		temp = "[MkLogger]";
-		defaultFile = logConfigs;
 		try {
 			logMsg += ("\n[Initializing][MkLogger]" + "=*=*=*=*=*=*=* MkWeb Log Configs Start*=*=*=*=*=*=*=*=\n");
 			logMsg += ("[Initializing][MkLogger]" + "=                   Start setting...                 =\n");
@@ -238,13 +272,18 @@ public class MkLogger{
 
 			createFile();
 
-			info("", logMsg);
+			if(printStarter)
+				info(logMsg);
+			
 			logMsg = null;
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();
 		}
-
+		
+		if(printStarter)
+			printStarter = false;
+		
 	}
 }

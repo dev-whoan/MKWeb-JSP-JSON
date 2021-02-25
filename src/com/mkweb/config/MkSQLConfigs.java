@@ -29,8 +29,9 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 	private File[] defaultFiles = null;
 	private static MkSQLConfigs sxc = null;
 	private long[] lastModified = null;
-	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[MkSQLConfigs]";
+	
+	private static final String TAG = "[MkSQLConfigs]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public static MkSQLConfigs Me() {
 		if(sxc == null)
@@ -51,7 +52,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Sql  Configs Start*=*=*=*=*=*=*=*=");
-			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
+			mklogger.info("File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
 			{
@@ -67,6 +68,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 				
 				String sqlName = sqlObject.get("name").toString();
 				String sqlDebugLevel = sqlObject.get("debug").toString();
+
 				String sqlDB = sqlObject.get("db").toString();
 				String sqlAPI = sqlObject.get("api").toString();
 				
@@ -85,7 +87,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						
 						MkJsonData mjd = new MkJsonData(serviceObject.get("query").toString());
 						if(!mjd.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId);
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
 							return;
 						}
 						
@@ -95,7 +97,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						
 						//serviceQuery.length != 5
 						if(serviceQueryData.size() != 5) {
-							mklogger.error(TAG, "[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
+							mklogger.error("[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
 							continue;
 						}
 						
@@ -105,14 +107,14 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						
 						//존재 안하면!! table이 없는거니까 잘못된거임!
 						if(serviceQueryData.get("table") == null) {
-							mklogger.error(TAG, "Failed to set Table data. Service name " + serviceId );
+							mklogger.error("Failed to set Table data. Service name " + serviceId );
 							continue;
 						}
 						
 						if(serviceQueryData.get("table") instanceof JSONObject) {
-							mklogger.debug(TAG, "JSONObject!!");
+							mklogger.debug("JSONObject!!");
 						}else {
-							mklogger.error(TAG, "Failed to set Table data. Table must be instance of JSONObject. Service name : " + serviceId);
+							mklogger.error("Failed to set Table data. Table must be instance of JSONObject. Service name : " + serviceId);
 							continue;
 						}
 						
@@ -120,7 +122,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
 						if(!serviceColumn.setJsonObject()) {
-							mklogger.error(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(column)");
+							mklogger.error("Failed to set MkJsonObject service name : " + serviceId +"(column)");
 							continue;
 						}
 						JSONObject jsonColumns = serviceColumn.getJsonObject();
@@ -135,7 +137,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
 						
 						if(!serviceData.setJsonObject()) {
-							mklogger.debug(TAG, "Failed to set MkJsonObject service name : " + serviceId +"(data)");
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId +"(data)");
 							continue;
 						}
 						JSONObject jsonDatas = serviceData.getJsonObject();
@@ -165,7 +167,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 							try {
 								tableData.put(catchme[cm], joinObject.get(catchme[cm]).toString());
 							} catch (NullPointerException e) {
-								mklogger.error(TAG, "[Controller: " + controlName + "(" + serviceId +")] You must to set \"" + catchme[cm] + "\" in \"table\" to use join. This controller will not be registered.");
+								mklogger.error("[Controller: " + controlName + "(" + serviceId +")] You must to set \"" + catchme[cm] + "\" in \"table\" to use join. This controller will not be registered.");
 								return;
 							}
 						}

@@ -37,9 +37,10 @@ public class tagFTP extends SimpleTagSupport {
 	private String id = "id";
 	private String target = null;
 	private String img = "false";
-	private String TAG = "[tagFTP]";
 	private String dir = null;
-	private MkLogger mklogger = MkLogger.Me();
+	
+	private static final String TAG = "[tagFTP]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	//Log ?���?
 	public void setObj(String obj) {	this.obj = obj;	}
 	public void setName(String name) {	this.name = name;	}
@@ -96,7 +97,7 @@ public class tagFTP extends SimpleTagSupport {
 		}
 		if(!pageServiceFound) {
 			pageServiceIndex = -1;
-			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any page service 'type:id'.");
+			mklogger.error(" Tag 'id(" + this.id + ")' is not matched with any page service 'type:id'.");
 			return;
 		}
 		
@@ -111,7 +112,7 @@ public class tagFTP extends SimpleTagSupport {
 		}
 		if(!ftpServiceFound) {
 			ftpServiceIndex = -1;
-			mklogger.error(TAG, " Tag 'id(" + this.id + ")' is not matched with any ftp service 'type:id'.");
+			mklogger.error(" Tag 'id(" + this.id + ")' is not matched with any ftp service 'type:id'.");
 			return;
 		}
 		
@@ -125,7 +126,7 @@ public class tagFTP extends SimpleTagSupport {
 		String[] dirs = null;
 		boolean ftpDirHash = ftpService.getHashDirPrefix();
 		
-		mklogger.debug(TAG, "dir : " + this.dir + "/");
+		mklogger.debug("dir : " + this.dir + "/");
 		if(ftpDirPrefix != null) {
 			if(this.dir != null)
 				ftpDirPrefix = this.dir;
@@ -150,13 +151,13 @@ public class tagFTP extends SimpleTagSupport {
 		}else {
 			ftpDirPrefix = "";
 		}
-		mklogger.debug(TAG, "ftDirPrefix : " + ftpDirPrefix);
+		mklogger.debug("ftDirPrefix : " + ftpDirPrefix);
 		filePath = filePath + ftpDirPrefix;
 		
 		if(!(MkConfigReader.Me().get("mkweb.ftp.absolute").contentEquals("yes")))
 			filePath = MkFTPConfigs.Me().getPrefix() + filePath; 
 
-		mklogger.debug(TAG, "tag filePath : " + filePath);
+		mklogger.debug("tag filePath : " + filePath);
 		
 		/*
 		 * 똑같이 여기서도 prefix 달아주고 hash 해주면 됨

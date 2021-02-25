@@ -28,8 +28,8 @@ import com.mkweb.config.MkRestApiSqlConfigs;
 import com.mkweb.config.MkSQLConfigs;
 
 public class ConnectionChecker {
-	private String TAG = "[ConnectionChecker]";
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[ConnectionChecker]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public String regularQuery(String controlName, String serviceName, boolean isApi) {
 		ArrayList<MkSqlJsonData> resultSqlData = null;
@@ -45,7 +45,7 @@ public class ConnectionChecker {
 				resultSqlData = MkSQLConfigs.Me().getControlByServiceName(serviceName);
 
 			if(resultSqlData == null) {
-				mklogger.error(TAG, "There is no sql control named : " + controlName);
+				mklogger.error("There is no sql control named : " + controlName);
 				return null;	
 			}
 		}
@@ -63,6 +63,73 @@ public class ConnectionChecker {
 		return result[0];
 	}
 
+	/*
+	 * 기존 : request parameter에서 parameter 앞 첨자를 구분했고, 해당 첨자들이 일치하지 않으면 취소시킴.
+	 * 이제는 service단을 받아서, service에서 요청한 것들만 Ok 시킴. 이 때, service가 정의한 파라미터 수와
+	 * 내가 받아들인 파라미터 수가 같은지 보면 됨
+	 * 인자 5개는 new, 3개는 old
+	 * */
+	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData,
+										String pageParameter, int pageParameterSize) {
+		Enumeration<String> params = request.getParameterNames();
+		String requestParams = null;
+		String pageStaticParameterName = null;
+		String[] pageStaticParameters = null;
+		if (pageStaticData != null) {
+			pageStaticParameterName = pageStaticData.getParameter();
+			pageStaticParameters = pageStaticData.getData();
+		} 
+		
+		int checked = 0;
+		ArrayList<String> addedValue = new ArrayList<>();
+		while(params.hasMoreElements()) {
+			String name = params.nextElement().toString().trim();
+			if(name.contains(".")) {
+				String userRequestParameterNam = name.split("\\.")[0];
+				
+				if(pageParameter.contentEquals(userRequestParameterNam)) {
+					if(addedValue.indexOf(name) == -1) {
+						requestParams = userRequestParameterNam;
+						checked++;
+						addedValue.add(name);
+					} else {
+						mklogger.warn("Request value already checked." + name);
+					}
+				}
+				continue;
+			} else {
+				//pageStatic Parameter
+				if(isStaticService) {
+					if(addedValue.indexOf(name) == -1) {
+						checked++;
+						addedValue.add(name);
+					} else {
+						mklogger.warn("Request value already checked." + name);
+					}
+				}
+			}
+		}
+		
+		if(isStaticService) {
+			if(checked >= pageParameterSize) {
+				requestParams = "__MKWEB_STATIC_VALUE__";
+			} else {
+				requestParams = null;
+				mklogger.error("(func getRequestPageParameterName-StaticService) Request parameters are not valid. Need to receive more parameters.");
+			}
+		}else {
+			if(checked != pageParameterSize) {
+				requestParams = null;
+				mklogger.debug("page parameter : " + pageParameter);
+				mklogger.debug("received : " + checked + ", pageSize : " + pageParameterSize);
+				mklogger.error("(func getRequestPageParameterName) Request parameters are not valid. May receive more parameters or less parameters than required.");
+			}
+		}
+		
+		return requestParams;
+	}
+	
+	
 	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData) {
 		Enumeration<String> params = request.getParameterNames();
 		String requestParams = null;
@@ -73,16 +140,20 @@ public class ConnectionChecker {
 			pageStaticParameters = pageStaticData.getData();
 		} 
 		int staticPassCount = 0;
+		mklogger.debug("params have elements : " + params.hasMoreElements());
 		while (params.hasMoreElements()) {
+			//need page data
 			String name = params.nextElement().toString().trim();
+			mklogger.debug("name: " + name);
 			if (isStaticService) {
 				if (name.contains(".")) {
 					String userRequestParameterName = name.split("\\.")[0];
+					mklogger.debug("urqn : " + userRequestParameterName);
 					if (requestParams != null) {
 						if (requestParams.contentEquals(userRequestParameterName) || !requestParams.contentEquals(pageStaticParameterName))
 							continue; 
-						mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
-						mklogger.debug(this.TAG, " The parameter name is not same as page static parameter name.");
+						mklogger.error(" (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+						mklogger.debug(" The parameter name is not same as page static parameter name.");
 						return null;
 					} 
 					if (!userRequestParameterName.contentEquals(pageStaticParameterName))
@@ -93,12 +164,12 @@ public class ConnectionChecker {
 			} 
 			if (name.contains(".")) {
 				String userRequestParameterName = name.split("\\.")[0];
-				mklogger.debug(TAG, "name : " + name + ", urpn: " + userRequestParameterName + " :: pspn " + pageStaticParameterName);
+				mklogger.debug("name : " + name + ", urpn: " + userRequestParameterName + " :: pspn " + pageStaticParameterName);
 				if (requestParams != null) {
 					if (requestParams.contentEquals(userRequestParameterName) || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName)))
 						continue; 
-					mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
-					mklogger.debug(this.TAG, " The parameter name is not same as previous parameter name.");
+					mklogger.error(" (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
+					mklogger.debug(" The parameter name is not same as previous parameter name.");
 					return null;
 				} 
 				
@@ -108,14 +179,15 @@ public class ConnectionChecker {
 				continue;
 			} 
 			if (pageStaticData == null) {
-				mklogger.error(this.TAG, " (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
+				mklogger.error(" (func getRequestPageParameterName) Request parameter is not valid(User requested with no parameter.)");
 				return null;
 			} 
+			
 		} 
 		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName))) && 
 				staticPassCount == pageStaticParameters.length) {
 			requestParams = "__MKWEB_STATIC_VALUE__";
-			mklogger.warn(this.TAG, "STATIC VALUE HAS SET");
+			mklogger.warn("STATIC VALUE HAS SET");
 		} 
 		return requestParams;
 	}
@@ -170,7 +242,7 @@ public class ConnectionChecker {
 	public String setQuery(String query) {
 		String aftQuery = query;
 		if(aftQuery != null) {
-			mklogger.debug(TAG, "(func setQuery): befQuery: " + aftQuery);
+			mklogger.debug("(func setQuery): befQuery: " + aftQuery);
 			String[] testQueryList = aftQuery.split("@");
 			String[] replaceTarget = null;
 
@@ -217,8 +289,8 @@ public class ConnectionChecker {
 		int requestSize = requestValue.size();
 
 		if(pageSize != requestSize) {
-			mklogger.error(TAG, " Number of request parameters is not same as number of allowed parameters.");
-			mklogger.temp(TAG + " Page value size : " + pageSize + " | request size : " + requestSize, false);
+			mklogger.error(" Number of request parameters is not same as number of allowed parameters.");
+			mklogger.temp(" Page value size : " + pageSize + " | request size : " + requestSize, false);
 			mklogger.temp("pageValue : " + pageValue.toString(), false);
 			mklogger.flush("debug");
 			return false;
@@ -289,7 +361,7 @@ public class ConnectionChecker {
 		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
 		Device userDevice = null;
 		int desktopIndex = -1;
-		mklogger.debug(TAG, "device size : " + devices.size());
+		mklogger.debug("device size : " + devices.size());
 		int deviceIndex = -1;
 		int gotcha = 0;
 		for(int i = 0; i < devices.size(); i++) {
@@ -344,7 +416,7 @@ public class ConnectionChecker {
 		}
 		
 
-		mklogger.debug(TAG, "dl 2 : " + defaultLanguage);
+		mklogger.debug("dl 2 : " + defaultLanguage);
 		String[] uriInfo = userDevice.getDeviceInfo(defaultLanguage);
 		
 		return uriInfo[0] + "/" + uriInfo[1];

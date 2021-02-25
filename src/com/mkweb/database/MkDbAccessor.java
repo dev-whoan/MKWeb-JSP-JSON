@@ -19,21 +19,22 @@ import com.mkweb.logger.MkLogger;
 import com.mkweb.config.MkConfigReader;
 
 public class MkDbAccessor {
-	//·Î±× ¸¸µé±â
+	//ï¿½Î±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
 	private Connection dbCon = null;
 	private String psmt = null;
-	private MkLogger mklogger = MkLogger.Me();
 	private ArrayList<String> reqValue = null;
 	private String[] reqValueArr = null;
 	private String[] generateKeys = null;
 	private String targetDB = null;
-	private String TAG = "[MkDbAccessor]";
+	
+	private static final String TAG = "[MkDbAccessor]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public MkDbAccessor() {
 		try {
 			dbCon = connectDB();
 		} catch (SQLException e) {
-			mklogger.debug(TAG, "Failed to connect DB : " + e.getMessage());
+			mklogger.debug("Failed to connect DB : " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -43,7 +44,7 @@ public class MkDbAccessor {
 			this.targetDB = targetDB;
 			dbCon = connectDB();
 		} catch(SQLException e) {
-			mklogger.debug(TAG, "Failed to connect DB : " + e.getMessage());
+			mklogger.debug("Failed to connect DB : " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -60,7 +61,7 @@ public class MkDbAccessor {
 
 	public void setRequestValue(ArrayList<String> arr) {
 		reqValue = new ArrayList<>();
-		mklogger.temp(TAG, "=====RequestValue=====", false);
+		mklogger.temp("=====RequestValue=====", false);
 		mklogger.temp(this.psmt, false);
 		String s = "Values : (";
 		for(int i = 0; i < arr.size(); i++) {
@@ -77,7 +78,7 @@ public class MkDbAccessor {
 
 	public void setApiRequestValue(ArrayList<String> arr) {
 		reqValue = new ArrayList<>();
-		mklogger.temp(TAG, "=====RequestValue=====", false);
+		mklogger.temp("=====RequestValue=====", false);
 		mklogger.temp(this.psmt, false);
 		String s = "Values : (";
 		for(int i = 0; i < arr.size(); i++) {
@@ -94,7 +95,7 @@ public class MkDbAccessor {
 
 	public void setRequestValue(String[] arr) {
 		reqValueArr = new String[arr.length];
-		mklogger.temp(TAG, "=====RequestValue=====", false);
+		mklogger.temp("=====RequestValue=====", false);
 		mklogger.temp(this.psmt, false);
 		String s = "Values : (";
 		for(int i = 0; i < reqValueArr.length; i++) {
@@ -110,7 +111,7 @@ public class MkDbAccessor {
 
 	public void setRequestValue(ArrayList<String> arr, JSONObject jsonObject) {
 		reqValue = new ArrayList<>();
-		mklogger.temp(TAG, "=====RequestValue=====", false);
+		mklogger.temp("=====RequestValue=====", false);
 		mklogger.temp(this.psmt, false);
 		String s = "Values : (";
 		for(int i = 0; i < arr.size(); i++) {
@@ -127,11 +128,11 @@ public class MkDbAccessor {
 	public void printRequestValues() {
 		if(reqValue != null) {
 			for(int i = 0; i < reqValue.size(); i++) {
-				mklogger.info(TAG, "reqValue " + i + " : " + reqValue.get(i));
+				mklogger.info("reqValue " + i + " : " + reqValue.get(i));
 			}
 		}else {
 			for(int i = 0; i < reqValueArr.length; i++) {
-				mklogger.info(TAG, "reqValueArr " + i + " : " + reqValueArr[i]);
+				mklogger.info("reqValueArr " + i + " : " + reqValueArr[i]);
 			}
 		}
 	}
@@ -142,15 +143,15 @@ public class MkDbAccessor {
 			try {
 				Class.forName("com.mysql.cj.jdbc.Driver");
 			} catch (ClassNotFoundException e) {
-				mklogger.error(TAG, "(connectDB) ClassNotFoundException: " + e.getMessage());
+				mklogger.error("(connectDB) ClassNotFoundException: " + e.getMessage());
 			}
 			String db = (targetDB != null ? targetDB : MkConfigReader.Me().get("mkweb.db.database"));
 			String url = "jdbc:mysql://" + MkConfigReader.Me().get("mkweb.db.hostname") + ":" + MkConfigReader.Me().get("mkweb.db.port") + "/" + db + "?" + "characterEncoding=UTF-8&serverTimezone=UTC";
 			conn = DriverManager.getConnection(url, MkConfigReader.Me().get("mkweb.db.id"), MkConfigReader.Me().get("mkweb.db.pw"));
 		}catch(SQLException e){
-			mklogger.error(TAG, "(connectDB) SQLException : " + e.getMessage());
+			mklogger.error("(connectDB) SQLException : " + e.getMessage());
 		}catch(Exception e){ 
-			mklogger.error(TAG, e.getMessage());
+			mklogger.error(e.getMessage());
 		}
 
 		return conn;
@@ -221,7 +222,7 @@ public class MkDbAccessor {
 					rs.close();
 
 			}else {
-				mklogger.debug(TAG, "psmt ³ÎÀÓ");
+				mklogger.debug("psmt ï¿½ï¿½ï¿½ï¿½");
 			}
 		}
 		return rst;
@@ -248,7 +249,7 @@ public class MkDbAccessor {
 					}
 				}
 
-				mklogger.debug(TAG, "prestmt: \n\n\n" + prestmt.toString());
+				mklogger.debug("prestmt: \n\n\n" + prestmt.toString());
 
 				rs = prestmt.executeQuery(); 
 

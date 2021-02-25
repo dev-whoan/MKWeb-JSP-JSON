@@ -28,9 +28,8 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 
 	private static MkRestApiPageConfigs pc = null;
 	private long lastModified[]; 
-	private MkLogger mklogger = MkLogger.Me();
-
-	private String TAG = "[MkRestPageConfigs]";
+	private static final String TAG = "[MkRestPageConfigs]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public static MkRestApiPageConfigs Me() {
 		if(pc == null)
@@ -65,7 +64,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb API Page Configs Start*=*=*=*=*=*=*=*=");
-			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
+			mklogger.info("File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
 			{
@@ -81,13 +80,15 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 
 				String pageName = pageObject.get("name").toString();
 				String lastURI = pageObject.get("last_uri").toString();
+				
 				String pageDebugLevel = pageObject.get("debug").toString();
+				
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 
 				JSONObject pageDevice = (JSONObject) pageObject.get("device");
 				
-				/*	µð¹ÙÀÌ½º ±¸ºÐ : desktop, android, ios ÃÖ´ë 3°³*/
+				/*	ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ ï¿½ï¿½ï¿½ï¿½ : desktop, android, ios ï¿½Ö´ï¿½ 3ï¿½ï¿½*/
 				ArrayList<Device> deviceConfig = new ArrayList<>();
 				
 				Set<String> deviceConfigKey = pageDevice.keySet();
@@ -98,17 +99,17 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					
 					Object dO = pageDevice.get(deviceControlName);
 					if(dO != null) {
-						//desktop, android, ios¿¡ ´ëÇÑ JSONObject
+						//desktop, android, iosï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ JSONObject
 						JSONObject deviceObject = (JSONObject) dO;
 						
-						//¸¸µé±â À§ÇÑ Device ¼³Á¤
+						//ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Device ï¿½ï¿½ï¿½ï¿½
 						Device tempDevice = new Device();
 						// tempDeviceInfo(language, JSONObject(path, file, uri));
 						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
 						
 						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
 						
-						//Device Controller°¡ °®°íÀÖ´Â key¸¦ Ã£¾Æ¾ß ÇÕ´Ï´Ù.
+						//Device Controllerï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ keyï¿½ï¿½ Ã£ï¿½Æ¾ï¿½ ï¿½Õ´Ï´ï¿½.
 						Set<String> deviceObjectKey = deviceObject.keySet();
 						Iterator<String> iterator = deviceObjectKey.iterator();
 						while(iterator.hasNext()) {
@@ -125,7 +126,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 						}
 						
 						if(tempDeviceInfo.get("default") == null) {
-							mklogger.temp(TAG + "[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
+							mklogger.temp("[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
 							mklogger.temp("The settings for this view controller is terminated.", false);
 							mklogger.flush("error");
 							return;
@@ -168,8 +169,8 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 						tempValues = mkJsonData.getJsonObject();
 					}
 					if(tempValues.size() == 0) {
-						mklogger.error(TAG, "[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
-						mklogger.debug(TAG, "{\"1\":\"\"}");
+						mklogger.error("[Controller: " + pageName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+						mklogger.debug("{\"1\":\"\"}");
 						continue;
 					}
 					page_value = new String[tempValues.size()];
@@ -181,7 +182,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					String controlName = lastURI;
 					/*	 Add Index Page	*/
 					if(controlName.contentEquals("/")) {
-						mklogger.temp(TAG + "[" + pageName + "] RESTful API view last_uri property must have value.", false);
+						mklogger.temp("[" + pageName + "] RESTful API view last_uri property must have value.", false);
 						mklogger.temp("The settings for this view controller is terminated.", false);
 						mklogger.flush("error");
 						return;
@@ -200,7 +201,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 							page_value,
 							(pageAPI.toLowerCase().contentEquals("yes")));
 					
-					printPageInfo(mklogger, TAG, curData, "info");
+					printPageInfo(mklogger, curData, "info");
 					pageJsonData.add(curData);
 					page_configs.put(controlName, pageJsonData);
 				}
@@ -232,13 +233,13 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		}
 
 		if(k == null) {
-			mklogger.error(TAG, " : Input String data is null");
+			mklogger.error(" : Input String data is null");
 			return null;
 		}
 
 		if(page_configs.get(k) == null)
 		{
-			mklogger.error(TAG, " : The control is unknown. [called control name: " + k + "]");
+			mklogger.error(" : The control is unknown. [called control name: " + k + "]");
 			return null;
 		}
 		return page_configs.get(k);

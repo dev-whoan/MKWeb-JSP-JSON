@@ -30,8 +30,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 
 	private static MkPageConfigs pc = null;
 	private long lastModified[];
-	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[MkPageConfigs]";
+	private static final String TAG = "[MkPageConfigs]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 
 	public static MkPageConfigs Me() {
 		if(pc == null)
@@ -65,7 +65,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 			
 			lastModified[lmi++] = defaultFile.lastModified();
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs Start*=*=*=*=*=*=*=*=");
-			mklogger.info(TAG + "File: " + defaultFile.getAbsolutePath());
+			mklogger.info("File: " + defaultFile.getAbsolutePath());
 			mklogger.info("=            " + defaultFile.getName() +"              =");
 			if(defaultFile == null || !defaultFile.exists())
 			{
@@ -81,6 +81,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 
 				String controlName = pageObject.get("name").toString();
 				String lastURI = pageObject.get("last_uri").toString();
+				
 				String pageDebugLevel = pageObject.get("debug").toString();
 
 				String pageAPI = pageObject.get("api").toString();
@@ -151,7 +152,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 						}
 						
 						if(tempDeviceInfo.get("default") == null) {
-							mklogger.temp(TAG + "[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
+							mklogger.temp("[" + defaultFile.getName() +"] Every view controller's device tag must include at least one platform that includes default service. (Device Tag : " + deviceControlName +")", false);
 							mklogger.temp("The settings for this view controller is terminated.", false);
 							mklogger.flush("error");
 							return;
@@ -187,8 +188,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 							tempValues = mkJsonData.getJsonObject();
 						}
 						if(tempValues.size() == 0) {
-							mklogger.error(TAG, "[Controller: " + controlName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
-							mklogger.debug(TAG, "{\"1\":\"\"}");
+							mklogger.error("[Controller: " + controlName + " | Service ID: " + serviceId+ "] Service doesn't have any value. Service must have at least one value. If the service does not include any value, please create blank one.");
+							mklogger.debug("{\"1\":\"\"}");
 							continue;
 						}
 						page_value = new String[tempValues.size()];
@@ -216,7 +217,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 								page_value,
 								isApiService);
 						
-						printPageInfo(mklogger, TAG, curData, "info");
+						printPageInfo(mklogger, curData, "info");
 						pageJsonData.add(curData);
 						page_configs.put(controlName, pageJsonData);
 					}
@@ -245,19 +246,19 @@ public class MkPageConfigs extends MkPageConfigCan{
 							page_value,
 							isApiService);
 
-					printPageInfo(mklogger, TAG, curData, "info");
+					printPageInfo(mklogger, curData, "info");
 					pageJsonData.add(curData);
 					page_configs.put(controlName, pageJsonData);
 				}
 				
 			} catch (FileNotFoundException e) {
-				mklogger.error(TAG, "defaultFile.getName()FileNOtFoundException: " + e.getMessage());
+				mklogger.error("defaultFile.getName()FileNOtFoundException: " + e.getMessage());
 				e.printStackTrace();
 			} catch (IOException e) {
-				mklogger.error(TAG, "IOException: " + e.getMessage());
+				mklogger.error("IOException: " + e.getMessage());
 				e.printStackTrace();
 			} catch (ParseException e) {
-				mklogger.error(TAG, "ParseException : " + e.getMessage());
+				mklogger.error("ParseException : " + e.getMessage());
 				e.printStackTrace();
 			} 
 			mklogger.info("=*=*=*=*=*=*=* MkWeb Page Configs  Done*=*=*=*=*=*=*=*=");
@@ -293,15 +294,15 @@ public class MkPageConfigs extends MkPageConfigCan{
 				break;
 			}
 		}
-		
+
 		if(mkPage == null) {
-			mklogger.error(TAG + " : Input String data is null");
+			mklogger.error(" : Input String data is null");
 			return null;
 		}
 
 		if(page_configs.get(mkPage) == null)
 		{
-			mklogger.error(TAG + " : The control is unknown. [called control name: " + mkPage + ", uri:" + requestURI + "]");
+			mklogger.error(" : The control is unknown. [called control name: " + mkPage + ", uri:" + requestURI + "]");
 			return null;
 		}
 		return page_configs.get(mkPage);

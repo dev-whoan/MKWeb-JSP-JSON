@@ -36,8 +36,8 @@ public class MkDispatcher extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	//	private static final String[] deviceFilter = {"win16","win32","win64","mac","macintel"};
 	private static final String[] deviceFilter = {"ipad", "iphone", "ipod", "android"};
-	private String TAG = "[MkDispatcher]";
-	private MkLogger mklogger = MkLogger.Me();
+	private static final String TAG = "[MkDispatcher]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
@@ -56,7 +56,7 @@ public class MkDispatcher extends HttpServlet {
 
 		Object o = request.getAttribute("mkPage");
 		if(o == null) {
-			mklogger.error(TAG, "Request URI is invalid. ( Unauthorzied connection [" + requestURI + "] )");
+			mklogger.error("Request URI is invalid. ( Unauthorzied connection [" + requestURI + "] )");
 			response.sendError(400);
 			return;
 		}
@@ -66,6 +66,8 @@ public class MkDispatcher extends HttpServlet {
 			return;
 		}
 		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(mkPage);
+
+		
 		String userAcceptLanguage = request.getHeader("Accept-Language");
 		String userAgent = request.getHeader("User-Agent").toLowerCase();
 		String userPlatform = null;
@@ -92,8 +94,8 @@ public class MkDispatcher extends HttpServlet {
 		request.setAttribute("mkPage", mkPage);
 		dispatch(request, response, targetURI);
 
-		mklogger.info(TAG, "Page Called by " + clientAddress);
-		MkPageConfigs.Me().printPageInfo(mklogger, TAG, resultPageData.get(0), "no-sql");
+		mklogger.info("Page Called by " + clientAddress);
+		MkPageConfigs.Me().printPageInfo(mklogger, resultPageData.get(0), "no-sql");
 	}
 
 	private void dispatch(HttpServletRequest request, HttpServletResponse response, String URI) throws ServletException, IOException {

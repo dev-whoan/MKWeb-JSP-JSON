@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.database.MkDbAccessor;
+import com.mkweb.entity.MkReceiveFormDataEntity;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.utils.ConnectionChecker;
 import com.mkweb.config.MkConfigReader;
@@ -27,10 +28,12 @@ import com.mkweb.config.MkPageConfigs;
 	loadOnStartup=1
 )
 
-public class MkReceiveFormData extends HttpServlet {
+public class MkReceiveFormData extends HttpServlet{
 	private static final long serialVersionUID = 1L;
-	private MkLogger mklogger = MkLogger.Me();
-	private String TAG = "[MkReceiveFormData]";
+	
+	private static final String TAG = "[MkReceiveFormData]";
+	private static final MkLogger mklogger = new MkLogger(TAG);
+	
     private MkPageJsonData pjData = null;
     
     private ArrayList<MkPageJsonData> pi = null;
@@ -58,7 +61,7 @@ public class MkReceiveFormData extends HttpServlet {
 			mkPage = "";
 		}
 		
-		mklogger.debug(TAG, "receive mkpage : " + mkPage);
+		mklogger.debug("receive mkpage : " + mkPage);
 		
 		return MkPageConfigs.Me().getControl(mkPage);		
 	}
@@ -68,7 +71,7 @@ public class MkReceiveFormData extends HttpServlet {
 		String host = MkConfigReader.Me().get("mkweb.web.hostname");
 		
     	if(host == null) {
-    		mklogger.error(TAG, " Hostname is not set. You must set hostname on configs/MkWeb.conf");
+    		mklogger.error(" Hostname is not set. You must set hostname on configs/MkWeb.conf");
     		return false;
     	}
     	host = host + "/";
@@ -76,12 +79,12 @@ public class MkReceiveFormData extends HttpServlet {
 		String mkPage = (!hostCheck.contentEquals(host) ? requestURI : "");
 
 		if(!cpi.isValidPageConnection(mkPage)) {
-			mklogger.error(TAG, " checkMethod: Invalid Page Connection.");
+			mklogger.error(" checkMethod: Invalid Page Connection.");
 			return false;
 		}
     	
 		if(pi == null || !isPiSet) {
-			mklogger.error(TAG, " PageInfo is not set!");
+			mklogger.error(" PageInfo is not set!");
 			return false;
 		}
 		
@@ -100,8 +103,8 @@ public class MkReceiveFormData extends HttpServlet {
 				return false;
 			}
 		} catch (NullPointerException e) {
-			mklogger.error(TAG, "There is no service for request parameter. You can ignore 'Request method is not authorized.' error.");
-			mklogger.debug(TAG, "Page Json Data is Null");
+			mklogger.error("There is no service for request parameter. You can ignore 'Request method is not authorized.' error.");
+			mklogger.debug("Page Json Data is Null");
 			return false;
 		}
 		
@@ -115,7 +118,7 @@ public class MkReceiveFormData extends HttpServlet {
     	MkDbAccessor DA = new MkDbAccessor();
 		
 		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
-			mklogger.error(TAG, " Request Value is not authorized. Please check page config.");
+			mklogger.error(" Request Value is not authorized. Please check page config.");
 			response.sendError(400);
 			return;
 		}
@@ -123,7 +126,7 @@ public class MkReceiveFormData extends HttpServlet {
 		String control = pjData.getControlName();
 		String service = pjData.getServiceName();
 		
-		mklogger.debug(TAG, "control : " + control + "| service : " + service);
+		mklogger.debug("control : " + control + "| service : " + service);
 		
 		String befQuery = cpi.regularQuery(control, service, false);
 		String query = cpi.setQuery(befQuery);
@@ -146,15 +149,15 @@ public class MkReceiveFormData extends HttpServlet {
 			try {
 				DA.executeDML();
 			} catch (SQLException e) {
-				mklogger.error(TAG, "(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+				mklogger.error("(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
 			}
 		}
     }
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if(MkConfigReader.Me().get("mkweb.web.receive.use").contentEquals("no")) {
-			mklogger.error(TAG, "MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
-			mklogger.debug(TAG, "mkweb.web.receive.use is not yes.");
+			mklogger.error("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
+			mklogger.debug("mkweb.web.receive.use is not yes.");
 			return;
 		}
 			
@@ -163,7 +166,7 @@ public class MkReceiveFormData extends HttpServlet {
 		isPiSet = (pi != null);
 		pageStaticData = null;
 
-		mklogger.debug(TAG, " isPiSet : " + isPiSet);
+		mklogger.debug(" isPiSet : " + isPiSet);
 		
 		if(isPiSet) {
 			for(int i = 0; i < pi.size(); i++) {
@@ -172,7 +175,7 @@ public class MkReceiveFormData extends HttpServlet {
 					break;
 				}
 			}
-			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
+			mklogger.debug("pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
 			pageValue = new ArrayList<>();
 			requestServiceName = new ArrayList<>();
@@ -187,7 +190,7 @@ public class MkReceiveFormData extends HttpServlet {
 		}
 		
 		if(!checkMethod(request, "get", refURL)) {
-			mklogger.error(TAG, " Request method is not authorized. [Tried: GET]");
+			mklogger.error(" Request method is not authorized. [Tried: GET]");
 			response.sendError(400);
 			return;
 		}
@@ -197,16 +200,16 @@ public class MkReceiveFormData extends HttpServlet {
 	
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if(MkConfigReader.Me().get("mkweb.web.receive.use").contentEquals("no")) {
-			mklogger.error(TAG, "MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
-			mklogger.error(TAG, "Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.");
-			mklogger.debug(TAG, "mkweb.web.receive.use is not yes. Please check MkWeb.conf");
+			mklogger.error("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.");
+			mklogger.error("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.");
+			mklogger.debug("mkweb.web.receive.use is not yes. Please check MkWeb.conf");
 			return;
 		}
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (pi != null);
 		pageStaticData = null;
-		mklogger.debug(TAG, " isPiSet : " + isPiSet);
+		mklogger.debug(" isPiSet : " + isPiSet);
 		
 		if(isPiSet) {
 			for(int i = 0; i < pi.size(); i++) {
@@ -215,7 +218,7 @@ public class MkReceiveFormData extends HttpServlet {
 					break;
 				}
 			}
-			mklogger.debug(TAG, "pagestaticdata: " +pageStaticData);
+			mklogger.debug("pagestaticdata: " +pageStaticData);
 			pageParameter = new ArrayList<>();
 			pageValue = new ArrayList<>();
 			requestServiceName = new ArrayList<>();
@@ -229,7 +232,7 @@ public class MkReceiveFormData extends HttpServlet {
 			}
 		}
 		if(!checkMethod(request, "post", refURL)) {
-			mklogger.error(TAG, " Request method is not authorized. [Tried: POST]");
+			mklogger.error(" Request method is not authorized. [Tried: POST]");
 			response.sendError(401);
 			return;
 		}
