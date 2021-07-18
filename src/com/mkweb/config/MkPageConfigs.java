@@ -29,7 +29,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 	private File[] defaultFiles = null;
 
 	private static MkPageConfigs pc = null;
-	private long lastModified[];
+	private long[] lastModified;
 	private static final String TAG = "[MkPageConfigs]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
 

@@ -231,7 +231,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				break;
 			}
 		}
-
+		mklogger.debug("k: " + k);
 		if(k == null) {
 			mklogger.error(" : Input String data is null");
 			return null;

@@ -306,6 +306,9 @@ public class MkRestApiResponse {
 		case 405:
 			responseStatus = "Method Not Allowed";
 			break;
+		case 406:
+			responseStatus = "Content Type Not Supported";
+			break;
 		case 409:
 			responseStatus = "Conflict";
 			break;

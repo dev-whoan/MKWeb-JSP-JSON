@@ -257,7 +257,7 @@ public class MkFileReceiver extends HttpServlet {
 					boolean isDirExists = folder.exists();
 					if(!isDirExists)
 					{
-						mklogger.info("The directory is not exists. Creating new one... : ");
+						mklogger.info("The directory is not exists. Creating new one... " + folder.getPath());
 						try {		
 							isDirExists = folder.mkdirs();
 							folder.setReadable(true, false);
@@ -425,51 +425,8 @@ public class MkFileReceiver extends HttpServlet {
 				if(responseCode == -1)
 					responseCode = 204;
 				
-				Enumeration<String> params = request.getParameterNames();
-				int reqSize = 0;
-				ArrayList<String> fileNames = new ArrayList<>();
-				String fileName = "";
-				while (params.hasMoreElements()) {
-					String name = params.nextElement().toString().trim();
-					if(!name.contains(".")) {
-						responseCode = 400;
-						responseMsg = "No further information.";
-						isDone = true;
-						break;
-					}
-					String[] nname = name.split("\\.");
-					
-					if(!nname[1].contentEquals(ftpService.getDirPrefix())) {
-						//File^extension
-						if(nname[0].contentEquals(pjData.getParameter())) {
-							String fName = nname[1];
-							if(!fName.contains("^")) {
-								responseCode = 400;
-								responseMsg = "Invalid Extensions.";
-								
-								mklogger.error("To remove file, need to define a target file name like [name^extension]");
-								isDone = true;
-								break;
-							}
-							fName = fName.replace('^', '.');
-							fileNames.add(fName);
-						}
-					}
-				}
-				
 				/*Need to update : Supporting multiple remove request*/
-				if(reqSize > 1) {
-					mklogger.warn("Now only single file remove is supported. Only first target would be removed.");
-					fileName = fileNames.get(0);
-					fileNames = null;
-				} else {
-					mklogger.warn("No file have requested to remove.");
-					responseCode = 204;
-					isDone = true;
-				}
-				
-				if(isDone)
-					break;
+
 				Set<String> dpSet = deleteParameters.keySet();
 				Iterator<String> iter = dpSet.iterator();
 				
@@ -483,13 +440,23 @@ public class MkFileReceiver extends HttpServlet {
 					break;
 				}
 				
-				mklogger.debug("So target is : " + removeTarget);
+				String newName = null;
+				try{
+					newName = removeTarget.split("\\^")[0] + "." + removeTarget.split("\\^")[1];
+				} catch (NullPointerException e) {
+					mklogger.warn("File extension is not valid. return HTTP.204");
+					responseCode = 204;
+					isDone = true;
+					break;
+				}
 				
-				File ftpResults = new File(filePath + "/" + removeTarget);
+				mklogger.debug("So removeTarget is : " + removeTarget + "|newName: " + newName);
+				
+				File ftpResults = new File(filePath + "/" + newName);
 				
 				if(!ftpResults.exists()) {
 					responseCode = 204;
-					mklogger.warn("File is not exist. However, return HTTP.204");
+					mklogger.warn("File is not exists. However, return HTTP.204");
 					isDone = true;
 					break;
 				}
@@ -758,7 +725,6 @@ public class MkFileReceiver extends HttpServlet {
 	}
 
 	private boolean prepareToReceiveFiles(HttpServletRequest request) throws IOException, ServletException {
-		mklogger.debug("check 2");
 		fileParts = (List<Part>) request.getParts();
 		
 		HashMap<String, ArrayList<String>> requestPartsParameters = new HashMap<>();
@@ -782,7 +748,6 @@ public class MkFileReceiver extends HttpServlet {
 	
 		requestParameterName = requestPartsParameters.keySet().iterator().next();
 		requestValues = requestPartsParameters.get(requestParameterName);
-		mklogger.debug("check 3");
 		return true;
 	}
 }

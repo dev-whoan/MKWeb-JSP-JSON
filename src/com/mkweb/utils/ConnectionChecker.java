@@ -361,7 +361,6 @@ public class ConnectionChecker {
 		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
 		Device userDevice = null;
 		int desktopIndex = -1;
-		mklogger.debug("device size : " + devices.size());
 		int deviceIndex = -1;
 		int gotcha = 0;
 		for(int i = 0; i < devices.size(); i++) {
@@ -415,8 +414,6 @@ public class ConnectionChecker {
 				defaultLanguage = "default";
 		}
 		
-
-		mklogger.debug("dl 2 : " + defaultLanguage);
 		String[] uriInfo = userDevice.getDeviceInfo(defaultLanguage);
 		
 		return uriInfo[0] + "/" + uriInfo[1];

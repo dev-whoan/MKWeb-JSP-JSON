@@ -1,7 +1,6 @@
 package com.mkweb.restapi;
 
 import java.io.BufferedReader;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,6 +20,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,30 +41,23 @@ import com.mkweb.utils.ConnectionChecker;
 /**
  * Servlet implementation class MkRestApi
  */
-
-/*
- * 1. ���� ���� 2. ��ü ��ȸ 3. ���� ���� ( �ڵ�, ������ Ÿ��, ���� ���� ��. )
- */
-
+@WebServlet(
+		name = "MkReceiveFormData",
+		loadOnStartup=1
+)
 public class MkRestApi extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static final String TAG = "[MkRestApi]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
 	private ConnectionChecker cpi = null;
-	
+
 	private static String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
-	private static String MKWEB_API_ID = MkConfigReader.Me().get("mkweb.restapi.request.id");
 	private static String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
-	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true
-			: false;
+	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true : false;
 	private static String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
-	private static String MKWEB_CUSTOM_TABLE = MkConfigReader.Me().get("mkweb.restapi.search.customtable");
 	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
 	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.refonly.host");
 
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
 	public MkRestApi() {
 		super();
 		cpi = new ConnectionChecker();
@@ -123,53 +117,97 @@ public class MkRestApi extends HttpServlet {
 		return result;
 	}
 
-	protected void doHead(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	private LinkedHashMap<String, String> getParameterValues(HttpServletRequest request){
+		Enumeration<String> parameters = request.getParameterNames();
+
+		LinkedHashMap<String, String> result = null;
+		if(parameters.hasMoreElements())
+			result = new LinkedHashMap<>();
+
+		while (parameters.hasMoreElements()) {
+			String parameter = parameters.nextElement();
+			result.put(parameter, request.getParameter(parameter));
+		}
+
+		return result;
+	}
+	
+	private void checkHost(MkRestApiResponse apiResponse, String previousURL, String hostcheck, String host) {
+		if(previousURL == null) {
+			previousURL = "null";
+		} else {
+			previousURL = previousURL.split("://")[1];
+			if(previousURL.contains("/")) {
+				previousURL = previousURL.split("/")[0] + "/";
+			}
+		}
+		if(!previousURL.contentEquals(host)) {
+			mklogger.error("User blocked by CORS policy: No 'Access-Control-Allow-Origin'.");
+			apiResponse.setCode(401);
+			apiResponse.setMessage("You violated CORS policy: No 'Access-Control-Allow-Origin'.");
+		}
+	}
+
+	private void checkJsonParameter(JSONObject jsonObject, String prettyParam) {
+		if(jsonObject != null) {
+			jsonObject.remove(MKWEB_SEARCH_KEY);
+
+			if(prettyParam != null)
+				jsonObject.remove(MKWEB_PRETTY_OPT);
+		}
+	}
+	
+	protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "head");
 		doTask(request, response);
 	}
 
-	protected void doOptions(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "options");
 		doTask(request, response);
 	}
 
-	protected void doPut(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "put");
 		doTask(request, response);
 	}
 
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "delete");		
 		doTask(request, response);
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "get");
 		doTask(request, response);
 	}
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "post");
 		doTask(request, response);
 	}
 
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String contentType = request.getContentType();
 		long START_MILLIS = System.currentTimeMillis();
 		request.setCharacterEncoding("UTF-8");
+		MkRestApiResponse apiResponse = new MkRestApiResponse();
+		apiResponse.setCode(200);
+		
 		if (!MkConfigReader.Me().get("mkweb.restapi.use").equals("yes")) {
-			response.sendError(404);
-			return;
+			apiResponse.setCode(404);
+			apiResponse.setMessage("Not Found.");
 		}
 		
-		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
 		
-		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
+		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
+
+		if((!REQUEST_METHOD.contentEquals("get")) && (contentType == null || !contentType.contains("application/json;"))) {
+			apiResponse.setCode(406);
+			apiResponse.setMessage("Content type not supported.");
+		}
+		
+		//		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
 		String prettyParam = request.getParameter(MKWEB_PRETTY_OPT);
 		
 		String requestURI = request.getRequestURI();
@@ -179,51 +217,35 @@ public class MkRestApi extends HttpServlet {
 		JSONObject requestParameterJson = null;
 		JSONObject requestParameterJsonToModify = null;
 		MkJsonData mkJsonData = new MkJsonData();
-
-		MkRestApiResponse apiResponse = new MkRestApiResponse();
 		JSONObject resultObject = null;
-		apiResponse.setCode(200);
-
-		if(MKWEB_REFONLY_HOST.toLowerCase().contentEquals("yes")) {
-			String previousURL = request.getHeader("referer");
-			String hostcheck = request.getRequestURL().toString().split("://")[1];
-			String host = MkConfigReader.Me().get("mkweb.web.hostname") + "/";
-			
-			if(previousURL == null) {
-				previousURL = "null";
-			} else {
-				previousURL = previousURL.split("://")[1];
-				if(previousURL.contains("/")) {
-					previousURL = previousURL.split("/")[0] + "/";
-				}
-			}
-			if(!previousURL.contentEquals(host)) {
-				mklogger.error("User blocked by CORS policy: No 'Access-Control-Allow-Origin'.");
-				apiResponse.setCode(401);
-				apiResponse.setMessage("You violated CORS policy: No 'Access-Control-Allow-Origin'.");
-			}
-		}
 		
-		while(true) {
-			if(apiResponse.getCode() == 401) {
-				break;
-			}
-			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
+		mklogger.debug("pretty: " + MKWEB_PRETTY_OPT + " | prettyParam: " +prettyParam + " | requestURI : " + requestURI);
+		
+		
+		if(MKWEB_REFONLY_HOST.toLowerCase().contentEquals("yes")) {
+			checkHost(apiResponse, 
+					request.getHeader("referer"), 
+					request.getRequestURL().toString().split("://")[1], 
+					MkConfigReader.Me().get("mkweb.web.hostname") + "/");
+		}
 
+		while(true) {
+			if(apiResponse.getCode() != 200)
+				break;
+			
+			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
 			if (reqPage.length < 2) {
 				apiResponse.setMessage("Please enter the conditions to search.");
 				apiResponse.setCode(400);
 				break;
 			}
-
 			mkPage = reqPage[1];
 
 			if (mkPage.contains("/")) {
 				mkPage = mkPage.split("/")[0];
 			}
-			
-			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 
+			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 			if (control == null) {
 				mklogger.error("[API] Control " + mkPage + " is not exist.");
 				apiResponse.setMessage("There is no api named : " + mkPage);
@@ -243,39 +265,24 @@ public class MkRestApi extends HttpServlet {
 			if (REQUEST_METHOD.contentEquals("get") || REQUEST_METHOD.contentEquals("head") ||
 					REQUEST_METHOD.contentEquals("options") || REQUEST_METHOD.contentEquals("put") ||
 					REQUEST_METHOD.contentEquals("delete")) {
-				mkJsonData.setData(request.getParameter(MKWEB_API_ID));
-				if (mkJsonData.setJsonObject()) {
-					requestParameterJson = mkJsonData.getJsonObject();
-					userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
-				} else {
+
 					String[] tempURI = requestURI.split("/");
 					int shouldCheckQuery = -1;
 					int mkPageIndex = -1;
 					/*
-					 * -1 : do Nothing 0 : ��ü ��ȸ 1 : String check
+					 * -1 : do Nothing / 0 : pass / 1 : String check
 					 */
 					if (tempURI[(tempURI.length - 1)].contentEquals(mkPage)) {
 						if (request.getParameterMap().size() == 1) {
 							String element = rpn.nextElement();
 							String elementValue = null;
-							if (element.contentEquals(MKWEB_API_ID)) {
-								elementValue = request.getParameter(element);
-								if (elementValue.contains("=") && elementValue.contains(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "��� 1�� ����(/mk_api_key/users ó��) 1 ");
-									shouldCheckQuery = 0;
-								} else if (!elementValue.contains(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "(1) ��� 2 - /mk_api_key/users?queryString~");
-									shouldCheckQuery = 1;
-								}
+
+							if (!element.contentEquals(MKWEB_SEARCH_KEY)) {
+								shouldCheckQuery = 1;
 							} else {
-								if (!element.contentEquals(MKWEB_SEARCH_KEY)) {
-									// mklogger.debug(TAG, "(1) ��� 2 - /mk_api_key/users?queryString~");
-									shouldCheckQuery = 1;
-								} else {
-									// mklogger.debug(TAG, "��� 1�� ���� (/mk_api_key/users ó��) 2 ");
-									shouldCheckQuery = 0;
-								}
+								shouldCheckQuery = 0;
 							}
+
 						} else {
 							shouldCheckQuery = 1;
 						}
@@ -293,34 +300,14 @@ public class MkRestApi extends HttpServlet {
 						mklogger.warn("Given data is not valid to cast JSONObject.");
 						mklogger.warn("Try to convert into MkJsonObject...");
 
-						String tempAPIID = request.getParameter(MKWEB_API_ID);
-						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
+						LinkedHashMap<String, String> result = getParameterValues(request); //new LinkedHashMap<String, String>();
 
-						if (tempAPIID != null) {
-							String[] tempArr = null;
-							if (tempAPIID.contains("&")) {
-								tempArr = tempAPIID.split("&");
-								result = (LinkedHashMap<String, String>) stringToMap(tempArr);
-							} else {
-								tempArr = new String[1];
-								tempArr[0] = tempAPIID;
-								result = (LinkedHashMap<String, String>) stringToMap(tempArr);
-							}
-						}
-
-						Enumeration<String> parameters = request.getParameterNames();
-						while (parameters.hasMoreElements()) {
-							String parameter = parameters.nextElement();
-							if (!parameter.contentEquals(MKWEB_API_ID))
-								result.put(parameter, request.getParameter(parameter));
-						}
 						requestParameterJson = mkJsonData.mapToJson(result);
 						mklogger.debug("result : " + result);
 						mklogger.debug("rqj    : " + requestParameterJson);
 
 						if (requestParameterJson == null) {
-							mklogger.error(
-									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
+							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
 							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
 							apiResponse.setCode(404);
 							break;
@@ -339,10 +326,10 @@ public class MkRestApi extends HttpServlet {
 								searchValues.add(tempURI[i]);
 							}
 						}
-						
+
 						if (searchColumns.size() == searchValues.size() + 1) 
 							searchValues.add(MKWEB_SEARCH_ALL);
-						
+
 						if (searchColumns.size() != searchValues.size()) {
 							mklogger.error("API Request is not valid.");
 							mklogger.debug("searchColumns size != searchValues.size");
@@ -357,8 +344,7 @@ public class MkRestApi extends HttpServlet {
 						}
 						requestParameterJson = mkJsonData.mapToJson(result);
 						if (requestParameterJson == null) {
-							mklogger.error(
-									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
+							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
 							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
 							apiResponse.setCode(400);
 							break;
@@ -367,21 +353,21 @@ public class MkRestApi extends HttpServlet {
 						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
 						if(REQUEST_METHOD.contentEquals("get"))
 							result.put(MKWEB_SEARCH_ALL, MKWEB_SEARCH_ALL);
-						
+
 						requestParameterJson = mkJsonData.mapToJson(result);
 						if(requestParameterJson == null) {
-							mklogger.error(
-									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
+							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
 							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
 							apiResponse.setCode(400);
 						}
 					}
-				}
+//				}
+				
 			} 
 
 			if(REQUEST_METHOD.contentEquals("post") || REQUEST_METHOD.contentEquals("put") || REQUEST_METHOD.contentEquals("delete")){
+				mkJsonData.mapToJson(getParameterValues(request));
 
-				mkJsonData.setData(request.getParameter(MKWEB_API_ID));
 				if(mkJsonData.getData() == null) {
 					StringBuilder stringBuilder = new StringBuilder();
 					BufferedReader bufferedReader = null;
@@ -405,25 +391,29 @@ public class MkRestApi extends HttpServlet {
 						}
 					}
 					String rawData = URLDecoder.decode(stringBuilder.toString(), "UTF-8");
-					mklogger.debug("rawData : " + rawData);
-					String rawDatas[] = rawData.split("\\=");
-
-					if(rawDatas.length == 2) {
-						if(rawDatas[0].contentEquals(MKWEB_API_ID)) {
-							mkJsonData.setData(rawDatas[1]);
-						}
-					} else {
-						if(requestParameterJson == null) {
-							mklogger.error("Request does not include MKWEB_API_ID.");
-							apiResponse.setMessage("You need to request with mkweb_api_id");
-							apiResponse.setCode(400);
-							break;
+					if(rawData.charAt(0) == '"' && rawData.charAt(rawData.length()-1) == '"') {
+						rawData = rawData.substring(1, rawData.length()-1);
+					}
+					int bslash = -1;
+					while((bslash = rawData.indexOf("\\")) >= 0) {
+						if(rawData.charAt(bslash+1) == '"') {
+							String front = new String(rawData);
+							String end = new String(rawData);
+							front = front.substring(0, bslash);
+							end = end.substring(bslash+2);
+							rawData = front + "\"" + end;
 						}
 					}
+
+					mklogger.debug("rawData : " + rawData);
+					mkJsonData.setData(rawData);
 				}
+				mklogger.debug("jsonData: " + mkJsonData.getData());
 				if (mkJsonData.setJsonObject()) {
-					if(REQUEST_METHOD.contentEquals("put"))
+					if(REQUEST_METHOD.contentEquals("put")) {
 						requestParameterJsonToModify = mkJsonData.getJsonObject();
+						mklogger.debug("rPJTM: " + requestParameterJsonToModify);
+					}
 					else {
 						if(REQUEST_METHOD.contentEquals("delete") && requestParameterJson != null) {
 							mklogger.error("Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
@@ -441,8 +431,7 @@ public class MkRestApi extends HttpServlet {
 						mkJsonData.setData(tempJsonString);
 
 						if (!mkJsonData.setJsonObject()) {
-							mklogger.error(
-									"API Request only allow with JSON type. Cannot convert given data into JSON Type.");
+							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
 							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
 							apiResponse.setCode(400);
 							break;
@@ -454,7 +443,7 @@ public class MkRestApi extends HttpServlet {
 					}
 				}
 			}
-
+			mklogger.debug("rpj: " + requestParameterJson);
 			if(userKey == null) {
 				if(requestParameterJson.get(MKWEB_SEARCH_KEY) != null) {
 					userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
@@ -477,24 +466,9 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 			
-			if(requestParameterJson != null) {
-				requestParameterJson.remove(MKWEB_SEARCH_KEY);
-				if(customTable != null)
-					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
-				
-				if(prettyParam != null)
-					requestParameterJson.remove(MKWEB_PRETTY_OPT);
-			}
-				
-			if(requestParameterJsonToModify != null) {
-				requestParameterJsonToModify.remove(MKWEB_SEARCH_KEY);
-				if(customTable != null)
-					requestParameterJson.remove(MKWEB_CUSTOM_TABLE);
-				if(prettyParam != null)
-					requestParameterJson.remove(MKWEB_PRETTY_OPT);
-			}
-				
-			
+			checkJsonParameter(requestParameterJson, prettyParam);
+			checkJsonParameter(requestParameterJsonToModify, prettyParam);
+
 			MkPageJsonData pageService = null;
 			MkSqlJsonData sqlService = null;
 			if(!REQUEST_METHOD.contentEquals("options")) {
@@ -534,14 +508,14 @@ public class MkRestApi extends HttpServlet {
 						break;
 					}
 				}
-				
+
 				if (sqlService == null) {
 					mklogger.error("There is no SQL Service what client requested.");
 					apiResponse.setMessage("The method you requested is not allowed.");
 					apiResponse.setCode(405);
 					break;
 				}
-				
+
 				String[] pageValues = pageService.getData();
 
 				requestIterator = requestKeySet.iterator();
@@ -549,8 +523,8 @@ public class MkRestApi extends HttpServlet {
 				List<String> tempRequireParams = null;
 				if(requireParameters != null)
 					tempRequireParams = new ArrayList<>(Arrays.asList(requireParameters));
-				
-				
+
+
 				int catchedParams = 0;
 				while (requestIterator.hasNext()) {
 					String requestKey = requestIterator.next().toString();
@@ -577,39 +551,43 @@ public class MkRestApi extends HttpServlet {
 						apiResponse.setCode(400);
 						break;
 					}
-					
+
 					if(requireParameters != null && requireParameters.length > 0) {
 						int id = tempRequireParams.indexOf(requestKey);
 						if( id != -1 )
 							tempRequireParams.remove(id);
 					}
 				}
-				
+
 				if(tempRequireParams != null && tempRequireParams.size() > 0) {
 					mklogger.error("Client must request with essential parameters.");
 					apiResponse.setCode(400);
 					apiResponse.setMessage("You must request with essential parameters.");
 					break;
 				}
-				
+
 				if(apiResponse.getCode() >= 400 && apiResponse.getCode() != -1){
 					break;
 				}
 
 				switch (REQUEST_METHOD) {
 				case "get": case "head": case "options":
-					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, customTable);
+					//					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, customTable);
+					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse);
 					break;
 				case "post":
-					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse, customTable);
+					//					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse, customTable);
+					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse);
 					break;
 				case "put":
 					mklogger.debug(" putting ... ");
-					resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse, customTable);
+					//					resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse, customTable);
+					resultObject = doTaskPut(pageService, sqlService, requestParameterJson, requestParameterJsonToModify, mkPage, MKWEB_SEARCH_ALL, REQUEST_METHOD, apiResponse);
 					break;
 
 				case "delete":
-					resultObject = doTaskDelete(pageService, sqlService, requestParameterJson, mkPage, apiResponse, customTable);
+					//					resultObject = doTaskDelete(pageService, sqlService, requestParameterJson, mkPage, apiResponse, customTable);
+					resultObject = doTaskDelete(pageService, sqlService, requestParameterJson, mkPage, apiResponse);
 					break;
 				}
 				break;
@@ -654,7 +632,7 @@ public class MkRestApi extends HttpServlet {
 				result = mkJsonData.jsonToPretty(resultObject);
 			else
 				result = resultObject.toString();
-			
+
 			result = result.substring(1, result.length()-1);
 			Object roPut = resultObject.get("PUT_UPDATE_DONE");
 			Object roPost = resultObject.get("PUT_INSERT_DONE");
@@ -667,7 +645,7 @@ public class MkRestApi extends HttpServlet {
 				resultObject.remove("DELETE_DONE");
 			}
 			apiResponse.setContentLength(resultObject.toString().length());
-			
+
 			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result, pretty, START_MILLIS);
 			out.print(temp);
 		}
@@ -676,9 +654,9 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse, String customTable) {		
+			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
 		JSONObject resultObject = null;
-	
+
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
 		String service = pjData.getServiceName();
@@ -688,11 +666,14 @@ public class MkRestApi extends HttpServlet {
 		String[] searchKeys = pjData.getData();
 		int requestSize = jsonObject.size();
 		boolean searchAll = false;
-		
+
+		/*
 		query = (customTable == null) ? 
 				createSQL("get", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 				createSQL("get", searchKeys, jsonObject, null, null, customTable);
-		
+		 */
+		query = createSQL("get", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()); //sqlData.getRawSql()[2]) :
+
 		Set<String> keySet = jsonObject.keySet();
 		Iterator<String> iter = keySet.iterator();
 		ArrayList<String> sqlKey = new ArrayList<String>();
@@ -713,7 +694,7 @@ public class MkRestApi extends HttpServlet {
 			try {
 				String decodeResult = URLDecoder.decode(temp, "UTF-8");
 				String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-				
+
 				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 			} catch (UnsupportedEncodingException e) {
 				//
@@ -722,7 +703,7 @@ public class MkRestApi extends HttpServlet {
 				mkResponse.setMessage(e.getMessage());
 				return null;
 			}
-			
+
 			sqlKey.add(temp);
 			if (i < requestSize - 1) {
 				condition += " AND ";
@@ -734,7 +715,7 @@ public class MkRestApi extends HttpServlet {
 
 		mklogger.debug("condition : " + query);
 		mklogger.debug("query : " + query);
-		
+
 		DA.setPreparedStatement(query);
 		if (!searchAll)
 			DA.setApiRequestValue(sqlKey);
@@ -786,7 +767,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskInput(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String requestMethod, MkRestApiResponse mkResponse, String customTable) {
+			String requestMethod, MkRestApiResponse mkResponse) {
 
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
@@ -796,7 +777,7 @@ public class MkRestApi extends HttpServlet {
 		String befQuery = cpi.regularQuery(control, service, true);
 		String query = null;
 		String[] inputKey = pjData.getData();
-		
+
 		int requestSize = jsonObject.size();
 
 		if(inputKey.length != requestSize) {
@@ -815,11 +796,13 @@ public class MkRestApi extends HttpServlet {
 			}
 			inputValues[i] = jsonObject.get(inputKey[i]).toString();
 		}
-		
+
+		/*
 		query = (customTable == null) ? 
 				createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 				createSQL("post", inputKey, null, inputValues, null, customTable);
-		
+		 */
+		query = createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()); //sqlData.getRawSql()[2]) :
 		DA.setRequestValue(inputValues);
 		query = cpi.setQuery(befQuery);
 		mklogger.debug("�׷��� ������ : " + query);
@@ -852,17 +835,18 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskPut(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, JSONObject modifyObject, String mkPage,
-			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse, String customTable) {
+			String MKWEB_SEARCH_ALL, String requestMethod, MkRestApiResponse mkResponse) {
 		if(modifyObject == null) {
-			mklogger.error("PUT method should wrapped by " + MkConfigReader.Me().get("mkweb.restapi.request.id") + ".");
-			mkResponse.setMessage("PUT method should wrapped by " + MkConfigReader.Me().get("mkweb.restapi.request.id") + ".");
+			mklogger.error("No modify data received.");
+			mkResponse.setMessage("No modify data received.");
 			mkResponse.setCode(400);
 			return null;
 		}
 		JSONObject resultObject = null;
 		String[] inputKey = pjData.getData();
 
-		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, customTable);
+		//		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, customTable);
+		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse);
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
@@ -893,10 +877,12 @@ public class MkRestApi extends HttpServlet {
 
 		String tempCrud = (getResult == null ? "insert" : "update");
 
+		/*
 		query = (customTable == null) ?
 				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getTableData().get("from").toString())) : //sqlData.getRawSql()[2])):
 				(createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, customTable));
-
+		 */
+		query = (createSQL(tempCrud, searchKey, jsonObject, modifyKey, modifyObject, sqlData.getTableData().get("from").toString())); //sqlData.getRawSql()[2])): 
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");
@@ -931,7 +917,7 @@ public class MkRestApi extends HttpServlet {
 		return resultObject;
 	}
 
-	private JSONObject doTaskDelete(MkPageJsonData pxData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse, String customTable) {
+	private JSONObject doTaskDelete(MkPageJsonData pxData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage, MkRestApiResponse mkResponse) {
 		JSONObject resultObject = null;
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 
@@ -949,10 +935,13 @@ public class MkRestApi extends HttpServlet {
 			searchKeys[i++] = jKey.next();
 		}
 
+		/*
 		query = (customTable == null) ? 
 						createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString()) : //sqlData.getRawSql()[2]) :
 						createSQL("delete", searchKeys, jsonObject, null, null, customTable);
-						
+		 */
+		query = createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString());  //sqlData.getRawSql()[2]) :
+
 		mklogger.debug("delete query: " + query);
 		DA.setPreparedStatement(query);
 
@@ -985,8 +974,8 @@ public class MkRestApi extends HttpServlet {
 					whereClause += " AND ";
 				}
 			}
-			*/
-			
+			 */
+
 			String valueClause = "*";
 			if(searchKey != null && searchKey.length > 0) {
 				valueClause = "";
@@ -995,7 +984,7 @@ public class MkRestApi extends HttpServlet {
 					try {
 						String decodeResult = URLDecoder.decode(temp, "UTF-8");
 						String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-						
+
 						temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 					} catch (UnsupportedEncodingException e) {
 						//
@@ -1003,13 +992,13 @@ public class MkRestApi extends HttpServlet {
 						return null;
 					}
 					valueClause += temp;
-					
+
 					if(i < searchKey.length-1) {
 						valueClause += ", ";
 					}
 				}
 			}
-	//		result = "SELECT * FROM TABLE WHERE ?";
+			//		result = "SELECT * FROM TABLE WHERE ?";
 			result = "SELECT " + valueClause + " FROM `" + Table +"`";
 
 			break;	
@@ -1023,14 +1012,14 @@ public class MkRestApi extends HttpServlet {
 				try {
 					String decodeResult = URLDecoder.decode(temp, "UTF-8");
 					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-					
+
 					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 				} catch (UnsupportedEncodingException e) {
 					//
 					mklogger.error("(createSQL post) given searchKey (" + temp + ") is invalid! " + e.getMessage());
 					return null;
 				}
-				
+
 				targetColumns += temp;
 				if(i < searchKey.length - 1)
 					targetColumns += ", ";
@@ -1040,14 +1029,14 @@ public class MkRestApi extends HttpServlet {
 				try {
 					String decodeResult = URLDecoder.decode(temp, "UTF-8");
 					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-					
+
 					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 				} catch (UnsupportedEncodingException e) {
 					//
 					mklogger.error("(createSQL post) given modifyKey (" + temp + ") is invalid! " + e.getMessage());
 					return null;
 				}
-				
+
 				targetValues = "'" + temp + "'";
 				if( i < modifyKey.length - 1)
 					targetValues += ", ";
@@ -1065,21 +1054,21 @@ public class MkRestApi extends HttpServlet {
 				try {
 					String decodeResult = URLDecoder.decode(temp, "UTF-8");
 					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-					
+
 					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 				} catch (UnsupportedEncodingException e) {
 					//
 					mklogger.error("(createSQL insert) given modify Key (" + temp + ") is invalid! " + e.getMessage());
 					return null;
 				}
-				
+
 				targetColumns += temp;
-				
+
 				temp = modifyObject.get(modifyKey[i]).toString();
 				try {
 					String decodeResult = URLDecoder.decode(temp, "UTF-8");
 					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
-					
+
 					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 				} catch (UnsupportedEncodingException e) {
 					//
@@ -1092,7 +1081,7 @@ public class MkRestApi extends HttpServlet {
 					targetValues += ",";
 				}
 			}
-			
+
 			result = "INSERT INTO `" + Table + "` (" + targetColumns + ") VALUE(" + targetValues + ");";
 
 			break;	

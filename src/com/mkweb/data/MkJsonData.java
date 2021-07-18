@@ -225,14 +225,22 @@ public class MkJsonData {
 	}
 	
 	public JSONObject mapToJson(Map<String, String> map) {
-		String tempString = "{";
+		try {
+			return new JSONObject(map);
+		} catch (Exception e) {
+			mklogger.error("func mapToJson(): Given data is not valid." + map);
+			return null;
+		}
 		
+		/*
+		String tempString = "{";
 		Set keys = map.keySet();
 		Iterator iter = keys.iterator();
 		int i = 0;
 		while(iter.hasNext()) {
 			String key = iter.next().toString();
 			String value = map.get(key);
+			jsonObject.put(key, value);
 			
 			tempString += "\"" + key + "\"" + ":" + "\"" + value + "\"";
 			if( i < map.size() ){
@@ -244,7 +252,10 @@ public class MkJsonData {
 		
 		if(!setJsonObject())
 			return null;
-		return getJsonObject();
+			
+		}
+		return jsonObject;
+		*/
 	}
 	
 	public String jsonToPretty(JSONObject jsonObject) throws JsonProcessingException {
