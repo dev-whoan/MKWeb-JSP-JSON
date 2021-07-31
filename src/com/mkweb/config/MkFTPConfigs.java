@@ -5,10 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +16,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.data.MkFtpData;
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.logger.MkLogger;
 
 public class MkFTPConfigs {

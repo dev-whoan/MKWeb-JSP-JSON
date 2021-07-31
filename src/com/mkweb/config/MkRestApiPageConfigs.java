@@ -17,7 +17,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.data.Device;
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.entity.MkPageConfigCan;
 import com.mkweb.logger.MkLogger;
@@ -30,6 +30,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	private long lastModified[]; 
 	private static final String TAG = "[MkRestPageConfigs]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
+	private static final String auth = MkConfigReader.Me().get("mkweb.restapi.search.usekey");
 
 	public static MkRestApiPageConfigs Me() {
 		if(pc == null)
@@ -87,8 +88,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 
 				JSONObject pageDevice = (JSONObject) pageObject.get("device");
-				
-				/*	����̽� ���� : desktop, android, ios �ִ� 3��*/
+
 				ArrayList<Device> deviceConfig = new ArrayList<>();
 				
 				Set<String> deviceConfigKey = pageDevice.keySet();
@@ -99,17 +99,13 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					
 					Object dO = pageDevice.get(deviceControlName);
 					if(dO != null) {
-						//desktop, android, ios�� ���� JSONObject
 						JSONObject deviceObject = (JSONObject) dO;
-						
-						//����� ���� Device ����
+
 						Device tempDevice = new Device();
-						// tempDeviceInfo(language, JSONObject(path, file, uri));
 						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
 						
 						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
-						
-						//Device Controller�� �����ִ� key�� ã�ƾ� �մϴ�.
+
 						Set<String> deviceObjectKey = deviceObject.keySet();
 						Iterator<String> iterator = deviceObjectKey.iterator();
 						while(iterator.hasNext()) {
@@ -199,7 +195,8 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 							serviceMethod,
 							serviceParameter,
 							page_value,
-							(pageAPI.toLowerCase().contentEquals("yes")));
+							(pageAPI.toLowerCase().contentEquals("yes")),
+							auth);
 					
 					printPageInfo(mklogger, curData, "info");
 					pageJsonData.add(curData);
@@ -246,7 +243,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth) {
 		MkPageJsonData result = new MkPageJsonData();
 		
 		result.setPageStatic(pageStatic);
@@ -264,6 +261,8 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 		result.setParameter(PRM_NAME);
 		result.setData(VAL_INFO);
 		result.setAPI(isApi);
+
+		result.setAuthorizedRequire(auth);
 		
 		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
 		PAGE_VALUE = pageValueToHashMap(VAL_INFO);

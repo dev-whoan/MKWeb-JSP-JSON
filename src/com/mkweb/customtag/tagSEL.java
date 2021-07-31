@@ -67,7 +67,6 @@ public class tagSEL extends SimpleTagSupport {
 
 	public void doTag() throws JspException, IOException{
 		MkDbAccessor DA;
-		ConnectionChecker cpi = new ConnectionChecker();
 		ArrayList<Object> dbResult = new ArrayList<Object>();
 
 		HttpServletRequest request = (HttpServletRequest) ((PageContext)getJspContext()).getRequest();
@@ -81,6 +80,9 @@ public class tagSEL extends SimpleTagSupport {
 		ArrayList<MkPageJsonData> pageInfo = getPageControl(request);
 		ArrayList<MkSqlJsonData> sqlInfo = getSqlControl(this.name);
 
+		/*
+		Should check Auths
+		 */
 		boolean isSet = (pageInfo == null || pageInfo.size() == 0) ? false : true;
 		MkPageJsonData pageStaticData = null;
 
@@ -128,12 +130,12 @@ public class tagSEL extends SimpleTagSupport {
 			return;
 		}
 
-		requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData,
+		requestParams = ConnectionChecker.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData,
 				pageInfo.get(pageServiceIndex).getParameter(), pageInfo.get(pageServiceIndex).getData().length);
-	//	requestParams = cpi.getRequestPageParameterName(request, pageInfo.get(pageServiceIndex).getPageStatic(), pageStaticData);
-		requestValues = cpi.getRequestParameterValues(request, pageInfo.get(pageServiceIndex).getParameter(), pageStaticData);
 
-		if(!cpi.comparePageValueWithRequestValue(
+		requestValues = ConnectionChecker.getRequestParameterValues(request, pageInfo.get(pageServiceIndex).getParameter(), pageStaticData);
+
+		if(!ConnectionChecker.comparePageValueWithRequestValue(
 				pageInfo.get(pageServiceIndex).getPageValue(),
 				requestValues,
 				pageStaticData,
@@ -161,10 +163,10 @@ public class tagSEL extends SimpleTagSupport {
 			}
 		}
 
-		String befQuery = cpi.regularQuery(sqlInfo.get(sqlControlIndex).getControlName(), pageInfo.get(pageServiceIndex).getServiceName(), false);
+		String befQuery = ConnectionChecker.regularQuery(sqlInfo.get(sqlControlIndex).getControlName(), pageInfo.get(pageServiceIndex).getServiceName(), false);
 
 		String query = null;
-		query = cpi.setQuery(befQuery);
+		query = ConnectionChecker.setQuery(befQuery);
 		if(query == null)
 			query = befQuery;
 

@@ -23,7 +23,7 @@ public class MkPageJsonData extends AbsJsonData {
 	/* Page Static Parameters */
 	private String objectType = null;
 	private String method = null;
-	private boolean authorizedRequire = false;		//이거 클래스 필요한거임; 지우지마셈
+	private int authorizedRequire = 0;
 	private boolean post = false;
 	private boolean get = false;
 	private boolean put = false;
@@ -38,7 +38,7 @@ public class MkPageJsonData extends AbsJsonData {
 	public void setParameter(String param) {	this.parameter = param;	}
 	public void setObjectType(String objectType) {	this.objectType = objectType;	}
 	public void setMethod(String method) {	this.method = method;	}
-	public void setAuthorizedRequire(String ar) {	this.authorizedRequire = (ar == null || ar.equals("no") ? false : ( ar.equals("yes") ? true : false) );	}
+	public void setAuthorizedRequire(String auths) { this.authorizedRequire = (auths == "yes" ? 2 : ( auths.contentEquals("part") ? 1 : 0) ); }
 	public void setPost(String post) {	this.post = (post == null || post.equals("no") ? false : ( post.equals("yes") ? true : false) );	}
 	public void setGet(String get) {	this.get = (get == null || get.equals("no") ? false : ( get.equals("yes") ? true : false) );	}
 	public void setPut(String put) {	this.put = (put == null || put.equals("no") ? false : ( put.equals("yes") ? true : false) );	}
@@ -58,7 +58,7 @@ public class MkPageJsonData extends AbsJsonData {
 	public String getParameter() {	return this.parameter;	}
 	public String getObjectType() {	return this.objectType;	}
 	public String getMethod() {	return this.method;	}
-	public boolean getAuthorizedRequire() {	return this.authorizedRequire;	}
+	public int getAuthorizedRequire() {	return this.authorizedRequire;	}
 	public boolean getPost() {	return this.post;	}
 	public boolean getGet() {	return this.get;	}
 	public boolean getPut() {	return this.put;	}

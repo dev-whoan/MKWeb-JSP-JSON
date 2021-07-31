@@ -13,12 +13,12 @@ public class Device extends AbsJsonData{
 	 */
 	
 	/*	Mother : controlName : default, android, ios	*/
-	/*	key: default, eng, ko ... 등 언어 설정 	*/
+	/*	key: default, eng, ko ... 	*/
 	
 	/* 
-	 * index 0: pageName	: 실제 파일 이름 / 연결 종단 URI
-	 * index 1: filePath	: 실제 파일 경로
-	 * index 2: pageURI		: 연결 URI dir
+	 * index 0: pageName	: URI
+	 * index 1: filePath	:
+	 * index 2: pageURI		: URI dir
 	 */
 	private HashMap<String, String[]> deviceInfo = new HashMap<>();
 	

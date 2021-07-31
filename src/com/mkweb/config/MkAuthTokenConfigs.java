@@ -1,30 +1,27 @@
 package com.mkweb.config;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
-import org.json.simple.JSONArray;
+import com.mkweb.data.MkSqlJsonData;
+import com.mkweb.utils.MkUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.mkweb.data.MkJsonData;
 import com.mkweb.data.MkAuthTokenData;
 import com.mkweb.logger.MkLogger;
 
 public class MkAuthTokenConfigs {
-	private HashMap<String, ArrayList<MkAuthTokenData>> authToken_configs = new HashMap<String, ArrayList<MkAuthTokenData>>();
+	private HashMap<String, MkAuthTokenData> authToken_configs = new HashMap<String, MkAuthTokenData>();
 	private File defaultFile = null;
 	private static MkAuthTokenConfigs matd = null;
 	private long lastModified = -1L;
 	private static final String TAG = "[AuthToken Configs]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
+	private static final HashMap<String, String> SUPPORT_ALGORITHM = new HashMap<>();
 
 	public static MkAuthTokenConfigs Me() {
 		if(matd == null) 
@@ -33,10 +30,17 @@ public class MkAuthTokenConfigs {
 		return matd;
 	}
 
+	private static void initializeAlgorithm(){
+		SUPPORT_ALGORITHM.put("HS256", "HMACSHA256");
+	}
+
 	public void setAuthTokenConfigs(File authTokenConfigs) {
+		if(SUPPORT_ALGORITHM.size() == 0){
+			initializeAlgorithm();
+		}
 		authToken_configs.clear();
 		defaultFile = authTokenConfigs;
-		ArrayList<MkAuthTokenData> ftpJsonData = null;
+		MkAuthTokenData authTokenJsonData = null;
 		lastModified = defaultFile.lastModified();
 
 		mklogger.info("=*=*=*=*=*=*=* MkWeb Auth Configs Start*=*=*=*=*=*=*=*=");
@@ -51,102 +55,122 @@ public class MkAuthTokenConfigs {
 		mklogger.info("File: " + defaultFile.getAbsolutePath());
 		mklogger.info("=            " + defaultFile.getName() +"             =");
 
-
 		try(FileReader reader = new FileReader(defaultFile)){
-			ftpJsonData = new ArrayList<MkAuthTokenData>();
+			authTokenJsonData = new MkAuthTokenData();
 			JSONParser jsonParser = new JSONParser();
 			JSONObject jsonObject = (JSONObject) jsonParser.parse(reader);
-			JSONObject ftpObject = (JSONObject) jsonObject.get("Controller");
+			JSONObject tokenObject = (JSONObject) jsonObject.get("Controller");
 
-			String ftpName = ftpObject.get("name").toString();
-			String ftpControllerPath = ftpObject.get("path").toString();		
+			String authName = MkConfigReader.Me().get("mkweb.auth.controller.name");
+			String authDebugLevel = tokenObject.get("level").toString();
 
-			String ftpDebugLevel = ftpObject.get("debug").toString();
-
-			JSONArray serviceArray = (JSONArray) ftpObject.get("services");
-
-			for(int i = 0; i < serviceArray.size(); i++) {
-				JSONObject serviceObject = (JSONObject) serviceArray.get(i);
-				String serviceId = null;
-				String servicePath = null;
-				String serviceDirPrefix = null;	//"dir"
-				String serviceType = null;
-				boolean serviceHashDirPrefix = false;
-
-				String[] serviceAllowFileFormat = null;
-				try {
-					serviceId = serviceObject.get("id").toString();
-					serviceType = serviceObject.get("type").toString();
-					servicePath = serviceObject.get("servicepath").toString();
-					Object prefix = serviceObject.get("dir");
-					mklogger.debug("prefix : " + prefix);
-					if(prefix != null) {
-						serviceDirPrefix = prefix.toString();
-						serviceHashDirPrefix = serviceObject.get("hash_dir").toString().contentEquals("true");
-					}
-
-					if(ftpControllerPath.charAt(ftpControllerPath.length() -1) == '/') {
-						servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath.substring(0, ftpControllerPath.length()-1) + servicePath) : (ftpControllerPath + servicePath));
-					}else {
-						servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath + servicePath) : (ftpControllerPath + "/" + servicePath));
-					}
-
-					MkJsonData mjd = new MkJsonData(serviceObject.get("format").toString());
-					if(!mjd.setJsonObject()) {
-						mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
-						return;
-					}
-
-					JSONObject serviceFormatData = mjd.getJsonObject();
-					serviceAllowFileFormat = new String[serviceFormatData.size()];
-					for(int j = 0; j < serviceAllowFileFormat.length; j++) {
-						serviceAllowFileFormat[j] = serviceFormatData.get("" + (j+1)).toString();
-					}
-
-				} catch(Exception e) {
-					mklogger.debug("Failed to create ftp controller. " + e.getMessage());
-					e.printStackTrace();
-					return;
-				}
-
-				MkAuthTokenData result = new MkAuthTokenData();
-				/*
-				result.setControlName(ftpName);
-				result.setServiceType(serviceType);
-				result.setPath(servicePath);
-				result.setDebugLevel(ftpDebugLevel);
-				result.setServiceName(serviceId);
-				result.setData(serviceAllowFileFormat);
-				result.setDirPrefix(serviceDirPrefix);
-				result.setHashDirPrefix(serviceHashDirPrefix);
-				 */
-				ftpJsonData.add(result);
-				printAuthTokenInfo(result, "info");
+			String algo = tokenObject.get("algorithm").toString();
+			String authAlgorithm = SUPPORT_ALGORITHM.get(algo);
+			if(authAlgorithm == null){
+				mklogger.error("NoSupportAlgorithmException: " + algo + " is not supported.");
+				return;
 			}
 
-			authToken_configs.put(ftpName, ftpJsonData);
+			String secretKey = tokenObject.get("secret").toString();
+			//now payload and databases
+			JSONObject authObject = (JSONObject) tokenObject.get("auths");
 
-		} catch (FileNotFoundException e) {
-			mklogger.error(e.getMessage());
-			e.printStackTrace();
-		} catch (IOException e) {
-			mklogger.error(e.getMessage());
-			e.printStackTrace();
-		} catch (ParseException e) {
+			if(!isAuthsValid(authObject)){
+				mklogger.error("InvalidAuthObjectException: \"auths\" field is not valid.");
+				return;
+			}
+
+			JSONObject payloadObject = (JSONObject) tokenObject.get("payload");
+			JSONObject payload = new JSONObject();
+
+			List<String> keys = MkUtils.keyGetter(payloadObject);
+			for(String key : keys){
+				payload.put(key, payloadObject.get(key));
+			}
+
+			authTokenJsonData.setAlgorithm(authAlgorithm)
+					.setSecretKey(secretKey)
+					.setAuthorizer(authObject)
+					.setPayload(payload)
+					.setControlName(authName);
+
+			printAuthTokenInfo(authTokenJsonData, "info");
+			authToken_configs.put(authName, authTokenJsonData);
+		} catch (IOException | ParseException e) {
 			mklogger.error(e.getMessage());
 			e.printStackTrace();
 		}
 		mklogger.info("=*=*=*=*=*=*=* MkWeb Auth Configs  Done*=*=*=*=*=*=*=*=");
 	}
 
+	private boolean isAuthsValid(JSONObject object){
+		JSONObject sql;
+		JSONObject parameter;
+		try{
+			sql = (JSONObject) object.get("sql");
+		} catch (Exception e){
+			mklogger.error("NullSQLControllerException: No sql set for \"auths\" field. 1");
+			return false;
+		}
+
+		String controller = null;
+		try{
+			controller = sql.get("controller").toString();
+		}catch (NullPointerException e){
+			mklogger.debug(sql.toString());
+			mklogger.error("NullSQLControllerException: No controller set for \"auths\" field. 2");
+			return false;
+		}
+		ArrayList<MkSqlJsonData> sqls = MkSQLConfigs.Me().getControl(controller);
+		if( sqls == null ){
+			mklogger.error("NoSQLControllerFoundException: " + controller);
+			return false;
+		}
+
+		String targetService = null;
+		try{
+			targetService = sql.get("service").toString();
+			if(targetService == null){
+				mklogger.error("NullSQLServiceException: No service set for \"auths\" field. 1");
+				return false;
+			}
+		} catch (NullPointerException e){
+			mklogger.debug(sql.toString());
+			mklogger.error("NullSQLServiceException: No service set for \"auths\" field. 2");
+			return false;
+		}
+
+		for(MkSqlJsonData temp : sqls){
+			if (temp.getServiceName().contentEquals(targetService)) {
+				sql.put("service", targetService);
+			}
+		}
+
+		if(sql.get("service") == null){
+			mklogger.error("NoSQLServiceFoundException: " + targetService);
+			return false;
+		}
+
+		try{
+			parameter = (JSONObject) object.get("parameter");
+			if(parameter.size() == 0){
+				mklogger.error("NoJWTParameterSetException: No parameter for \"auths\" field. 1");
+				return false;
+			}
+		} catch (Exception e){
+			mklogger.error("NullSQLControllerException: No parameter for \"auths\" field. 2");
+			return false;
+		}
+
+		return true;
+	}
+
 	public void printAuthTokenInfo(MkAuthTokenData jsonData, String type) {
-		String tempMsg = "\n===============================FTP  Control================================="
+		String tempMsg = "\n==========================MkAuthToken  Control=============================="
 				+ "\n|Controller:\t" + jsonData.getControlName()
-				+ "\n|FTP ID:\t" + jsonData.getServiceName() + "\t\tFTP Type:\t" + jsonData.getServiceType()
-				+ "\n|FTP Path:\t" + jsonData.getPath()
-				+ "\n|FTP Prefix:\t" + jsonData.getDirPrefix()
-				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
-				+ "\n|File Formats:\t" + jsonData.getData()
+				+ "\n|Algorithm:\t" + jsonData.getAlgorithm()
+				+ "\n|Auths:\t" + jsonData.getAuthorizer().toString()
+				+ "\n|Payloads:\t" + jsonData.getPayload().toString()
 				+ "\n============================================================================";
 
 		mklogger.temp(tempMsg, false);
@@ -162,35 +186,8 @@ public class MkAuthTokenConfigs {
 		}
 	}
 
-	public ArrayList<MkAuthTokenData> getControl(String controlName) {
+	public MkAuthTokenData getControl(String controlName) {
 		reloadControls();
 		return authToken_configs.get(controlName);
 	}
-
-	public ArrayList<MkAuthTokenData> getControlByServiceName(String serviceName){
-		reloadControls();
-
-		Set<String> keys = authToken_configs.keySet();
-		Iterator<String> iter  = keys.iterator();
-		String resultControlName = null;
-		ArrayList<MkAuthTokenData> jsonData = null;
-		while(iter.hasNext()) {
-			String controlName = iter.next();
-			jsonData = getControl(controlName);
-			for(MkAuthTokenData curData : jsonData) {
-				if(serviceName.contentEquals(curData.getServiceName())) {
-					resultControlName = controlName;
-					break;
-				}
-			}
-
-			if(resultControlName != null) {
-				break;
-			}
-			jsonData = null;
-		}
-
-		return jsonData;
-	}
-
 }

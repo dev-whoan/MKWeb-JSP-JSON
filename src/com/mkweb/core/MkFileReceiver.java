@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -30,11 +29,11 @@ import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkFTPConfigs;
 import com.mkweb.config.MkPageConfigs;
 import com.mkweb.data.MkFtpData;
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.utils.ConnectionChecker;
-import com.mkweb.utils.MyCrypto;
+import com.mkweb.utils.MkCrypto;
 
 @WebServlet(name = "MkFTPServlet", loadOnStartup = 1)
 @MultipartConfig
@@ -51,16 +50,11 @@ public class MkFileReceiver extends HttpServlet {
 	private static final String HASH_PREFIX = "__TRIP_!!_DIARY__";
 	private String requestParameterName = null;
 	private ArrayList<String> requestValues = null;
-	private ConnectionChecker cpi = null;
 	private HashMap<String, String> deleteParameters = null;
 	
 	private static final String[] FTP_MODE = {"ftp-receiver", "ftp-remover"};
 	
 	private List<Part> fileParts = null;
-
-	public MkFileReceiver() {
-		this.cpi = new ConnectionChecker();
-	}
 
 	private ArrayList<MkPageJsonData> getPageControl(String url) {
 		String mkPage = null;
@@ -87,7 +81,7 @@ public class MkFileReceiver extends HttpServlet {
 		host = String.valueOf(host) + "/";
 		String requestURI = rqPageURL.split(MkConfigReader.Me().get("mkweb.web.hostname"))[1];
 		String mkPage = !hostCheck.contentEquals(host) ? requestURI : "";
-		if (!this.cpi.isValidPageConnection(mkPage)) {
+		if (!ConnectionChecker.isValidPageConnection(mkPage)) {
 			this.mklogger.error(" checkMethod: Invalid Page Connection.");
 			return false;
 		} 
@@ -125,7 +119,7 @@ public class MkFileReceiver extends HttpServlet {
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
 		String previousURL = request.getHeader("referer");
-		if(!cpi.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
+		if(!ConnectionChecker.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
 			mklogger.error(" Request Value is not authorized. Please check page config.");
 			response.sendError(400);
 			return;
@@ -194,7 +188,7 @@ public class MkFileReceiver extends HttpServlet {
 					String tempDir = "";
 					for(String dir : dirs) {
 						if(ftpDirHash)
-							tempDir += "/" + new MyCrypto().MD5(dir + HASH_PREFIX);
+							tempDir += "/" + MkCrypto.MD5(dir + HASH_PREFIX);
 						else
 							tempDir += "/" + dir;
 					}
@@ -202,7 +196,7 @@ public class MkFileReceiver extends HttpServlet {
 					ftpDirPrefix = tempDir;
 				}else {
 					if(ftpDirHash) 
-						ftpDirPrefix = "/" + new MyCrypto().MD5(ftpDirPrefix + HASH_PREFIX);
+						ftpDirPrefix = "/" + MkCrypto.MD5(ftpDirPrefix + HASH_PREFIX);
 					else
 						ftpDirPrefix = "/" + ftpDirPrefix;
 				}
@@ -401,7 +395,7 @@ public class MkFileReceiver extends HttpServlet {
 					String tempDir = "";
 					for(String dir : dirs) {
 						if(ftpDirHash)
-							tempDir += "/" + new MyCrypto().MD5(dir + HASH_PREFIX);
+							tempDir += "/" + MkCrypto.MD5(dir + HASH_PREFIX);
 						else
 							tempDir += "/" + dir;
 					}
@@ -409,7 +403,7 @@ public class MkFileReceiver extends HttpServlet {
 					ftpDirPrefix = tempDir;
 				}else {
 					if(ftpDirHash) 
-						ftpDirPrefix = "/" + new MyCrypto().MD5(ftpDirPrefix + HASH_PREFIX);
+						ftpDirPrefix = "/" + MkCrypto.MD5(ftpDirPrefix + HASH_PREFIX);
 					else
 						ftpDirPrefix = "/" + ftpDirPrefix;
 				}
@@ -498,13 +492,13 @@ public class MkFileReceiver extends HttpServlet {
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
-			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
-			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
-			mklogger.flush("error");
-			mklogger.debug("mkweb.web.receive.use is not yes.");
-			return;
-		} 
+//		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
+//			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
+//			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
+//			mklogger.flush("error");
+//			mklogger.debug("mkweb.web.receive.use is not yes.");
+//			return;
+//		}
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (this.pi != null);
@@ -535,13 +529,13 @@ public class MkFileReceiver extends HttpServlet {
 	
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
-			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
-			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
-			mklogger.flush("error");
-			mklogger.debug("mkweb.web.receive.use is not yes.");
-			return;
-		} 
+//		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
+//			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
+//			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
+//			mklogger.flush("error");
+//			mklogger.debug("mkweb.web.receive.use is not yes.");
+//			return;
+//		}
 		String refURL = request.getHeader("Referer");
 		pi = getPageControl(refURL);
 		isPiSet = (this.pi != null);
@@ -646,13 +640,13 @@ public class MkFileReceiver extends HttpServlet {
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
-			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
-			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
-			mklogger.flush("error");
-			mklogger.debug("mkweb.web.receive.use is not yes. Please check MkWeb.conf");
-			return;
-		}
+//		if (!MkConfigReader.Me().get("mkweb.ftp.use").contentEquals("yes")) {
+//			mklogger.temp("MkReceiveFormData is not allowed. But user tried to use it. However, this log only show when web.xml have this servlet information. Please modify web.xml or change your MkWeb setting.", false);
+//			mklogger.temp("Also if you are not going to use MkReceiveFormData, and not going to change web.xml, the /data/receive uri is being dead.", false);
+//			mklogger.flush("error");
+//			mklogger.debug("mkweb.web.receive.use is not yes. Please check MkWeb.conf");
+//			return;
+//		}
 
 		String refURL = request.getHeader("Referer");
 		

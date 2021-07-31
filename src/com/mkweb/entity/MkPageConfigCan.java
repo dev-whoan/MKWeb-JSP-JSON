@@ -43,7 +43,7 @@ public abstract class MkPageConfigCan extends MkPageJsonData {
 	
 	public abstract ArrayList<MkPageJsonData> getControl(String k);
 	public abstract void setPageConfigs(File[] pageConfigs);
-	protected abstract MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi);
+	protected abstract MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth);
 
 	public void printPageInfo(MkLogger mklogger, MkPageJsonData jsonData, String type) {
 		String[] VAL_INFO = jsonData.getData();
@@ -79,7 +79,7 @@ public abstract class MkPageConfigCan extends MkPageJsonData {
 		String tempMsg = "\n===============================Page Control================================="
 				+ "\n|Control Name:\t(" + jsonData.getControlName() + ")\t\tLast URI:\t" + jsonData.getLastURI()
 				+ deviceMessage
-				+ "\n|Debug Level:\t" + jsonData.getDebug()
+				+ "\n|Debug Level:\t" + jsonData.getDebug() + "\t\tAuth Level:\t" + jsonData.getAuthorizedRequire()
 				+ "\n|Page Static:\t" + jsonData.getPageStatic() + "\t\tService Name:\t" + jsonData.getServiceName()
 				+ "\n|Type:\t" + jsonData.getServiceType() + "\tParameter:\t" + jsonData.getParameter()
 				+ "\n|API :\t" + jsonData.IsApiPage();

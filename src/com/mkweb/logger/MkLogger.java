@@ -227,9 +227,11 @@ public class MkLogger{
 			}
 		}
 	}
-	
+
+	public void testMessage(){
+		info("\n\n\n\ntestMEssage");
+	}
 	public void setLogConfig() {
-		
 		if(defaultFile == null) {
 			System.err.println("[MkLogger] There is no file defined to set MkLogger.");
 			return;

@@ -1,9 +1,8 @@
 package com.mkweb.data;
 
-import com.mkweb.entity.JsonData;
+import com.mkweb.entity.MkDefaultModelImpl;
 
-public class AbsJsonData implements JsonData {
-	
+public class AbsJsonData implements MkDefaultModelImpl {
 	protected String serviceName = null;
 	protected String serviceType = null;
 	protected String controlName = null;

@@ -17,21 +17,20 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.mkweb.auths.MkAuthToken;
+import com.mkweb.config.*;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.logger.MkLogger;
-import com.mkweb.config.MkFTPConfigs;
-import com.mkweb.config.MkPageConfigs;
-import com.mkweb.config.MkRestApiPageConfigs;
-import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.config.MkSQLConfigs;
 
 public class ConnectionChecker {
 	private static final String TAG = "[ConnectionChecker]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
 
-	public String regularQuery(String controlName, String serviceName, boolean isApi) {
+	private ConnectionChecker(){}
+
+	public static String regularQuery(String controlName, String serviceName, boolean isApi) {
 		ArrayList<MkSqlJsonData> resultSqlData = null;
 		if(isApi)
 			resultSqlData = MkRestApiSqlConfigs.Me().getControl(controlName);
@@ -69,7 +68,7 @@ public class ConnectionChecker {
 	 * 내가 받아들인 파라미터 수가 같은지 보면 됨
 	 * 인자 5개는 new, 3개는 old
 	 * */
-	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData,
+	public static String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData,
 										String pageParameter, int pageParameterSize) {
 		Enumeration<String> params = request.getParameterNames();
 		String requestParams = null;
@@ -130,7 +129,7 @@ public class ConnectionChecker {
 	}
 	
 	
-	public String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData) {
+	public static String getRequestPageParameterName(HttpServletRequest request, boolean isStaticService, MkPageJsonData pageStaticData) {
 		Enumeration<String> params = request.getParameterNames();
 		String requestParams = null;
 		String pageStaticParameterName = null;
@@ -192,7 +191,7 @@ public class ConnectionChecker {
 		return requestParams;
 	}
 
-	public ArrayList<String> getRequestParameterValues(HttpServletRequest request, String parameter, MkPageJsonData pageStaticData){
+	public static ArrayList<String> getRequestParameterValues(HttpServletRequest request, String parameter, MkPageJsonData pageStaticData){
 		ArrayList<String> requestValues = new ArrayList<String>();
 
 		Enumeration<String> params = request.getParameterNames();
@@ -239,7 +238,7 @@ public class ConnectionChecker {
 		return requestValues;
 	}
 
-	public String setQuery(String query) {
+	public static String setQuery(String query) {
 		String aftQuery = query;
 		if(aftQuery != null) {
 			mklogger.debug("(func setQuery): befQuery: " + aftQuery);
@@ -270,7 +269,7 @@ public class ConnectionChecker {
 		return aftQuery;
 	}
 
-	public String setApiQuery(String query) {
+	public static String setApiQuery(String query) {
 		String aftQuery = query;
 
 		if(aftQuery != null) {
@@ -280,7 +279,7 @@ public class ConnectionChecker {
 		return aftQuery;
 	}
 
-	public boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, MkPageJsonData pageStaticDatas, boolean isStaticService, boolean isApi) {
+	public static boolean comparePageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, MkPageJsonData pageStaticDatas, boolean isStaticService, boolean isApi) {
 		LinkedHashMap<String, Boolean> staticData = null;
 		if(pageStaticDatas != null)
 			staticData = pageStaticDatas.getPageValue(); 
@@ -329,7 +328,7 @@ public class ConnectionChecker {
 		return (pageValues.contentEquals(requestValues));
 	}
 
-	public boolean isValidPageConnection(String requestControlName) {
+	public static boolean isValidPageConnection(String requestControlName) {
 		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
@@ -338,11 +337,15 @@ public class ConnectionChecker {
 		return true;
 	}
 	
-	public String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<MkPageJsonData> resultPageData) {
+	public static String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<MkPageJsonData> resultPageData) {
 		String defaultLanguage = null;
 		if(userPlatform == null)
 			userPlatform = "desktop";
 		try {
+			if(userAcceptLanguage == null){
+				userAcceptLanguage = MkConfigReader.Me().get("mkweb.web.default.language");
+			}
+
 			defaultLanguage = Locale.LanguageRange.parse(userAcceptLanguage)
 					.stream().sorted(Comparator.comparing(Locale.LanguageRange::getWeight).reversed())
 					.map(range -> new Locale(range.getRange())).collect(Collectors.toList()).get(0).toString().substring(0, 2);
@@ -419,7 +422,7 @@ public class ConnectionChecker {
 		return uriInfo[0] + "/" + uriInfo[1];
 	}
 
-	public boolean isValidApiPageConnection(String requestControlName, String[] requestDir) {
+	public static boolean isValidApiPageConnection(String requestControlName, String[] requestDir) {
 		ArrayList<MkPageJsonData> resultPageData = MkRestApiPageConfigs.Me().getControl(requestControlName);
 
 		if(resultPageData == null || resultPageData.size() < 1)
@@ -444,5 +447,19 @@ public class ConnectionChecker {
 		}
 
 		return true;
+	}
+
+	public static boolean isAuthorized(HttpServletRequest request, ArrayList<MkPageJsonData> pageJsonData){
+		int pageLevel = pageJsonData.get(0).getAuthorizedRequire();
+
+		String token = request.getHeader("Authorization");
+		if(token == null && pageLevel == 2){
+			return false;
+		}
+
+		if(pageLevel == 2)
+			return MkAuthToken.verify(token);
+		else
+			return true;
 	}
 }

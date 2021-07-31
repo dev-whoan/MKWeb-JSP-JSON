@@ -4,18 +4,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
@@ -26,7 +21,7 @@ import com.mkweb.data.MkFtpData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 import com.mkweb.utils.ConnectionChecker;
-import com.mkweb.utils.MyCrypto;
+import com.mkweb.utils.MkCrypto;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkFTPConfigs;
 import com.mkweb.config.MkPageConfigs;
@@ -62,7 +57,6 @@ public class tagFTP extends SimpleTagSupport {
 	}
 
 	public void doTag() throws JspException, IOException{
-		ConnectionChecker cpi = new ConnectionChecker();
 		
 		HttpServletRequest request = (HttpServletRequest) ((PageContext)getJspContext()).getRequest();
 
@@ -136,7 +130,7 @@ public class tagFTP extends SimpleTagSupport {
 				String tempDir = "";
 				for(String dir : dirs) {
 					if(ftpDirHash)
-						tempDir += "/" + new MyCrypto().MD5(dir + "__TRIP_!!_DIARY__");
+						tempDir += "/" + MkCrypto.MD5(dir + "__TRIP_!!_DIARY__");
 					else
 						tempDir += "/" + dir;
 				}
@@ -144,7 +138,7 @@ public class tagFTP extends SimpleTagSupport {
 				ftpDirPrefix = tempDir;
 			}else {
 				if(ftpDirHash) 
-					ftpDirPrefix = "/" + new MyCrypto().MD5(ftpDirPrefix + "__TRIP_!!_DIARY__");
+					ftpDirPrefix = "/" + MkCrypto.MD5(ftpDirPrefix + "__TRIP_!!_DIARY__");
 				else
 					ftpDirPrefix = "/" + ftpDirPrefix;
 			}

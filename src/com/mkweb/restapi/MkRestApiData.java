@@ -2,11 +2,11 @@ package com.mkweb.restapi;
 
 import java.util.HashMap;
 
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 
-//Caching ´ë»ó
+//Caching ï¿½ï¿½ï¿½
 public class MkRestApiData extends MkJsonData{
-	//Çì´õ ¼³Á¤ ¹¹¹¹ÀÖÁö?
+	//ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?
 	private int responseCode = -1;
 	private String message = null;
 	private String contentType = null;

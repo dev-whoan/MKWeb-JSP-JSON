@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +31,7 @@ import org.json.simple.JSONObject;
 import com.mkweb.config.MkConfigReader;
 import com.mkweb.config.MkRestApiPageConfigs;
 import com.mkweb.config.MkRestApiSqlConfigs;
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.database.MkDbAccessor;
@@ -42,25 +42,23 @@ import com.mkweb.utils.ConnectionChecker;
  * Servlet implementation class MkRestApi
  */
 @WebServlet(
-		name = "MkReceiveFormData",
+		name = "MkRestApiServlet",
 		loadOnStartup=1
 )
 public class MkRestApi extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static final String TAG = "[MkRestApi]";
 	private static final MkLogger mklogger = new MkLogger(TAG);
-	private ConnectionChecker cpi = null;
 
-	private static String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uripattern");
+	private static String MKWEB_URI_PATTERN = MkConfigReader.Me().get("mkweb.restapi.uri");
 	private static String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
-	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes") ? true : false;
+	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes");
 	private static String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
 	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
 	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.refonly.host");
 
 	public MkRestApi() {
 		super();
-		cpi = new ConnectionChecker();
 	}
 
 	private boolean checkMethod(ArrayList<MkPageJsonData> pageJsonData, String requestMethod) {
@@ -189,6 +187,7 @@ public class MkRestApi extends HttpServlet {
 
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String contentType = request.getContentType();
+		String authToken = request.getHeader("Authorization");
 		long START_MILLIS = System.currentTimeMillis();
 		request.setCharacterEncoding("UTF-8");
 		MkRestApiResponse apiResponse = new MkRestApiResponse();
@@ -202,7 +201,7 @@ public class MkRestApi extends HttpServlet {
 		
 		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
 
-		if((!REQUEST_METHOD.contentEquals("get")) && (contentType == null || !contentType.contains("application/json;"))) {
+		if((!REQUEST_METHOD.contentEquals("get")) && (contentType == null || !contentType.contains("application/json"))) {
 			apiResponse.setCode(406);
 			apiResponse.setMessage("Content type not supported.");
 		}
@@ -220,8 +219,7 @@ public class MkRestApi extends HttpServlet {
 		JSONObject resultObject = null;
 		
 		mklogger.debug("pretty: " + MKWEB_PRETTY_OPT + " | prettyParam: " +prettyParam + " | requestURI : " + requestURI);
-		
-		
+
 		if(MKWEB_REFONLY_HOST.toLowerCase().contentEquals("yes")) {
 			checkHost(apiResponse, 
 					request.getHeader("referer"), 
@@ -232,8 +230,9 @@ public class MkRestApi extends HttpServlet {
 		while(true) {
 			if(apiResponse.getCode() != 200)
 				break;
-			
+
 			reqPage = requestURI.split("/" + MKWEB_URI_PATTERN + "/");
+
 			if (reqPage.length < 2) {
 				apiResponse.setMessage("Please enter the conditions to search.");
 				apiResponse.setCode(400);
@@ -287,7 +286,6 @@ public class MkRestApi extends HttpServlet {
 							shouldCheckQuery = 1;
 						}
 					} else {
-						shouldCheckQuery = -1;
 						for (int i = 0; i < tempURI.length; i++) {
 							if (tempURI[i].contentEquals(mkPage)) {
 								mkPageIndex = i;
@@ -302,14 +300,12 @@ public class MkRestApi extends HttpServlet {
 
 						LinkedHashMap<String, String> result = getParameterValues(request); //new LinkedHashMap<String, String>();
 
-						requestParameterJson = mkJsonData.mapToJson(result);
-						mklogger.debug("result : " + result);
-						mklogger.debug("rqj    : " + requestParameterJson);
+						requestParameterJson = MkJsonData.mapToJson(result);
 
-						if (requestParameterJson == null) {
+						if (requestParameterJson == null && authToken == null) {
 							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
-							apiResponse.setCode(404);
+							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
+							apiResponse.setCode(400);
 							break;
 						}
 					} else if (shouldCheckQuery == -1) {
@@ -342,22 +338,22 @@ public class MkRestApi extends HttpServlet {
 						for (int i = 0; i < searchColumns.size(); i++) {
 							result.put(searchColumns.get(i), searchValues.get(i));
 						}
-						requestParameterJson = mkJsonData.mapToJson(result);
-						if (requestParameterJson == null) {
+						requestParameterJson = MkJsonData.mapToJson(result);
+						if (requestParameterJson == null && authToken == null) {
 							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
+							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
 							apiResponse.setCode(400);
 							break;
 						}
-					} else if (shouldCheckQuery == 0) {
+					} else {
 						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
 						if(REQUEST_METHOD.contentEquals("get"))
 							result.put(MKWEB_SEARCH_ALL, MKWEB_SEARCH_ALL);
 
-						requestParameterJson = mkJsonData.mapToJson(result);
-						if(requestParameterJson == null) {
+						requestParameterJson = MkJsonData.mapToJson(result);
+						if(requestParameterJson == null && authToken == null) {
 							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
+							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
 							apiResponse.setCode(400);
 						}
 					}
@@ -366,7 +362,7 @@ public class MkRestApi extends HttpServlet {
 			} 
 
 			if(REQUEST_METHOD.contentEquals("post") || REQUEST_METHOD.contentEquals("put") || REQUEST_METHOD.contentEquals("delete")){
-				mkJsonData.mapToJson(getParameterValues(request));
+				MkJsonData.mapToJson(getParameterValues(request));
 
 				if(mkJsonData.getData() == null) {
 					StringBuilder stringBuilder = new StringBuilder();
@@ -390,23 +386,32 @@ public class MkRestApi extends HttpServlet {
 							}
 						}
 					}
-					String rawData = URLDecoder.decode(stringBuilder.toString(), "UTF-8");
-					if(rawData.charAt(0) == '"' && rawData.charAt(rawData.length()-1) == '"') {
-						rawData = rawData.substring(1, rawData.length()-1);
-					}
-					int bslash = -1;
-					while((bslash = rawData.indexOf("\\")) >= 0) {
-						if(rawData.charAt(bslash+1) == '"') {
-							String front = new String(rawData);
-							String end = new String(rawData);
-							front = front.substring(0, bslash);
-							end = end.substring(bslash+2);
-							rawData = front + "\"" + end;
+					String rawData = URLDecoder.decode(stringBuilder.toString(), StandardCharsets.UTF_8);
+					try{
+						if(rawData.charAt(0) == '"' && rawData.charAt(rawData.length()-1) == '"') {
+							rawData = rawData.substring(1, rawData.length()-1);
 						}
-					}
 
-					mklogger.debug("rawData : " + rawData);
-					mkJsonData.setData(rawData);
+
+						int bslash = -1;
+						while((bslash = rawData.indexOf("\\")) >= 0) {
+							if(rawData.charAt(bslash+1) == '"') {
+								String front = new String(rawData);
+								String end = new String(rawData);
+								front = front.substring(0, bslash);
+								end = end.substring(bslash+2);
+								rawData = front + "\"" + end;
+							}
+						}
+
+						mklogger.debug("rawData : " + rawData);
+						mkJsonData.setData(rawData);
+					} catch (StringIndexOutOfBoundsException e){
+						mklogger.error("Please check your request. There is no data to post, put or delete.");
+						apiResponse.setMessage("Please check your request. There is no data to post, put or delete.");
+						apiResponse.setCode(400);
+						break;
+					}
 				}
 				mklogger.debug("jsonData: " + mkJsonData.getData());
 				if (mkJsonData.setJsonObject()) {
@@ -426,13 +431,13 @@ public class MkRestApi extends HttpServlet {
 
 				} else {
 					if(mkJsonData.getData() != null) {
-						String tempJsonString = mkJsonData.stringToJsonString(mkJsonData.getData());
+						String tempJsonString = MkJsonData.stringToJsonString(mkJsonData.getData());
 
 						mkJsonData.setData(tempJsonString);
 
 						if (!mkJsonData.setJsonObject()) {
 							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type.");
+							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
 							apiResponse.setCode(400);
 							break;
 						}
@@ -444,28 +449,34 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 			mklogger.debug("rpj: " + requestParameterJson);
-			if(userKey == null) {
-				if(requestParameterJson.get(MKWEB_SEARCH_KEY) != null) {
-					userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
-				}else if(requestParameterJsonToModify != null) {
-					if(requestParameterJsonToModify.get(MKWEB_SEARCH_KEY) != null) {
-						userKey = requestParameterJsonToModify.get(MKWEB_SEARCH_KEY).toString();
+			if (MKWEB_USE_KEY){
+				if(authToken != null){
+					userKey = authToken.toLowerCase().split("bearer ")[1];
+					if(requestParameterJson == null){
+						requestParameterJson = new JSONObject();
+						requestParameterJsonToModify = new JSONObject();
+					}
+				} else {
+					if(requestParameterJson.get(MKWEB_SEARCH_KEY) != null) {
+						userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
+					}else if(requestParameterJsonToModify != null) {
+						if(requestParameterJsonToModify.get(MKWEB_SEARCH_KEY) != null) {
+							userKey = requestParameterJsonToModify.get(MKWEB_SEARCH_KEY).toString();
+						}
+					}
+
+					if(userKey == null) {
+						userKey = request.getParameter(MKWEB_SEARCH_KEY);
 					}
 				}
 
-				if(userKey == null) {
-					userKey = request.getParameter(MKWEB_SEARCH_KEY);
-				}
-			}
-
-			if (MKWEB_USE_KEY) {
 				if (!isKeyValid(userKey, mkPage)) {
 					apiResponse.setMessage("The key is not valid.");
 					apiResponse.setCode(401);
 					break;
 				}
 			}
-			
+
 			checkJsonParameter(requestParameterJson, prettyParam);
 			checkJsonParameter(requestParameterJsonToModify, prettyParam);
 
@@ -478,7 +489,6 @@ public class MkRestApi extends HttpServlet {
 				ArrayList<MkPageJsonData> pageControl = MkRestApiPageConfigs.Me().getControl(mkPage);
 
 				for (MkPageJsonData service : pageControl) {
-					// mklogger.debug(TAG, " service method : " + service.getMethod());
 					if (REQUEST_METHOD.contentEquals(service.getMethod())) {
 						pageService = service;
 						break;
@@ -661,7 +671,7 @@ public class MkRestApi extends HttpServlet {
 
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
-		String befQuery = cpi.regularQuery(control, service, true);
+		String befQuery = ConnectionChecker.regularQuery(control, service, true);
 		String query = null;
 		String[] searchKeys = pjData.getData();
 		int requestSize = jsonObject.size();
@@ -774,7 +784,7 @@ public class MkRestApi extends HttpServlet {
 
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
-		String befQuery = cpi.regularQuery(control, service, true);
+		String befQuery = ConnectionChecker.regularQuery(control, service, true);
 		String query = null;
 		String[] inputKey = pjData.getData();
 
@@ -804,7 +814,7 @@ public class MkRestApi extends HttpServlet {
 		 */
 		query = createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()); //sqlData.getRawSql()[2]) :
 		DA.setRequestValue(inputValues);
-		query = cpi.setQuery(befQuery);
+		query = ConnectionChecker.setQuery(befQuery);
 		mklogger.debug("�׷��� ������ : " + query);
 		if(query == null) {
 			mkResponse.setCode(500);

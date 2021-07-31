@@ -61,13 +61,12 @@ public class MkDispatcher extends HttpServlet {
 			return;
 		}
 		String mkPage = request.getAttribute("mkPage").toString();
-		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
+		if(!ConnectionChecker.isValidPageConnection(mkPage)) {
 			response.sendError(404);
 			return;
 		}
 		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(mkPage);
 
-		
 		String userAcceptLanguage = request.getHeader("Accept-Language");
 		String userAgent = request.getHeader("User-Agent").toLowerCase();
 		String userPlatform = null;
@@ -83,14 +82,20 @@ public class MkDispatcher extends HttpServlet {
 		}
 		if(userPlatform == null)
 			userPlatform = "desktop";
-		
-		String targetURI = MkPageJsonData.getAbsPath() + (new ConnectionChecker()).getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData);
 
+		String targetURI = MkPageJsonData.getAbsPath() + (ConnectionChecker.getRequestPageLanguage(mkPage, userPlatform, userAcceptLanguage, resultPageData));
 		if(targetURI.contains("error_")) {
 			response.sendError(Integer.parseInt(targetURI.split("error_")[1]));
 			return;
 		}
-		
+
+		//  For each service, the service executor will ask authorize.
+		if(!ConnectionChecker.isAuthorized(request, resultPageData)){
+			mklogger.debug("Failed");
+			response.sendError(401);
+			return;
+		}
+
 		request.setAttribute("mkPage", mkPage);
 		dispatch(request, response, targetURI);
 

@@ -65,7 +65,7 @@ public class defaultDispatcher extends HttpServlet {
 			mkPage = "";
 		}
 		
-		if(!(new ConnectionChecker()).isValidPageConnection(mkPage)) {
+		if(!ConnectionChecker.isValidPageConnection(mkPage)) {
 			response.sendError(404);
 			return;
 		}

@@ -1,75 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns="http://java.sun.com/xml/ns/javaee"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-	id="WebApp_ID" version="3.0">
+		 xmlns="http://java.sun.com/xml/ns/javaee"
+		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+		 id="WebApp_ID" version="3.0">
 	<display-name>MkWeb</display-name>
-	
-	<servlet>
-		<servlet-name>MkReceiveFormData</servlet-name>
-		<servlet-class>com.mkweb.core.MkReceiveFormData</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-	 
-	<servlet-mapping>
-		<servlet-name>MkReceiveFormData</servlet-name>
-		<url-pattern>/data/receive</url-pattern>
-	</servlet-mapping>
-	
-	<servlet>
-		<servlet-name>MkFTPServlet</servlet-name>
-		<servlet-class>com.mkweb.core.MkFileReceiver</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-	 
-	<servlet-mapping>
-		<servlet-name>MkFTPServlet</servlet-name>
-		<url-pattern>/ftp/receive</url-pattern>
-	</servlet-mapping>
 
-	<servlet>
-		<servlet-name>MkWebRestApi</servlet-name>
-		<servlet-class>com.mkweb.restapi.MkRestApi</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-	
 	<servlet-mapping>
-		<servlet-name>MkWebRestApi</servlet-name>
-		<url-pattern>/mk_api_key/*</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-	    <servlet-name>default</servlet-name>
-	    <url-pattern>*.png</url-pattern>
-	    <url-pattern>*.jpg</url-pattern>
-	    <url-pattern>*.gif</url-pattern>
-	    <url-pattern>*.jpeg</url-pattern>
-	    <url-pattern>*.PNG</url-pattern>
-	    <url-pattern>*.zip</url-pattern>
-	    <url-pattern>*.css</url-pattern>
-	    <url-pattern>*.js</url-pattern>
-	    <url-pattern>*.ico</url-pattern>
+		<servlet-name>default</servlet-name>
+		<url-pattern>*.png</url-pattern>
+		<url-pattern>*.jpg</url-pattern>
+		<url-pattern>*.gif</url-pattern>
+		<url-pattern>*.jpeg</url-pattern>
+		<url-pattern>*.PNG</url-pattern>
+		<url-pattern>*.zip</url-pattern>
+		<url-pattern>*.css</url-pattern>
+		<url-pattern>*.js</url-pattern>
+		<url-pattern>*.ico</url-pattern>
 	</servlet-mapping>
 	<!-- MkWeb Dispatcher Settings -->
-	
+
 	<!-- Context:: MkWeb Initializer-->
 	<listener>
 		<listener-class>com.mkweb.context.MkWebContextListener</listener-class>
 	</listener>
 	<!-- Context:: MkWeb Initializer-->
-	
-	
-	<!-- MkWeb Setting Configs -->
+
+	<!-- MkWeb Configs -->
 	<context-param>
 		<param-name>MKWeb.Properties</param-name>
 		<param-value>/WEB-INF/classes/configs/MkWeb.conf</param-value>
 	</context-param>
-	
+
 	<context-param>
 		<param-name>MKWeb.PageConfigs</param-name>
 		<param-value>/WEB-INF/classes/configs/views</param-value>
 	</context-param>
-	
+
 	<context-param>
 		<param-name>MKWeb.SqlConfigs</param-name>
 		<param-value>/WEB-INF/classes/configs/sqls</param-value>
@@ -84,15 +50,20 @@
 		<param-name>MKWeb.FTPConfigs</param-name>
 		<param-value>/WEB-INF/classes/configs/ftps</param-value>
 	</context-param>
-	
+
 	<context-param>
-		<param-name>MkWeb.ApiSqlConfigs</param-name>
-		<param-value>/WEB-INF/classes/configs/api/sqls</param-value>
-	</context-param>
-	
-	<context-param>
-		<param-name>MkWeb.ApiPageConfigs</param-name>
+		<param-name>MKWeb.ApiPageConfigs</param-name>
 		<param-value>/WEB-INF/classes/configs/api/views</param-value>
 	</context-param>
-	<!-- MkWeb Setting Configs -->
+
+	<context-param>
+		<param-name>MKWeb.ApiSqlConfigs</param-name>
+		<param-value>/WEB-INF/classes/configs/api/sqls</param-value>
+	</context-param>
+
+	<context-param>
+		<param-name>MKWeb.AuthConfigs</param-name>
+		<param-value>/WEB-INF/classes/configs/MkAuthToken.json</param-value>
+	</context-param>
+	<!-- MkWeb Configs -->
 </web-app>

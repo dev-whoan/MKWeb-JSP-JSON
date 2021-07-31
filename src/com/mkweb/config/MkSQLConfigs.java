@@ -10,16 +10,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.w3c.dom.Node;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.NodeList;
 
-import com.mkweb.data.MkJsonData;
-import com.mkweb.data.MkPageJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.entity.MkSqlConfigCan;
 import com.mkweb.logger.MkLogger;
@@ -176,6 +172,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 					String[] finalQuery = createSQL(serviceQuery, tableData, false);
 					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
+					sqlData.setServiceType(serviceQuery[0]);
 					//ID = 0, DB = 1
 					sqlData.setServiceName(serviceId);
 					sqlData.setTableData(tableData);
@@ -207,7 +204,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		String tempMsg = "\n===============================SQL  Control================================="
 				+ "\n|Controller: \t" + jsonData.getControlName()
 				+ "\n|SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
-				+ "\n|SQL DB:\t" + jsonData.getDB()
+				+ "\n|SQL DB:\t" + jsonData.getDB() + "\t\t Type:\t" + jsonData.getServiceType()
 				+ "\n|SQL Table:\t" + jsonData.getTableData()
 				+ "\n|SQL Query:\t" + jsonData.getData()[0].trim()
 				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
@@ -216,8 +213,8 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		mklogger.temp(tempMsg, false);
 		mklogger.flush(type);
 	}
-	
-	public ArrayList<MkSqlJsonData> getControl(String controlName) {
+
+	private void updateConfigs(){
 		for(int i = 0; i < defaultFiles.length; i++)
 		{
 			if(lastModified[i] != defaultFiles[i].lastModified()){
@@ -228,20 +225,25 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 				break;
 			}
 		}
+	}
+
+	public ArrayList<MkSqlJsonData> getControl(String controlName) {
+		updateConfigs();
 
 		return sql_configs.get(controlName);
 	}
-	
-	public ArrayList<MkSqlJsonData> getControlByServiceName(String serviceName){
-		for(int i = 0; i < defaultFiles.length; i++) {
-			if(lastModified[i] != defaultFiles[i].lastModified()){
-				setSqlConfigs(defaultFiles);
-				mklogger.info("==============Reload SQL Config files==============");
-				mklogger.info("========Caused by : different modified time========");
-				mklogger.info("==============Reload SQL Config files==============");
-				break;
+
+	public String getServiceTypeByServiceName(ArrayList<MkSqlJsonData> control, String serviceName){
+		for(MkSqlJsonData service : control){
+			if(service.getServiceName().contentEquals(serviceName)){
+				return service.getServiceType();
 			}
 		}
+		return null;
+	}
+
+	public ArrayList<MkSqlJsonData> getControlByServiceName(String serviceName){
+		updateConfigs();
 		
 		Set iter = sql_configs.keySet();
 		Iterator sqlIterator = iter.iterator();

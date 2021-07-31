@@ -18,7 +18,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.mkweb.data.Device;
-import com.mkweb.data.MkJsonData;
+import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.entity.MkPageConfigCan;
 import com.mkweb.logger.MkLogger;
@@ -83,6 +83,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 				String lastURI = pageObject.get("last_uri").toString();
 				
 				String pageDebugLevel = pageObject.get("debug").toString();
+				String authorize = pageObject.get("auth").toString();
 
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
@@ -98,7 +99,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 				boolean isApiService = false;
 				
 				JSONObject pageDevice = (JSONObject) pageObject.get("device");
-				
+
 				ArrayList<Device> deviceConfig = new ArrayList<>();
 				
 				Set<String> deviceConfigKey = pageDevice.keySet();
@@ -143,7 +144,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 											}											
 										}
 									}
-									
+
+									mklogger.debug("allow uri: " + (deviceURI + lastURI));
 									allowURI.put((deviceURI + lastURI), controlName);
 								}
 							}
@@ -215,7 +217,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 								serviceMethod,
 								serviceParameter,
 								page_value,
-								isApiService);
+								isApiService,
+								authorize);
 						
 						printPageInfo(mklogger, curData, "info");
 						pageJsonData.add(curData);
@@ -229,6 +232,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 					page_value = new String[1];
 					page_value[0] = "";
 					isApiService = false;
+					authorize = "no";
 					
 					/*	 Add Index Page	*/
 					if(controlName.contentEquals("/")) 
@@ -244,7 +248,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 							serviceMethod,
 							serviceParameter,
 							page_value,
-							isApiService);
+							isApiService,
+							authorize);
 
 					printPageInfo(mklogger, curData, "info");
 					pageJsonData.add(curData);
@@ -266,7 +271,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 	}
 
 	private String getURIControl(String requestURI) {
-		/*
+/*
 		Set<String> keys = allowURI.keySet();
 		Iterator<String> iter = keys.iterator();
 		mklogger.temp(TAG + "my allwed pages", false);
@@ -275,7 +280,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 			mklogger.temp(key + ":" + allowURI.get(key), false);
 		}
 		mklogger.flush("debug");
-		*/
+*/
 		return allowURI.get(requestURI);
 	}
 	
@@ -309,7 +314,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 	}
 
 	@Override
-	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi) {
+	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth) {
 		MkPageJsonData result = new MkPageJsonData();
 		
 		result.setPageStatic(pageStatic);
@@ -327,6 +332,8 @@ public class MkPageConfigs extends MkPageConfigCan{
 		result.setParameter(PRM_NAME);
 		result.setData(VAL_INFO);
 		result.setAPI(isApi);
+
+		result.setAuthorizedRequire(auth);
 
 		LinkedHashMap<String, Boolean> PAGE_VALUE = null;
 		PAGE_VALUE = pageValueToHashMap(VAL_INFO);
