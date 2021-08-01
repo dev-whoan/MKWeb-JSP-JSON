@@ -123,57 +123,60 @@ public class MkHttpSQLExecutor extends HttpServlet{
 		
 		String control = pjData.getControlName();
 		String service = pjData.getServiceName();
-		ArrayList<MkSqlJsonData> sqlService = MkSQLConfigs.Me().getControlByServiceName(service);
-		String serviceType = MkSQLConfigs.Me().getServiceTypeByServiceName(sqlService, service);
+		ArrayList<MkSqlJsonData> sqlServices = MkSQLConfigs.Me().getControlByServiceName(service);
+		MkSqlJsonData sqlService = MkSQLConfigs.Me().getServiceInfoByServiceName(sqlServices, service);
+		String serviceType = sqlService.getServiceType();
 		
 		mklogger.debug("control : " + control + "| service : " + service + "| type: " + serviceType);
-		
-		String befQuery = ConnectionChecker.regularQuery(control, service, false);
-		String query = ConnectionChecker.setQuery(befQuery);
-		
-		if(requestValues != null) {
-			String[] reqs = new String[requestValues.size()];
-			String tempValue = "";
-			
-			DA.setPreparedStatement(query);
-			
-			for(int i = 0; i < reqs.length; i++) {
-				tempValue = request.getParameter(requestParams + "." + requestValues.get(i));
-				reqs[i] = tempValue;
-			}
-			
-			tempValue = null;
-			DA.setRequestValue(reqs);
-			reqs = null;
-			
-			try {
-				if(serviceType.toLowerCase().contentEquals("select")){
-					PrintWriter writer = response.getWriter();
-					String message = "";
-					int statusCode = 200;
-					ArrayList<Object> dbResult = DA.executeSEL(true);
-					JSONArray jsonArray = new JSONArray();
-					if(dbResult == null || dbResult.size() == 0){
-						statusCode = 204;
-					} else {
-						LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
-						for(int i = 0; i < dbResult.size(); i++)
-						{
-							result = (LinkedHashMap<String, Object>) dbResult.get(i);
-							jsonArray.add(i, MkJsonData.objectMapToJson(result));
-						}
-					}
-					response.setStatus(statusCode);
-					response.setContentType("application/json;charset=UTF-8");
-					response.setCharacterEncoding("UTF-8");
-					response.setHeader("Result", "HTTP/1.1 " + statusCode);
-					writer.print(MkJsonData.removeQuoteFromJsonArray(jsonArray));
-				} else {
-					DA.executeDML();
+
+		if(ConnectionChecker.isSqlAuthorized(request, response, sqlService)){
+			String befQuery = ConnectionChecker.regularQuery(control, service, false);
+			String query = ConnectionChecker.setQuery(befQuery);
+
+			if(requestValues != null) {
+				String[] reqs = new String[requestValues.size()];
+				String tempValue = "";
+
+				DA.setPreparedStatement(query);
+
+				for(int i = 0; i < reqs.length; i++) {
+					tempValue = request.getParameter(requestParams + "." + requestValues.get(i));
+					reqs[i] = tempValue;
 				}
-			} catch (SQLException e) {
-				mklogger.error("(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
-				response.setStatus(500);
+
+				tempValue = null;
+				DA.setRequestValue(reqs);
+				reqs = null;
+
+				try {
+					if(serviceType.toLowerCase().contentEquals("select")){
+						PrintWriter writer = response.getWriter();
+						String message = "";
+						int statusCode = 200;
+						ArrayList<Object> dbResult = DA.executeSEL(true);
+						JSONArray jsonArray = new JSONArray();
+						if(dbResult == null || dbResult.size() == 0){
+							statusCode = 204;
+						} else {
+							LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
+							for(int i = 0; i < dbResult.size(); i++)
+							{
+								result = (LinkedHashMap<String, Object>) dbResult.get(i);
+								jsonArray.add(i, MkJsonData.objectMapToJson(result));
+							}
+						}
+						response.setStatus(statusCode);
+						response.setContentType("application/json;charset=UTF-8");
+						response.setCharacterEncoding("UTF-8");
+						response.setHeader("Result", "HTTP/1.1 " + statusCode);
+						writer.print(MkJsonData.removeQuoteFromJsonArray(jsonArray));
+					} else {
+						DA.executeDML();
+					}
+				} catch (SQLException e) {
+					mklogger.error("(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
+					response.setStatus(500);
+				}
 			}
 		}
     }

@@ -14,10 +14,13 @@ import java.util.stream.Collectors;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.mkweb.auths.MkAuthToken;
+import com.mkweb.config.MkConfigReader;
 import com.mkweb.data.Device;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
@@ -53,7 +56,6 @@ public class MkDispatcher extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String requestURI = request.getRequestURI();
 		String clientAddress = request.getAttribute("client-host").toString();
-
 		Object o = request.getAttribute("mkPage");
 		if(o == null) {
 			mklogger.error("Request URI is invalid. ( Unauthorzied connection [" + requestURI + "] )");
@@ -90,17 +92,23 @@ public class MkDispatcher extends HttpServlet {
 		}
 
 		//  For each service, the service executor will ask authorize.
-		if(!ConnectionChecker.isAuthorized(request, resultPageData)){
-			mklogger.debug("Failed");
-			response.sendError(401);
+
+		if(!ConnectionChecker.isPageAuthorized(request, response, resultPageData)){
+			if(MkConfigReader.Me().get("mkweb.auth.redirect.use").contentEquals("yes")){
+				response.sendRedirect(MkConfigReader.Me().get("mkweb.auth.redirect.uri"));
+			} else {
+				response.sendError(401);
+			}
+
 			return;
 		}
-
 		request.setAttribute("mkPage", mkPage);
-		dispatch(request, response, targetURI);
 
+		mklogger.debug("cookie: " + request.getCookies().length);
+		MkAuthToken.printCookies(request.getCookies());
 		mklogger.info("Page Called by " + clientAddress);
 		MkPageConfigs.Me().printPageInfo(mklogger, resultPageData.get(0), "no-sql");
+		dispatch(request, response, targetURI);
 	}
 
 	private void dispatch(HttpServletRequest request, HttpServletResponse response, String URI) throws ServletException, IOException {

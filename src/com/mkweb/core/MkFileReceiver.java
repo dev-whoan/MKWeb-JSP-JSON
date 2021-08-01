@@ -38,6 +38,12 @@ import com.mkweb.utils.MkCrypto;
 @WebServlet(name = "MkFTPServlet", loadOnStartup = 1)
 @MultipartConfig
 public class MkFileReceiver extends HttpServlet {
+	/*
+	Problem: 이미지를 동적인 N개 보내기를 원하지만 현재 ftp 콘픽 설정에서는 정적의 개수를 설정해야 한다.
+	최대개수를 설정해 놓고, 없으면 취소하는건 어떤가?
+	예를 들어서, 그럼 내가 이미지와 한글파일을 따로 저장하고 싶으면?? 이건 아닌것같은데..
+	OK. 이제 정리 됨!
+	 */
 	private static final long serialVersionUID = 1L;
 	
 	private static final String TAG = "[MkFileReceiver]";
@@ -47,7 +53,7 @@ public class MkFileReceiver extends HttpServlet {
 	private ArrayList<MkPageJsonData> pi = null;
 	private boolean isPiSet = false;
 	MkPageJsonData pageStaticData = null;
-	private static final String HASH_PREFIX = "__TRIP_!!_DIARY__";
+	private static final String HASH_PREFIX = MkConfigReader.Me().get("mkweb.ftp.hash.prefix");
 	private String requestParameterName = null;
 	private ArrayList<String> requestValues = null;
 	private HashMap<String, String> deleteParameters = null;
@@ -75,18 +81,18 @@ public class MkFileReceiver extends HttpServlet {
 		
 		mklogger.debug("method : " + rqMethod);
 		if (host == null) {
-			this.mklogger.error(" Hostname is not set. You must set hostname on configs/MkWeb.conf");
+			mklogger.error(" Hostname is not set. You must set hostname on configs/MkWeb.conf");
 			return false;
 		} 
 		host = String.valueOf(host) + "/";
 		String requestURI = rqPageURL.split(MkConfigReader.Me().get("mkweb.web.hostname"))[1];
 		String mkPage = !hostCheck.contentEquals(host) ? requestURI : "";
 		if (!ConnectionChecker.isValidPageConnection(mkPage)) {
-			this.mklogger.error(" checkMethod: Invalid Page Connection.");
+			mklogger.error(" checkMethod: Invalid Page Connection.");
 			return false;
 		} 
 		if (this.pi == null || !this.isPiSet) {
-			this.mklogger.error(" PageInfo is not set!");
+			mklogger.error(" PageInfo is not set!");
 			return false;
 		}
 		
@@ -118,18 +124,12 @@ public class MkFileReceiver extends HttpServlet {
 
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
-		String previousURL = request.getHeader("referer");
-		if(!ConnectionChecker.comparePageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, false, false)) {
-			mklogger.error(" Request Value is not authorized. Please check page config.");
-			response.sendError(400);
-			return;
-		}
 
 		String control = this.pjData.getControlName();
 		String service = this.pjData.getServiceName();
 
 		boolean isDone = false;
-		this.mklogger.debug("controller: " + control + ", service : " + service);
+		mklogger.debug("controller: " + control + ", service : " + service);
 		ArrayList<MkFtpData> ftpControl = MkFTPConfigs.Me().getControlByServiceName(service);
 
 		MkFtpData ftpService = null;
@@ -139,22 +139,29 @@ public class MkFileReceiver extends HttpServlet {
 				break;
 			}
 		}
-		
+		/*
+		여기서 파일 갯수 수정
+		*/
+		if(!ConnectionChecker.compareFtpPageValueWithRequestValue(pjData.getPageValue(), requestValues, pageStaticData, ftpService, false)) {
+			mklogger.error(" Request Value is not authorized. Please check page config.");
+			response.sendError(400);
+			return;
+		}
+
 		String result = "";
-		String responseMsg = "";
-		String uploaded = "";
+		StringBuilder responseMsg = new StringBuilder();
+		StringBuilder uploaded = new StringBuilder();
 		int responseCode = -1;
 		
 		if(ftpService == null) {
-			responseMsg = "No further information.";
+			responseMsg = new StringBuilder("No further information.");
 			responseCode = 400;
 			mklogger.error("There is no FTP service named : " + service);
 		}
 		while(!isDone) {
-			
-			if(Arrays.asList(FTP_MODE).indexOf(ftpService.getServiceType()) == -1) {
+			if(!Arrays.asList(FTP_MODE).contains(ftpService.getServiceType())) {
 				isDone = true;
-				responseMsg = "This cannot receive a file.";
+				responseMsg = new StringBuilder("This cannot receive a file.");
 				responseCode = 400;
 				mklogger.error("This service is not kind of file receiver. Please check FTP controller, or request parameters");
 				break;
@@ -177,7 +184,7 @@ public class MkFileReceiver extends HttpServlet {
 					mklogger.error("User didn't send dir prefix.");
 					
 					responseCode = 400;
-					responseMsg = "Need to send path.";
+					responseMsg = new StringBuilder("Need to send path.");
 					
 					isDone = true;
 					break;
@@ -185,15 +192,15 @@ public class MkFileReceiver extends HttpServlet {
 				
 				if(ftpDirPrefix.contains("^")) {
 					dirs = ftpDirPrefix.split("\\^");
-					String tempDir = "";
+					StringBuilder tempDir = new StringBuilder();
 					for(String dir : dirs) {
 						if(ftpDirHash)
-							tempDir += "/" + MkCrypto.MD5(dir + HASH_PREFIX);
+							tempDir.append("/").append(MkCrypto.MD5(dir + HASH_PREFIX));
 						else
-							tempDir += "/" + dir;
+							tempDir.append("/").append(dir);
 					}
 					
-					ftpDirPrefix = tempDir;
+					ftpDirPrefix = tempDir.toString();
 				}else {
 					if(ftpDirHash) 
 						ftpDirPrefix = "/" + MkCrypto.MD5(ftpDirPrefix + HASH_PREFIX);
@@ -203,8 +210,15 @@ public class MkFileReceiver extends HttpServlet {
 			}else {
 				ftpDirPrefix = "";
 			}
-			
-			filePath = filePath + ftpDirPrefix;
+
+			if(ftpDirPrefix.isEmpty()){
+				filePath = filePath + "/" + System.currentTimeMillis();
+				mklogger.debug("filePath 1 : " + filePath);
+			} else {
+				filePath = filePath + ftpDirPrefix;
+				mklogger.debug("filePath 2 : " + filePath);
+			}
+
 			filePath = MkFTPConfigs.Me().getPrefix() + filePath;
 			
 			if(ftpService.getServiceType().contentEquals("ftp-receiver")) {
@@ -218,8 +232,9 @@ public class MkFileReceiver extends HttpServlet {
 				for (Part filePart : fileParts) {
 					String partName = filePart.getName();
 					if(partName != null && !partName.contentEquals("")) {
-						if(partName.contains(".")) {
-							if(partName.split("\\.")[1].contains(ftpService.getDirPrefix())) {
+						mklogger.debug("partName : " + partName + " | ftpDirPrefix: " + ftpDirPrefix + "!" + " is empty : " + ftpDirPrefix.isEmpty());
+						if(partName.contains(".") && !ftpDirPrefix.isEmpty()) {
+							if(partName.split("\\.")[1].contains(ftpDirPrefix)) {
 								continue;
 							}
 						}
@@ -245,20 +260,22 @@ public class MkFileReceiver extends HttpServlet {
 					}
 					currentIndex++;
 				}
-				
+
+				String folderName = null;
 				if(!ftpDirPrefix.contentEquals("") || ftpDirPrefix != null) {
 					File folder = new File(filePath);
+					folderName = folder.getPath();
 					boolean isDirExists = folder.exists();
 					if(!isDirExists)
 					{
 						mklogger.info("The directory is not exists. Creating new one... " + folder.getPath());
-						try {		
+						try {
 							isDirExists = folder.mkdirs();
 							folder.setReadable(true, false);
 							folder.setExecutable(true, false);
 							if(!isDirExists) {
 								responseCode = 500;
-								responseMsg = "Server have some problems! Please contact Admin.";
+								responseMsg = new StringBuilder("Server have some problems! Please contact Admin.");
 								mklogger.error( "Failed to create path. [" + filePath +"]");
 								isDone = true;
 								break;
@@ -266,7 +283,7 @@ public class MkFileReceiver extends HttpServlet {
 						} catch (Exception e) {
 							mklogger.error("Failed to create path. [" + filePath +"] " + e.getMessage());
 							responseCode = 500;
-							responseMsg = "Server have some problems! Please contact Admin.";
+							responseMsg = new StringBuilder("Server have some problems! Please contact Admin.");
 							isDone = true;
 							break;
 						}
@@ -280,7 +297,7 @@ public class MkFileReceiver extends HttpServlet {
 					} catch (IOException e) {
 						mklogger.error("Failed to upload file. Maybe there is no target directory." + e.getMessage());
 						responseCode = 500;
-						responseMsg = "Server have some problems! Please contact Admin.";
+						responseMsg = new StringBuilder("Server have some problems! Please contact Admin.");
 						
 						continue;
 					}
@@ -295,20 +312,23 @@ public class MkFileReceiver extends HttpServlet {
 							outputStream.write(bytes, 0, read);
 						}
 
-						uploaded += (fileNames[currentIndex-1]);
-						
+						String responsePrefix = ftpService.getPath() + "/" + currentFile.getPath().split(ftpService.getPath())[1];
+						responsePrefix = responsePrefix.replaceAll("\\/\\/", "/");
+						uploaded.append(responsePrefix);
+						responseMsg.append("[Success to upload : ").append(responsePrefix).append("]");
 						if(currentIndex < fileNames.length){
-							uploaded += ",";
+							uploaded.append(",");
+							responseMsg.append(",");
 						}
 					} catch (Exception e) {
-						mklogger.temp("There was something wrong to create file : " + currentFile.getAbsolutePath() + "/ file name : " + currentFile.getName(), false);
-						mklogger.temp(e.getMessage(), false);
-						mklogger.flush("error");
-						
-						responseCode = 401;
-						responseMsg = "File is invalid.";
-						
-						continue;
+						if(!currentFile.getAbsolutePath().contentEquals(folderName)){
+							mklogger.temp("There was something wrong to create file : " + currentFile.getAbsolutePath() + "/ file name : " + currentFile.getName(), false);
+							mklogger.temp(e.getMessage(), false);
+							mklogger.flush("error");
+
+							responseCode = 401;
+							responseMsg.append("[Fail to upload : ").append(currentFile.getAbsolutePath()).append("],");
+						}
 					}
 				}
 			}
@@ -328,13 +348,12 @@ public class MkFileReceiver extends HttpServlet {
 	
 	private void doDeleteFile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
-		String previousURL = request.getHeader("referer");
 
 		String control = this.pjData.getControlName();
 		String service = this.pjData.getServiceName();
 
 		boolean isDone = false;
-		this.mklogger.debug("controller: " + control + ", service : " + service);
+		mklogger.debug("controller: " + control + ", service : " + service);
 		ArrayList<MkFtpData> ftpControl = MkFTPConfigs.Me().getControlByServiceName(service);
 
 		MkFtpData ftpService = null;
@@ -357,7 +376,7 @@ public class MkFileReceiver extends HttpServlet {
 		}
 		while(!isDone) {
 			
-			if(Arrays.asList(FTP_MODE).indexOf(ftpService.getServiceType()) == -1) {
+			if(!Arrays.asList(FTP_MODE).contains(ftpService.getServiceType())) {
 				isDone = true;
 				responseMsg = "This cannot receive a file.";
 				responseCode = 400;
@@ -392,15 +411,15 @@ public class MkFileReceiver extends HttpServlet {
 				
 				if(ftpDirPrefix.contains("^")) {
 					dirs = ftpDirPrefix.split("\\^");
-					String tempDir = "";
+					StringBuilder tempDir = new StringBuilder();
 					for(String dir : dirs) {
 						if(ftpDirHash)
-							tempDir += "/" + MkCrypto.MD5(dir + HASH_PREFIX);
+							tempDir.append("/").append(MkCrypto.MD5(dir + HASH_PREFIX));
 						else
-							tempDir += "/" + dir;
+							tempDir.append("/").append(dir);
 					}
 					
-					ftpDirPrefix = tempDir;
+					ftpDirPrefix = tempDir.toString();
 				}else {
 					if(ftpDirHash) 
 						ftpDirPrefix = "/" + MkCrypto.MD5(ftpDirPrefix + HASH_PREFIX);
@@ -520,7 +539,7 @@ public class MkFileReceiver extends HttpServlet {
 		}
 		
 		if (!checkMethod(request, "get", refURL)) {
-			this.mklogger.error(" Request method is not authorized. [Tried: GET]");
+			mklogger.error(" Request method is not authorized. [Tried: GET]");
 			response.sendError(405);
 			return;
 		} 
@@ -632,7 +651,7 @@ public class MkFileReceiver extends HttpServlet {
 		
 		String[] datas = rawData.split("&");
 		if (!checkMethod(request, "delete", refURL)) {
-			this.mklogger.error("Request method is not authorized. [Tried: DELETE]");
+			mklogger.error("Request method is not authorized. [Tried: DELETE]");
 			response.sendError(405);
 			return;
 		} 

@@ -9,17 +9,19 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.auths.MkAuthToken;
 import com.mkweb.config.*;
 import com.mkweb.data.Device;
+import com.mkweb.data.MkFtpData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
 import com.mkweb.logger.MkLogger;
@@ -50,10 +52,9 @@ public class ConnectionChecker {
 		}
 
 		String[] result = null;
-		
-		for(int i = 0; i < resultSqlData.size(); i++) {
-			MkSqlJsonData tempJsonData = resultSqlData.get(i);
-			if(tempJsonData.getServiceName().contentEquals(serviceName)) {
+
+		for (MkSqlJsonData tempJsonData : resultSqlData) {
+			if (tempJsonData.getServiceName().contentEquals(serviceName)) {
 				result = tempJsonData.getData();
 				break;
 			}
@@ -87,7 +88,7 @@ public class ConnectionChecker {
 				String userRequestParameterNam = name.split("\\.")[0];
 				
 				if(pageParameter.contentEquals(userRequestParameterNam)) {
-					if(addedValue.indexOf(name) == -1) {
+					if(!addedValue.contains(name)) {
 						requestParams = userRequestParameterNam;
 						checked++;
 						addedValue.add(name);
@@ -95,11 +96,10 @@ public class ConnectionChecker {
 						mklogger.warn("Request value already checked." + name);
 					}
 				}
-				continue;
 			} else {
 				//pageStatic Parameter
 				if(isStaticService) {
-					if(addedValue.indexOf(name) == -1) {
+					if(!addedValue.contains(name)) {
 						checked++;
 						addedValue.add(name);
 					} else {
@@ -154,7 +154,8 @@ public class ConnectionChecker {
 						mklogger.error(" (func getRequestPageParameterName) Request parameter is not valid( old: " + requestParams + " / new: " + userRequestParameterName);
 						mklogger.debug(" The parameter name is not same as page static parameter name.");
 						return null;
-					} 
+					}
+					assert pageStaticParameterName != null;
 					if (!userRequestParameterName.contentEquals(pageStaticParameterName))
 						continue; 
 					requestParams = userRequestParameterName;
@@ -182,12 +183,12 @@ public class ConnectionChecker {
 				return null;
 			} 
 			
-		} 
-		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName))) && 
+		}
+		if (staticPassCount > 0 && (requestParams.contentEquals("__MKWEB_STATIC_VALUE__") || (pageStaticParameterName != null && requestParams.contentEquals(pageStaticParameterName))) &&
 				staticPassCount == pageStaticParameters.length) {
 			requestParams = "__MKWEB_STATIC_VALUE__";
 			mklogger.warn("STATIC VALUE HAS SET");
-		} 
+		}
 		return requestParams;
 	}
 
@@ -201,9 +202,7 @@ public class ConnectionChecker {
 			pageStaticParameter = pageStaticData.getParameter();
 			pageStaticParameterValues = pageStaticData.getData();
 		}
-		/* static value�� static ��û�� �ƴ� ��� Skip �Ѵ�. */
-		/* static value�� �ƴϸ� static ��û�� �� Skip �Ѵ�. */
-		/* --> Parameter�� �����͸� �޴´�. */
+
 		while(params.hasMoreElements()) {
 			String name = params.nextElement().toString().trim();
 			if(name.contains(".")) {
@@ -220,14 +219,12 @@ public class ConnectionChecker {
 				if(userRequestParameter.contentEquals(parameter))
 					requestValues.add(userRequestValue);
 
-				continue;
 			}else {
 				if(pageStaticParameter != null) {
 					if(parameter.contentEquals(pageStaticParameter)) {
-						for(int i = 0; i < pageStaticParameterValues.length; i++) {
-							if(name.contentEquals(pageStaticParameterValues[i])) {
+						for (String pageStaticParameterValue : pageStaticParameterValues) {
+							if (name.contentEquals(pageStaticParameterValue)) {
 								requestValues.add(name);
-								continue;
 							}
 						}
 					}
@@ -259,8 +256,8 @@ public class ConnectionChecker {
 			}
 
 			if(replaceTarget != null) {
-				for(int i = 0; i < replaceTarget.length; i++) {
-					aftQuery = aftQuery.replaceFirst(("@" + replaceTarget[i]+ "@"), "?");
+				for (String s : replaceTarget) {
+					aftQuery = aftQuery.replaceFirst(("@" + s + "@"), "?");
 				}
 			}else {
 				return null;
@@ -287,7 +284,7 @@ public class ConnectionChecker {
 		int pageSize = pageValue.size();
 		int requestSize = requestValue.size();
 
-		if(pageSize != requestSize) {
+		if((pageSize != requestSize)) {
 			mklogger.error(" Number of request parameters is not same as number of allowed parameters.");
 			mklogger.temp(" Page value size : " + pageSize + " | request size : " + requestSize, false);
 			mklogger.temp("pageValue : " + pageValue.toString(), false);
@@ -303,9 +300,7 @@ public class ConnectionChecker {
 
 		if(pv.size() > 0 && pv != null) {
 			Set<String> entrySet = pv.keySet();
-			Iterator<String> iter = entrySet.iterator();
-			while(iter.hasNext()) {
-				String key = iter.next();
+			for (String key : entrySet) {
 				pageValues += key;
 			}
 		}
@@ -328,13 +323,73 @@ public class ConnectionChecker {
 		return (pageValues.contentEquals(requestValues));
 	}
 
+	public static boolean compareFtpPageValueWithRequestValue(LinkedHashMap<String, Boolean> pageValue, ArrayList<String> requestValue, MkPageJsonData pageStaticDatas, MkFtpData ftpService, boolean isStaticService) {
+		LinkedHashMap<String, Boolean> staticData = null;
+		if(pageStaticDatas != null)
+			staticData = pageStaticDatas.getPageValue();
+
+		int pageSize = pageValue.size();
+		int requestSize = requestValue.size();
+
+		if((requestSize > ftpService.getMaxCount())) {
+			mklogger.error(" Number of request parameters is not same as number of allowed parameters.");
+			mklogger.temp(" Page value size : " + pageSize + " | request size : " + requestSize, false);
+			mklogger.temp("pageValue : " + pageValue, false);
+			mklogger.flush("debug");
+			return false;
+		}
+
+		String pageValues = "";
+		LinkedHashMap<String, Boolean> pv = null;
+
+		if(pageValue != null)
+			pv = new LinkedHashMap<>(pageValue);
+
+		if(pv.size() > 0 && pv != null) {
+			Set<String> entrySet = pv.keySet();
+			for (String key : entrySet) {
+				pageValues += key;
+			}
+		}
+
+		/*
+		request parameter 사이즈랑 페이지 사이즈랑 다른데, 이 둘이 어떻게 맞는지 봐야함.
+		 */
+		String requestValues = "";
+		boolean method = false;
+		if(requestValue != null) {
+			if(requestSize == pageSize){
+				for(String rv : requestValue) {
+					requestValues += rv;
+				}
+			} else {
+				method = true;
+				for(String rv : requestValue){
+					if(pv.get(rv) == null){
+						return false;
+					}
+				}
+			}
+		}
+		if(method){
+			return true;
+		} else {
+			char[] pvc = pageValues.toCharArray();
+			char[] rvc = requestValues.toCharArray();
+			Arrays.sort(pvc);
+			Arrays.sort(rvc);
+
+			pageValues = new String(pvc);
+			requestValues = new String(rvc);
+
+			return (pageValues.contentEquals(requestValues));
+		}
+	}
+
 	public static boolean isValidPageConnection(String requestControlName) {
 		ArrayList<MkPageJsonData> resultPageData = MkPageConfigs.Me().getControl(requestControlName);
 
-		if(resultPageData == null || resultPageData.size() < 1)
-			return false;
-		
-		return true;
+		return resultPageData != null && resultPageData.size() >= 1;
 	}
 	
 	public static String getRequestPageLanguage(String requestControlName, String userPlatform, String userAcceptLanguage, ArrayList<MkPageJsonData> resultPageData) {
@@ -392,12 +447,10 @@ public class ConnectionChecker {
 		
 		HashMap<String, String[]> currentDeviceInfo = currentDevice.getDeviceInfo();
 		Set<String> key = currentDeviceInfo.keySet();
-		Iterator<String> iter = key.iterator();
-		while(iter.hasNext()) {
-			String cService = iter.next();
-			if(requestServiceURI.contentEquals(currentDeviceInfo.get(cService)[2])) {
+		for (String cService : key) {
+			if (requestServiceURI.contentEquals(currentDeviceInfo.get(cService)[2])) {
 				userDevice = currentDevice;
-				if(!cService.contentEquals("default"))
+				if (!cService.contentEquals("default"))
 					defaultLanguage = cService;
 				break;
 			}
@@ -442,17 +495,23 @@ public class ConnectionChecker {
 		String c1 = userLogicalDir + requestControlName;
 		String c2 = "/" + jsonData.getControlName();
 
-		if(!c1.equals(c2)){
-			return false;
-		}
-
-		return true;
+		return c1.equals(c2);
 	}
 
-	public static boolean isAuthorized(HttpServletRequest request, ArrayList<MkPageJsonData> pageJsonData){
+	public static boolean isPageAuthorized(HttpServletRequest request, HttpServletResponse response, ArrayList<MkPageJsonData> pageJsonData){
 		int pageLevel = pageJsonData.get(0).getAuthorizedRequire();
 
 		String token = request.getHeader("Authorization");
+
+		if(token == null){
+			try{
+				Cookie tokenCookie = MkAuthToken.getTokenCookie(request.getCookies());
+				token = tokenCookie.getValue();
+			} catch (NullPointerException e){
+				token = null;
+			}
+		}
+
 		if(token == null && pageLevel == 2){
 			return false;
 		}
@@ -461,5 +520,25 @@ public class ConnectionChecker {
 			return MkAuthToken.verify(token);
 		else
 			return true;
+	}
+
+	public static boolean isSqlAuthorized(HttpServletRequest request, HttpServletResponse response, MkSqlJsonData sqlJsonData){
+		boolean authRequire = sqlJsonData.getAuthorizedRequire();
+
+		if(!authRequire)
+			return true;
+
+		String token = request.getHeader("Authorization");
+
+		if(token == null){
+			try{
+				Cookie tokenCookie = MkAuthToken.getTokenCookie(request.getCookies());
+				token = tokenCookie.getValue();
+			} catch (NullPointerException e){
+				token = null;
+			}
+		}
+
+		return MkAuthToken.verify(token);
 	}
 }

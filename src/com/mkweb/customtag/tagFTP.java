@@ -147,10 +147,11 @@ public class tagFTP extends SimpleTagSupport {
 		}
 		mklogger.debug("ftDirPrefix : " + ftpDirPrefix);
 		filePath = filePath + ftpDirPrefix;
-		
+
+		/*
 		if(!(MkConfigReader.Me().get("mkweb.ftp.absolute").contentEquals("yes")))
 			filePath = MkFTPConfigs.Me().getPrefix() + filePath; 
-
+*/
 		mklogger.debug("tag filePath : " + filePath);
 		
 		/*

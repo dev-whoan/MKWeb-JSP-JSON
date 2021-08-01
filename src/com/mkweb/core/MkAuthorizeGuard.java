@@ -13,13 +13,18 @@ import com.mkweb.utils.MkJsonData;
 import com.mkweb.utils.MkUtils;
 import org.json.simple.JSONObject;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -57,20 +62,28 @@ public class MkAuthorizeGuard extends HttpServlet {
         if(keys == null || keys.size() == 0){ return false;   }
         if(requestObject.size() != keys.size()){ return false; }
 
+        mklogger.debug(keys);
+        mklogger.debug(values);
         try{
             requestParams = new String[keys.size()];
             requestValues = new String[keys.size()];
 
             int i = 0;
+            assert values != null;
             for(String param : values){
-                String value = requestObject.get(param).toString();
+                String temp = requestObject.get(param).toString();
+
+                String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+                String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
+
+                temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
+
                 requestParams[i] = param;
-                requestValues[i++] = value;
+                requestValues[i++] = temp;
             }
         } catch (NullPointerException e){
             return false;
         }
-
 
         return true;
     }
@@ -87,9 +100,6 @@ public class MkAuthorizeGuard extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         tokenConfigs = MkAuthTokenConfigs.Me().getControl(MkConfigReader.Me().get("mkweb.auth.controller.name"));
 
-        mklogger.debug("tokenConfings" + tokenConfigs);
-
-
         tokenService = (JSONObject) tokenConfigs.getAuthorizer().get("sql");
         tokenParameter = (JSONObject) tokenConfigs.getAuthorizer().get("parameter");
         /*
@@ -97,6 +107,7 @@ public class MkAuthorizeGuard extends HttpServlet {
          */
 
         if(!isParameterValid(request)){
+            mklogger.debug("Parameter invalid");
             response.setStatus(401);
             return;
         }
@@ -123,7 +134,10 @@ public class MkAuthorizeGuard extends HttpServlet {
         MkDbAccessor DA = new MkDbAccessor();
         DA.setPreparedStatement(query);
         DA.setRequestValue(requestValues);
+        PrintWriter writer = response.getWriter();
+        JSONObject responseObject = new JSONObject();
         int statusCode = 200;
+        String token = null;
         try{
             ArrayList<Object> dbResult = DA.executeSEL(true);
             JSONObject jsonObject = null;
@@ -134,19 +148,28 @@ public class MkAuthorizeGuard extends HttpServlet {
                 result = (LinkedHashMap<String, Object>) dbResult.get(dbResult.size()-1);
                 jsonObject = MkJsonData.objectMapToJson(result);
             }
-            if(jsonObject == null && jsonObject.size() == 0)
-                response.setStatus(204);
 
-            mklogger.debug(jsonObject);
+            if(jsonObject == null || (jsonObject.size() == 0)) {
+                response.setStatus(204);
+                return;
+            }
+
+            mklogger.debug(MkJsonData.removeQuoteFromJsonObject(jsonObject));
             authToken = new MkAuthToken();
-            String token = authToken.generateToken(MkJsonData.removeQuoteFromJsonObject(jsonObject)).getToken();
+            token = authToken.generateToken(MkJsonData.removeQuoteFromJsonObject(jsonObject)).getToken();
             if(!MkAuthToken.verify(token))
                 statusCode = 401;
 
-            response.setStatus(statusCode);
-        } catch (SQLException e) {
+            statusCode = 200;
+        } catch (SQLException e ) {
             mklogger.error("(executeDML) psmt = this.dbCon.prepareStatement(" + query + ") :" + e.getMessage());
-            response.setStatus(500);
+            statusCode = 500;
         }
+        response.setStatus(statusCode);
+
+        responseObject.put("code", statusCode);
+        responseObject.put("token", token);
+
+        writer.print(responseObject);
     }
 }

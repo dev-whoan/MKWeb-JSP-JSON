@@ -21,7 +21,9 @@ public class MkRestApiResponse {
 	private static final MkLogger mklogger = new MkLogger(TAG);
 	private long lifeTime = -1L;
 
-	MkRestApiResponse(){	documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";	lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;}
+	MkRestApiResponse(){	documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";
+	//	lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;
+	}
 	MkRestApiResponse(String jsonString, int code, int count){
 		mklogger.debug(" Called");
 		responseResult = jsonString;
@@ -29,7 +31,7 @@ public class MkRestApiResponse {
 		responseCount = count;
 		responseCode = code;
 		documentURL = MkConfigReader.Me().get("mkweb.web.hostname") + "/" + MkConfigReader.Me().get("mkweb.restapi.docs") + "/";
-		lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;
+	//	lifeTime = Integer.parseInt(MkConfigReader.Me().get("mkweb.restapi.lifecycle")) * 60 * 1000;
 	}
 
 	public String getData() {

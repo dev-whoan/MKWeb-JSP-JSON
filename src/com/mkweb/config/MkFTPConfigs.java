@@ -5,10 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -76,14 +73,15 @@ public class MkFTPConfigs {
 				
 				JSONArray serviceArray = (JSONArray) ftpObject.get("services");
 
-				for(int i = 0; i < serviceArray.size(); i++) {
-					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
+				for (Object o : serviceArray) {
+					JSONObject serviceObject = (JSONObject) o;
 					String serviceId = null;
 					String servicePath = null;
-					String serviceDirPrefix = null;	//"dir"
+					String serviceDirPrefix = null;    //"dir"
 					String serviceType = null;
+					Object maxCounts = null;
 					boolean serviceHashDirPrefix = false;
-					
+
 					String[] serviceAllowFileFormat = null;
 					try {
 						serviceId = serviceObject.get("id").toString();
@@ -91,40 +89,49 @@ public class MkFTPConfigs {
 						servicePath = serviceObject.get("servicepath").toString();
 						Object prefix = serviceObject.get("dir");
 						mklogger.debug("prefix : " + prefix);
-						if(prefix != null) {
+						if (prefix != null) {
 							serviceDirPrefix = prefix.toString();
 							serviceHashDirPrefix = serviceObject.get("hash_dir").toString().contentEquals("true");
 						}
+						maxCounts = serviceObject.get("max_count");
+						if (maxCounts != null) {
+							try {
+								maxCounts = Integer.parseInt(maxCounts.toString());
+							} catch (NumberFormatException e) {
+								mklogger.error("Failed to create service. The maxcount is not number format : " + serviceId);
+								continue;
+							}
+						}
 
-						if(ftpControllerPath.charAt(ftpControllerPath.length() -1) == '/') {
-							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath.substring(0, ftpControllerPath.length()-1) + servicePath) : (ftpControllerPath + servicePath));
-						}else {
+						if (ftpControllerPath.charAt(ftpControllerPath.length() - 1) == '/') {
+							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath.substring(0, ftpControllerPath.length() - 1) + servicePath) : (ftpControllerPath + servicePath));
+						} else {
 							servicePath = (servicePath.charAt(0) == '/' ? (ftpControllerPath + servicePath) : (ftpControllerPath + "/" + servicePath));
 						}
-						
-						if(!createDirectory(servicePath)) {
-							mklogger.error("Failed to create directory. Please check your IO permissions. [" + servicePath +"]");
+
+						if (!createDirectory(servicePath)) {
+							mklogger.error("Failed to create directory. Please check your IO permissions. [" + servicePath + "]");
 							return;
 						}
-						
+
 						MkJsonData mjd = new MkJsonData(serviceObject.get("format").toString());
-						if(!mjd.setJsonObject()) {
+						if (!mjd.setJsonObject()) {
 							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
-							return;
+							continue;
 						}
-						
+
 						JSONObject serviceFormatData = mjd.getJsonObject();
 						serviceAllowFileFormat = new String[serviceFormatData.size()];
-						for(int j = 0; j < serviceAllowFileFormat.length; j++) {
-							serviceAllowFileFormat[j] = serviceFormatData.get("" + (j+1)).toString();
+						for (int j = 0; j < serviceAllowFileFormat.length; j++) {
+							serviceAllowFileFormat[j] = serviceFormatData.get("" + (j + 1)).toString();
 						}
-						
-					} catch(Exception e) {
+
+					} catch (Exception e) {
 						mklogger.debug("Failed to create ftp controller. " + e.getMessage());
 						e.printStackTrace();
 						return;
 					}
-					
+
 					MkFtpData result = new MkFtpData();
 					result.setControlName(ftpName);
 					result.setServiceType(serviceType);
@@ -134,20 +141,15 @@ public class MkFTPConfigs {
 					result.setData(serviceAllowFileFormat);
 					result.setDirPrefix(serviceDirPrefix);
 					result.setHashDirPrefix(serviceHashDirPrefix);
-					
+					result.setMaxCount((int) maxCounts);
+
 					ftpJsonData.add(result);
 					printFTPInfo(result, "info");
 				}
 				
 				ftp_configs.put(ftpName, ftpJsonData);
 				
-			} catch (FileNotFoundException e) {
-				mklogger.error(e.getMessage());
-				e.printStackTrace();
-			} catch (IOException e) {
-				mklogger.error(e.getMessage());
-				e.printStackTrace();
-			} catch (ParseException e) {
+			} catch (IOException | ParseException e) {
 				mklogger.error(e.getMessage());
 				e.printStackTrace();
 			}
@@ -160,9 +162,9 @@ public class MkFTPConfigs {
 				+ "\n|Controller:\t" + jsonData.getControlName()
 				+ "\n|FTP ID:\t" + jsonData.getServiceName() + "\t\tFTP Type:\t" + jsonData.getServiceType()
 				+ "\n|FTP Path:\t" + jsonData.getPath()
-				+ "\n|FTP Prefix:\t" + jsonData.getDirPrefix()
+				+ "\n|FTP Prefix:\t" + jsonData.getDirPrefix() + "\t\tFile Counts:\t" + jsonData.getMaxCount()
 				+ "\n|Debug Level:\t" + jsonData.getDebugLevel()
-				+ "\n|File Formats:\t" + jsonData.getData()
+				+ "\n|File Formats:\t" + Arrays.toString(jsonData.getData())
 				+ "\n============================================================================";
 		
 		mklogger.temp(tempMsg, false);

@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.mkweb.utils.MkUtils;
 import org.json.simple.JSONObject;
 
 import com.mkweb.config.MkConfigReader;
@@ -54,8 +55,9 @@ public class MkRestApi extends HttpServlet {
 	private static String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
 	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes");
 	private static String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
-	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.pretty");
 	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.refonly.host");
+	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.pretty.param");
+	private static String MKWEB_PAGING_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.paging.param");
 
 	public MkRestApi() {
 		super();
@@ -81,9 +83,9 @@ public class MkRestApi extends HttpServlet {
 		mklogger.temp(" REST Api Key has searched : " + key + " Result: ", false);
 
 		if (apiKeyList != null) {
-			for (int i = 0; i < apiKeyList.size(); i++) {
+			for (Object o : apiKeyList) {
 				HashMap<String, Object> result = new HashMap<String, Object>();
-				result = (HashMap<String, Object>) apiKeyList.get(i);
+				result = (HashMap<String, Object>) o;
 				if (result.get(keyColumn).equals(key)) {
 					mklogger.temp(" key is valid! (remark : " + result.get(remarkColumn) + ")", false);
 					mklogger.flush("info");
@@ -102,17 +104,6 @@ public class MkRestApi extends HttpServlet {
 		}
 
 		return isDone;
-	}
-
-	private Map<String, String> stringToMap(String[] strArray) {
-		Map<String, String> result = new HashMap<String, String>();
-		for (int i = 0; i < strArray.length; i++) {
-			String tempParameter = strArray[i].split("\\=")[0];
-			String tempValue = strArray[i].split("\\=")[1];
-			result.put(tempParameter, tempValue);
-		}
-
-		return result;
 	}
 
 	private LinkedHashMap<String, String> getParameterValues(HttpServletRequest request){
@@ -146,13 +137,71 @@ public class MkRestApi extends HttpServlet {
 		}
 	}
 
-	private void checkJsonParameter(JSONObject jsonObject, String prettyParam) {
+	private void remvoeParameter(JSONObject jsonObject, String key) {
+		if(jsonObject != null) {
+			jsonObject.remove(MKWEB_SEARCH_KEY);
+
+			if(key != null)
+				jsonObject.remove(key);
+		}
+	}
+
+	private void removeOptionsFromParameter(JSONObject jsonObject, String prettyParam, String pagingParam) {
 		if(jsonObject != null) {
 			jsonObject.remove(MKWEB_SEARCH_KEY);
 
 			if(prettyParam != null)
 				jsonObject.remove(MKWEB_PRETTY_OPT);
+
+			if(pagingParam != null)
+				jsonObject.remove(MKWEB_PAGING_OPT);
 		}
+	}
+
+	private JSONObject readUriParameters(String uri, String pageName){
+		int mkPageIndex = -1;
+		String[] tempURI = uri.split("/");
+
+		boolean searchAll = tempURI[(tempURI.length -1)].contentEquals(pageName);
+		mkPageIndex = Arrays.asList(tempURI).indexOf(pageName);
+		ArrayList<String> searchColumns = new ArrayList<>();
+		ArrayList<String> searchValues = new ArrayList<>();
+
+		if(!searchAll){
+			boolean isColumn = true;
+			for (int i = mkPageIndex + 1; i < tempURI.length; i++) {
+				if (isColumn) {
+					isColumn = false;
+					searchColumns.add(tempURI[i]);
+				} else {
+					isColumn = true;
+					searchValues.add(tempURI[i]);
+				}
+			}
+
+			if (searchColumns.size() == searchValues.size() + 1)
+				searchValues.add(MKWEB_SEARCH_ALL);
+
+			if (searchColumns.size() != searchValues.size()) {
+				mklogger.error("API Request is not valid.");
+				mklogger.debug("searchColumns size != searchValues.size");
+				JSONObject errorResponse = new JSONObject();
+				errorResponse.put("error_code", 400);
+				errorResponse.put("error_message", "You need to set all conditions to search.");
+				return errorResponse;
+			}
+		} else {
+			searchColumns.add(MKWEB_SEARCH_ALL);
+			searchValues.add(MKWEB_SEARCH_ALL);
+		}
+
+		LinkedHashMap<String, String> result = new LinkedHashMap<>();
+
+		for (int i = 0; i < searchColumns.size(); i++) {
+			result.put(searchColumns.get(i), searchValues.get(i));
+		}
+
+		return MkJsonData.mapToJson(result);
 	}
 	
 	protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -207,7 +256,8 @@ public class MkRestApi extends HttpServlet {
 		}
 		
 		//		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
-		String prettyParam = request.getParameter(MKWEB_PRETTY_OPT);
+		String prettyParam = null;
+		String pagingParam = null;
 		
 		String requestURI = request.getRequestURI();
 		String[] reqPage = null;
@@ -217,8 +267,6 @@ public class MkRestApi extends HttpServlet {
 		JSONObject requestParameterJsonToModify = null;
 		MkJsonData mkJsonData = new MkJsonData();
 		JSONObject resultObject = null;
-		
-		mklogger.debug("pretty: " + MKWEB_PRETTY_OPT + " | prettyParam: " +prettyParam + " | requestURI : " + requestURI);
 
 		if(MKWEB_REFONLY_HOST.toLowerCase().contentEquals("yes")) {
 			checkHost(apiResponse, 
@@ -261,158 +309,64 @@ public class MkRestApi extends HttpServlet {
 				break;
 			}
 
-			if (REQUEST_METHOD.contentEquals("get") || REQUEST_METHOD.contentEquals("head") ||
-					REQUEST_METHOD.contentEquals("options") || REQUEST_METHOD.contentEquals("put") ||
-					REQUEST_METHOD.contentEquals("delete")) {
+			/*
+			GET, HEAD, OPTIONS only allow query string
+			PUT allow query string for condition, body parameter for update
+			DELETE allow body parameter for deleting
+			POST allow body parameter
+			*/
+			//Step 1 : Read URI
+			requestParameterJson = readUriParameters(requestURI, mkPage);
 
-					String[] tempURI = requestURI.split("/");
-					int shouldCheckQuery = -1;
-					int mkPageIndex = -1;
-					/*
-					 * -1 : do Nothing / 0 : pass / 1 : String check
-					 */
-					if (tempURI[(tempURI.length - 1)].contentEquals(mkPage)) {
-						if (request.getParameterMap().size() == 1) {
-							String element = rpn.nextElement();
-							String elementValue = null;
+			if(requestParameterJson.get("error_code") != null){
+				apiResponse.setCode((int) requestParameterJson.get("error_code"));
+				apiResponse.setMessage(requestParameterJson.get("error_message").toString());
+				break;
+			}
 
-							if (!element.contentEquals(MKWEB_SEARCH_KEY)) {
-								shouldCheckQuery = 1;
-							} else {
-								shouldCheckQuery = 0;
-							}
+			//STEP 1 ENDED
 
-						} else {
-							shouldCheckQuery = 1;
-						}
-					} else {
-						for (int i = 0; i < tempURI.length; i++) {
-							if (tempURI[i].contentEquals(mkPage)) {
-								mkPageIndex = i;
-								break;
-							}
-						}
-					}
+					//Step 2 : Read Parameters will only handle text/plain. so this will skipped because MkWeb only allow application/json.
 
-					if (shouldCheckQuery == 1) {
-						mklogger.warn("Given data is not valid to cast JSONObject.");
-						mklogger.warn("Try to convert into MkJsonObject...");
-
-						LinkedHashMap<String, String> result = getParameterValues(request); //new LinkedHashMap<String, String>();
-
-						requestParameterJson = MkJsonData.mapToJson(result);
-
-						if (requestParameterJson == null && authToken == null) {
-							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
-							apiResponse.setCode(400);
-							break;
-						}
-					} else if (shouldCheckQuery == -1) {
-						// 
-						ArrayList<String> searchColumns = new ArrayList<>();
-						ArrayList<String> searchValues = new ArrayList<>();
-						boolean isColumn = true;
-						for (int i = mkPageIndex + 1; i < tempURI.length; i++) {
-							if (isColumn) {
-								isColumn = false;
-								searchColumns.add(tempURI[i]);
-							} else {
-								isColumn = true;
-								searchValues.add(tempURI[i]);
-							}
-						}
-
-						if (searchColumns.size() == searchValues.size() + 1) 
-							searchValues.add(MKWEB_SEARCH_ALL);
-
-						if (searchColumns.size() != searchValues.size()) {
-							mklogger.error("API Request is not valid.");
-							mklogger.debug("searchColumns size != searchValues.size");
-							apiResponse.setMessage("You need to set all conditions to search.");
-							apiResponse.setCode(400);
-							break;
-						}
-						LinkedHashMap<String, String> result = new LinkedHashMap<>();
-
-						for (int i = 0; i < searchColumns.size(); i++) {
-							result.put(searchColumns.get(i), searchValues.get(i));
-						}
-						requestParameterJson = MkJsonData.mapToJson(result);
-						if (requestParameterJson == null && authToken == null) {
-							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
-							apiResponse.setCode(400);
-							break;
-						}
-					} else {
-						LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
-						if(REQUEST_METHOD.contentEquals("get"))
-							result.put(MKWEB_SEARCH_ALL, MKWEB_SEARCH_ALL);
-
-						requestParameterJson = MkJsonData.mapToJson(result);
-						if(requestParameterJson == null && authToken == null) {
-							mklogger.error("API Request only allow with JSON type. Cannot convert given data into JSON Type.");
-							apiResponse.setMessage("Please check your request. The entered data cannot be converted into JSON Type. You may need Key to use API.");
-							apiResponse.setCode(400);
-						}
-					}
-//				}
-				
-			} 
-
+			//Step 2 : Read Body Parameter
 			if(REQUEST_METHOD.contentEquals("post") || REQUEST_METHOD.contentEquals("put") || REQUEST_METHOD.contentEquals("delete")){
-				MkJsonData.mapToJson(getParameterValues(request));
-
-				if(mkJsonData.getData() == null) {
-					StringBuilder stringBuilder = new StringBuilder();
-					BufferedReader bufferedReader = null;
-					try (InputStream inputStream = request.getInputStream()){
-						if (inputStream != null) {
-							bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-							String line;
-							while((line = bufferedReader.readLine()) != null){
-								stringBuilder.append(line);
-							}
-						}
-					} catch (IOException ex) {
-						throw ex;
-					} finally {
-						if (bufferedReader != null) {
-							try {
-								bufferedReader.close();
-							} catch (IOException ex) {
-								throw ex;
-							}
-						}
+				StringBuilder stringBuilder = new StringBuilder();
+				InputStream inputStream = request.getInputStream();
+				try(BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))){
+					String line;
+					while((line = bufferedReader.readLine()) != null){
+						stringBuilder.append(line);
 					}
-					String rawData = URLDecoder.decode(stringBuilder.toString(), StandardCharsets.UTF_8);
-					try{
-						if(rawData.charAt(0) == '"' && rawData.charAt(rawData.length()-1) == '"') {
-							rawData = rawData.substring(1, rawData.length()-1);
-						}
-
-
-						int bslash = -1;
-						while((bslash = rawData.indexOf("\\")) >= 0) {
-							if(rawData.charAt(bslash+1) == '"') {
-								String front = new String(rawData);
-								String end = new String(rawData);
-								front = front.substring(0, bslash);
-								end = end.substring(bslash+2);
-								rawData = front + "\"" + end;
-							}
-						}
-
-						mklogger.debug("rawData : " + rawData);
-						mkJsonData.setData(rawData);
-					} catch (StringIndexOutOfBoundsException e){
-						mklogger.error("Please check your request. There is no data to post, put or delete.");
-						apiResponse.setMessage("Please check your request. There is no data to post, put or delete.");
-						apiResponse.setCode(400);
-						break;
-					}
+				} catch (IOException e){
+					throw e;
 				}
+
+				String rawData = URLDecoder.decode(stringBuilder.toString(), StandardCharsets.UTF_8);
+				try{
+					if(rawData.charAt(0) == '"' && rawData.charAt(rawData.length()-1) == '"') {
+						rawData = rawData.substring(1, rawData.length()-1);
+					}
+
+					int bslash = -1;
+					while((bslash = rawData.indexOf("\\")) >= 0) {
+						if(rawData.charAt(bslash+1) == '"') {
+							String front = new String(rawData);
+							String end = new String(rawData);
+							front = front.substring(0, bslash);
+							end = end.substring(bslash+2);
+							rawData = front + "\"" + end;
+						}
+					}
+
+					mklogger.debug("rawData : " + rawData);
+					mkJsonData.setData(rawData);
+				} catch (StringIndexOutOfBoundsException e){
+					mklogger.error("Please check your request. There is no data to post, put or delete.");
+					apiResponse.setMessage("Please check your request. There is no data to post, put or delete.");
+					apiResponse.setCode(400);
+					break;
+				}
+
 				mklogger.debug("jsonData: " + mkJsonData.getData());
 				if (mkJsonData.setJsonObject()) {
 					if(REQUEST_METHOD.contentEquals("put")) {
@@ -421,10 +375,13 @@ public class MkRestApi extends HttpServlet {
 					}
 					else {
 						if(REQUEST_METHOD.contentEquals("delete") && requestParameterJson != null) {
-							mklogger.error("Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
-							apiResponse.setMessage("Delete methods only 1 way to pass the parameters. You can use only URI parameter or Body parameter.");
-							apiResponse.setCode(400);
-							break;
+							if(requestParameterJson.get(MKWEB_SEARCH_ALL) == null){
+								mklogger.debug(requestParameterJson);
+								mklogger.error("Delete methods only 1 way to pass the parameters. You can send data with body parameter.");
+								apiResponse.setMessage("Delete methods only 1 way to pass the parameters. You can send data with body parameter.");
+								apiResponse.setCode(400);
+								break;
+							}
 						}
 						requestParameterJson = mkJsonData.getJsonObject();
 					}
@@ -448,6 +405,14 @@ public class MkRestApi extends HttpServlet {
 					}
 				}
 			}
+
+			remvoeParameter(requestParameterJson, "");
+
+			//Step 3 : Read QueryString for Options
+			Map<String, Object[]> queryParameters = MkUtils.getQueryParameters(request.getQueryString());
+			mklogger.debug(queryParameters.get(MKWEB_PRETTY_OPT));
+			prettyParam = queryParameters.get(MKWEB_PRETTY_OPT) != null ? queryParameters.get(MKWEB_PRETTY_OPT)[0].toString() : null;
+			pagingParam = queryParameters.get(MKWEB_PAGING_OPT) != null ? queryParameters.get(MKWEB_PAGING_OPT)[0].toString() : null;
 			mklogger.debug("rpj: " + requestParameterJson);
 			if (MKWEB_USE_KEY){
 				if(authToken != null){
@@ -457,17 +422,10 @@ public class MkRestApi extends HttpServlet {
 						requestParameterJsonToModify = new JSONObject();
 					}
 				} else {
-					if(requestParameterJson.get(MKWEB_SEARCH_KEY) != null) {
-						userKey = requestParameterJson.get(MKWEB_SEARCH_KEY).toString();
-					}else if(requestParameterJsonToModify != null) {
-						if(requestParameterJsonToModify.get(MKWEB_SEARCH_KEY) != null) {
-							userKey = requestParameterJsonToModify.get(MKWEB_SEARCH_KEY).toString();
-						}
-					}
+					Object[] queryKey = queryParameters.get(MKWEB_SEARCH_KEY);
+					if(queryKey != null)
+						userKey = queryKey[0].toString();
 
-					if(userKey == null) {
-						userKey = request.getParameter(MKWEB_SEARCH_KEY);
-					}
 				}
 
 				if (!isKeyValid(userKey, mkPage)) {
@@ -477,8 +435,8 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 
-			checkJsonParameter(requestParameterJson, prettyParam);
-			checkJsonParameter(requestParameterJsonToModify, prettyParam);
+			removeOptionsFromParameter(requestParameterJson, prettyParam, pagingParam);
+			removeOptionsFromParameter(requestParameterJsonToModify, prettyParam, pagingParam);
 
 			MkPageJsonData pageService = null;
 			MkSqlJsonData sqlService = null;
@@ -534,21 +492,20 @@ public class MkRestApi extends HttpServlet {
 				if(requireParameters != null)
 					tempRequireParams = new ArrayList<>(Arrays.asList(requireParameters));
 
-
-				int catchedParams = 0;
+				mklogger.debug(requestKeySet);
 				while (requestIterator.hasNext()) {
 					String requestKey = requestIterator.next().toString();
 					int passed = -1;
-					for (int i = 0; i < pageValues.length; i++) {
-						if (pageValues[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
+					for (String pageValue : pageValues) {
+						if (pageValue.contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
 							passed = 1;
 							break;
 						}
 					}
 
 					if (passed == 1) {
-						for (int i = 0; i < sqlConditions.length; i++) {
-							if (sqlConditions[i].contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
+						for (String sqlCondition : sqlConditions) {
+							if (sqlCondition.contentEquals(requestKey) || requestKey.contentEquals(MKWEB_SEARCH_ALL)) {
 								passed = 2;
 								break;
 							}
@@ -580,10 +537,12 @@ public class MkRestApi extends HttpServlet {
 					break;
 				}
 
+				int page = (pagingParam != null ? Integer.parseInt(pagingParam) : -1);
+
 				switch (REQUEST_METHOD) {
 				case "get": case "head": case "options":
 					//					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, customTable);
-					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse);
+					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, page);
 					break;
 				case "post":
 					//					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse, customTable);
@@ -610,13 +569,14 @@ public class MkRestApi extends HttpServlet {
 		response.setContentType(apiResponse.getContentType());
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("Result", "HTTP/1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus());
-		response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
+	//	response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
 
 		PrintWriter out = response.getWriter();
 
 		String result = null;
 		boolean pretty = false;
 		pretty = (prettyParam != null);
+
 		if(resultObject == null) {
 			String allowMethods = "";
 			if(apiResponse.getCode() < 400 && REQUEST_METHOD.contentEquals("options")) {
@@ -639,7 +599,7 @@ public class MkRestApi extends HttpServlet {
 			out.print(result);
 		}else {
 			if(pretty)
-				result = mkJsonData.jsonToPretty(resultObject);
+				result = MkJsonData.jsonToPretty(resultObject);
 			else
 				result = resultObject.toString();
 
@@ -664,7 +624,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse) {		
+			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse, int page) {
 		JSONObject resultObject = null;
 
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
@@ -687,7 +647,7 @@ public class MkRestApi extends HttpServlet {
 		Set<String> keySet = jsonObject.keySet();
 		Iterator<String> iter = keySet.iterator();
 		ArrayList<String> sqlKey = new ArrayList<String>();
-		String condition = " WHERE ";
+		StringBuilder condition = new StringBuilder(" WHERE ");
 		int i = 0;
 
 		while (iter.hasNext()) {
@@ -699,33 +659,40 @@ public class MkRestApi extends HttpServlet {
 					continue;
 				}
 			}
-			condition += key + " = ?";
+			condition.append(key).append(" = ?");
 			String temp = jsonObject.get(key).toString();
-			try {
-				String decodeResult = URLDecoder.decode(temp, "UTF-8");
-				String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+			String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+			String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-			} catch (UnsupportedEncodingException e) {
-				//
-				mklogger.error("(doTaskGet - jsonObject key) given data (" + temp + ") is invalid! " + e.getMessage());
-				mkResponse.setCode(400);
-				mkResponse.setMessage(e.getMessage());
-				return null;
-			}
+			temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 
 			sqlKey.add(temp);
 			if (i < requestSize - 1) {
-				condition += " AND ";
+				condition.append(" AND ");
 			}
 			i++;
 		}
-		if (condition.contains("?"))
+		if (condition.toString().contains("?"))
 			query += condition;
 
 		mklogger.debug("condition : " + query);
 		mklogger.debug("query : " + query);
 
+		if(page > 0){
+			String pageLimit = MkConfigReader.Me().get("mkweb.restapi.search.opt.paging.limit");
+			if(pageLimit == null)	pageLimit = "100";
+			int pl = Integer.parseInt(pageLimit);
+			int curStart = (pl * (page-1));
+			if(curStart < 0 || page == 1)	curStart = 0;
+			StringBuilder limitQuery = new StringBuilder(" LIMIT " );
+			//2페이지면 앞에 100개 빼야함. (pl * page) - pl
+			//pl * page - pl = pl*(page-1)
+			//100 * 2 - 100
+			//3페이지면 100 * 3 - 100
+			limitQuery.append(String.valueOf(curStart)).append(", ").append(pl);
+
+			query += limitQuery;
+		}
 		DA.setPreparedStatement(query);
 		if (!searchAll)
 			DA.setApiRequestValue(sqlKey);
@@ -856,19 +823,19 @@ public class MkRestApi extends HttpServlet {
 		String[] inputKey = pjData.getData();
 
 		//		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, customTable);
-		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse);
+		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, -1);
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
 		String query = null;
-		String[] modifyValues = new String[modifyObject.size()];
-		int mvIterator = 0;
-		for(int i = 0; i < pjData.getData().length; i++) {
-			Object tik = modifyObject.get(inputKey[i]);
-			if(tik != null) {					
-				modifyValues[mvIterator++] = tik.toString();					
-			}
-		}
+//		String[] modifyValues = new String[modifyObject.size()];
+//		int mvIterator = 0;
+//		for(int i = 0; i < pjData.getData().length; i++) {
+//			Object tik = modifyObject.get(inputKey[i]);
+//			if(tik != null) {
+//				modifyValues[mvIterator++] = tik.toString();
+//			}
+//		}
 		String[] searchKey = new String[jsonObject.size()];
 		String[] modifyKey = new String[modifyObject.size()];
 		Set<String> jSet = jsonObject.keySet();
@@ -991,16 +958,10 @@ public class MkRestApi extends HttpServlet {
 				valueClause = "";
 				for(int i = 0; i < searchKey.length; i++) {
 					String temp = searchKey[i];
-					try {
-						String decodeResult = URLDecoder.decode(temp, "UTF-8");
-						String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+					String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+					String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-						temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-					} catch (UnsupportedEncodingException e) {
-						//
-						mklogger.error("(createSQL get) given data (" + temp + ") is invalid! " + e.getMessage());
-						return null;
-					}
+					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 					valueClause += temp;
 
 					if(i < searchKey.length-1) {
@@ -1019,16 +980,10 @@ public class MkRestApi extends HttpServlet {
 			String targetValues = "";
 			for(int i = 0; i < searchKey.length; i++) {
 				String temp = searchKey[i];
-				try {
-					String decodeResult = URLDecoder.decode(temp, "UTF-8");
-					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+				String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+				String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-				} catch (UnsupportedEncodingException e) {
-					//
-					mklogger.error("(createSQL post) given searchKey (" + temp + ") is invalid! " + e.getMessage());
-					return null;
-				}
+				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 
 				targetColumns += temp;
 				if(i < searchKey.length - 1)
@@ -1036,16 +991,10 @@ public class MkRestApi extends HttpServlet {
 			}
 			for(int i = 0; i < modifyKey.length; i++) {
 				String temp = modifyKey[i];
-				try {
-					String decodeResult = URLDecoder.decode(temp, "UTF-8");
-					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+				String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+				String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-				} catch (UnsupportedEncodingException e) {
-					//
-					mklogger.error("(createSQL post) given modifyKey (" + temp + ") is invalid! " + e.getMessage());
-					return null;
-				}
+				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 
 				targetValues = "'" + temp + "'";
 				if( i < modifyKey.length - 1)
@@ -1061,30 +1010,18 @@ public class MkRestApi extends HttpServlet {
 			String targetValues = "";
 			for(int i = 0; i < modifyKey.length; i++) {
 				String temp = modifyKey[i];
-				try {
-					String decodeResult = URLDecoder.decode(temp, "UTF-8");
-					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+				String decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+				String encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-				} catch (UnsupportedEncodingException e) {
-					//
-					mklogger.error("(createSQL insert) given modify Key (" + temp + ") is invalid! " + e.getMessage());
-					return null;
-				}
+				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 
 				targetColumns += temp;
 
 				temp = modifyObject.get(modifyKey[i]).toString();
-				try {
-					String decodeResult = URLDecoder.decode(temp, "UTF-8");
-					String encodeResult = URLEncoder.encode(decodeResult, "UTF-8");
+				decodeResult = URLDecoder.decode(temp, StandardCharsets.UTF_8);
+				encodeResult = URLEncoder.encode(decodeResult, StandardCharsets.UTF_8);
 
-					temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
-				} catch (UnsupportedEncodingException e) {
-					//
-					mklogger.error("(createSQL insert) given modify Object (" + temp + ") is invalid! " + e.getMessage());
-					return null;
-				}
+				temp = (encodeResult.contentEquals(temp) ? decodeResult : temp);
 				targetValues += "'" + temp + "'";
 				if(i < modifyKey.length-1) {
 					targetColumns += ",";

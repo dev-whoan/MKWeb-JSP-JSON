@@ -7,6 +7,8 @@ import com.mkweb.logger.MkLogger;
 import com.mkweb.utils.MkJsonData;
 import org.json.simple.JSONObject;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Base64;
 
 public class MkAuthToken {
@@ -66,6 +68,31 @@ public class MkAuthToken {
 
 	public static boolean lifecheck(long tokenTime){
 		return System.currentTimeMillis() - tokenTime <= lifetime;
+	}
+	public static long getMaxLifetime(){	return lifetime;	}
+
+	public static Cookie getTokenCookie(Cookie[] cookies){
+		for(Cookie cookie : cookies){
+			if(cookie.getName().contentEquals(MkConfigReader.Me().get("mkweb.auth.controller.name"))){
+				return cookie;
+			}
+		}
+		return null;
+	}
+
+	public static boolean setTokenCookie(HttpServletResponse response, Cookie cookie){
+		try{
+			response.addCookie(cookie);
+		} catch (Exception e){
+			return false;
+		}
+		return true;
+	}
+
+	public static void printCookies(Cookie[] cookies){
+		for(Cookie cookie : cookies){
+			new MkLogger("[MkAuthToken]").debug(cookie.getName());
+		}
 	}
 
 	public String getToken(){

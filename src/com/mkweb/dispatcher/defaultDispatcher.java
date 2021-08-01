@@ -52,7 +52,7 @@ public class defaultDispatcher extends HttpServlet {
 		    ipAddress = request.getRemoteAddr();  
 		}
 
-		String requestURI = request.getRequestURI();	// /main		
+		String requestURI = request.getRequestURI();	// /main
 		String mkPage = null;
 		
 		String hostcheck = request.getRequestURL().toString().split("://")[1];
@@ -71,7 +71,6 @@ public class defaultDispatcher extends HttpServlet {
 		}
 		
 		request.setAttribute("mkPage", mkPage);
-	//	request.setAttribute(controller.getName("id:sessionid"), mkSessionData);
 		request.setAttribute("client-host", ipAddress);
 		RequestDispatcher dispatcher = this.getServletContext().getRequestDispatcher(requestURI + ".mkw");
 		dispatcher.forward(request, response);

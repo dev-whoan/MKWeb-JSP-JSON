@@ -84,7 +84,7 @@ public class MkPageConfigs extends MkPageConfigCan{
 				
 				String pageDebugLevel = pageObject.get("debug").toString();
 				String authorize = pageObject.get("auth").toString();
-
+				mklogger.debug("\n\n\nauthorize: " + authorize);
 				String pageAPI = pageObject.get("api").toString();
 				JSONArray serviceArray = (JSONArray) pageObject.get("services");
 				

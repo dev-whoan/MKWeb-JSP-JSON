@@ -70,105 +70,107 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 				
 				JSONArray serviceArray = (JSONArray) sqlObject.get("services");
 
-				for(int i = 0; i < serviceArray.size(); i++) {
-					JSONObject serviceObject = (JSONObject) serviceArray.get(i);
+				for (Object o : serviceArray) {
+					JSONObject serviceObject = (JSONObject) o;
 					String serviceId = null;
+					boolean serviceAuth = false;
 					String[] serviceQuery = null;
 					HashMap<String, Object> tableData = null;
 					try {
 						serviceId = serviceObject.get("id").toString();
+						serviceAuth = (serviceObject.get("auth") != null && serviceObject.get("auth").toString().contentEquals("yes"));
 
 						String serviceColumns = null;
 						String serviceDatas = null;
-						
+
 						MkJsonData mjd = new MkJsonData(serviceObject.get("query").toString());
-						if(!mjd.setJsonObject()) {
+						if (!mjd.setJsonObject()) {
 							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId);
 							return;
 						}
-						
+
 						JSONObject serviceQueryData = mjd.getJsonObject();
 						// -1 for table object
-						serviceQuery = new String[serviceQueryData.size()-1];
-						
+						serviceQuery = new String[serviceQueryData.size() - 1];
+
 						//serviceQuery.length != 5
-						if(serviceQueryData.size() != 5) {
-							mklogger.error("[Controller: " + controlName + " | service: "+serviceId+"] The format of query is not valid. Please check your page configs.");
+						if (serviceQueryData.size() != 5) {
+							mklogger.error("[Controller: " + controlName + " | service: " + serviceId + "] The format of query is not valid. Please check your page configs.");
 							continue;
 						}
-						
+
 						serviceQuery[0] = serviceQueryData.get("crud").toString();
-					//	serviceQuery[2] = serviceQueryData.get("table").toString();
-						serviceQuery[3] = serviceQueryData.get("where").toString();	// [4]
-						
+						//	serviceQuery[2] = serviceQueryData.get("table").toString();
+						serviceQuery[3] = serviceQueryData.get("where").toString();    // [4]
+
 						//존재 안하면!! table이 없는거니까 잘못된거임!
-						if(serviceQueryData.get("table") == null) {
-							mklogger.error("Failed to set Table data. Service name " + serviceId );
+						if (serviceQueryData.get("table") == null) {
+							mklogger.error("Failed to set Table data. Service name " + serviceId);
 							continue;
 						}
-						
-						if(serviceQueryData.get("table") instanceof JSONObject) {
+
+						if (serviceQueryData.get("table") instanceof JSONObject) {
 							mklogger.debug("JSONObject!!");
-						}else {
+						} else {
 							mklogger.error("Failed to set Table data. Table must be instance of JSONObject. Service name : " + serviceId);
 							continue;
 						}
-						
+
 						tableData = (HashMap<String, Object>) serviceQueryData.get("table");
-						
+
 						MkJsonData serviceColumn = new MkJsonData(serviceQueryData.get("column").toString());
-						if(!serviceColumn.setJsonObject()) {
-							mklogger.error("Failed to set MkJsonObject service name : " + serviceId +"(column)");
+						if (!serviceColumn.setJsonObject()) {
+							mklogger.error("Failed to set MkJsonObject service name : " + serviceId + "(column)");
 							continue;
 						}
 						JSONObject jsonColumns = serviceColumn.getJsonObject();
 						serviceColumns = "";
-						for(int k = 0; k < jsonColumns.size(); k++) {
-							serviceColumns += jsonColumns.get("" + (k+1)).toString();
-							
-							if(k < jsonColumns.size()-1)
+						for (int k = 0; k < jsonColumns.size(); k++) {
+							serviceColumns += jsonColumns.get("" + (k + 1)).toString();
+
+							if (k < jsonColumns.size() - 1)
 								serviceColumns += ",";
 						}
-						
+
 						MkJsonData serviceData = new MkJsonData(serviceQueryData.get("data").toString());
-						
-						if(!serviceData.setJsonObject()) {
-							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId +"(data)");
+
+						if (!serviceData.setJsonObject()) {
+							mklogger.debug("Failed to set MkJsonObject service name : " + serviceId + "(data)");
 							continue;
 						}
 						JSONObject jsonDatas = serviceData.getJsonObject();
 						serviceDatas = "";
-						for(int k = 0; k < jsonDatas.size(); k++) {
-							serviceDatas += "@" + jsonDatas.get("" + (k+1)).toString() + "@";
-							
-							if(k < jsonDatas.size()-1)
+						for (int k = 0; k < jsonDatas.size(); k++) {
+							serviceDatas += "@" + jsonDatas.get("" + (k + 1)).toString() + "@";
+
+							if (k < jsonDatas.size() - 1)
 								serviceDatas += ",";
 						}
-						
+
 						serviceQuery[1] = serviceColumns;
-						serviceQuery[2] = serviceDatas;		// [3]
-					}catch(NullPointerException npe) {
-						mklogger.error("[Controller: " + controlName + "("+serviceId+")] The service SQL doesn't have attributes. Please check the SQL config.");
+						serviceQuery[2] = serviceDatas;        // [3]
+					} catch (NullPointerException npe) {
+						mklogger.error("[Controller: " + controlName + "(" + serviceId + ")] The service SQL doesn't have attributes. Please check the SQL config.");
 						continue;
 					}
 
 					MkSqlJsonData sqlData = new MkSqlJsonData();
-					
+
 					Object join = tableData.get("join");
-					
-					if(join != null) {
+
+					if (join != null) {
 						JSONObject joinObject = (JSONObject) join;
 						String[] catchme = {"type", "joinfrom", "on"};
-						for(int cm = 0; cm < catchme.length; cm++) {
+						for (int cm = 0; cm < catchme.length; cm++) {
 							try {
 								tableData.put(catchme[cm], joinObject.get(catchme[cm]).toString());
 							} catch (NullPointerException e) {
-								mklogger.error("[Controller: " + controlName + "(" + serviceId +")] You must to set \"" + catchme[cm] + "\" in \"table\" to use join. This controller will not be registered.");
+								mklogger.error("[Controller: " + controlName + "(" + serviceId + ")] You must to set \"" + catchme[cm] + "\" in \"table\" to use join. This controller will not be registered.");
 								return;
 							}
 						}
 					}
-					
+
 					String[] finalQuery = createSQL(serviceQuery, tableData, false);
 					sqlData.setRawSql(serviceQuery);
 					sqlData.setControlName(sqlName);
@@ -179,8 +181,9 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 					sqlData.setDB(sqlDB);
 					sqlData.setData(finalQuery);
 					sqlData.setDebugLevel(sqlDebugLevel);
+					sqlData.setAuthorizedRequire(serviceAuth);
 					sqlData.setApiSQL((sqlAPI.toLowerCase().contentEquals("yes")));
-					
+
 					sqlJsonData.add(sqlData);
 					printSqlInfo(sqlData, "info");
 				}
@@ -204,6 +207,7 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		String tempMsg = "\n===============================SQL  Control================================="
 				+ "\n|Controller: \t" + jsonData.getControlName()
 				+ "\n|SQL ID:\t" + jsonData.getServiceName() + "\t\t API:\t" + jsonData.IsApiSql()
+				+ "\n|SQL Auth:\t" + jsonData.getAuthorizedRequire()
 				+ "\n|SQL DB:\t" + jsonData.getDB() + "\t\t Type:\t" + jsonData.getServiceType()
 				+ "\n|SQL Table:\t" + jsonData.getTableData()
 				+ "\n|SQL Query:\t" + jsonData.getData()[0].trim()
@@ -231,6 +235,15 @@ public class MkSQLConfigs extends MkSqlConfigCan {
 		updateConfigs();
 
 		return sql_configs.get(controlName);
+	}
+
+	public MkSqlJsonData getServiceInfoByServiceName(ArrayList<MkSqlJsonData> control, String serviceName){
+		for(MkSqlJsonData service : control){
+			if(service.getServiceName().contentEquals(serviceName)){
+				return service;
+			}
+		}
+		return null;
 	}
 
 	public String getServiceTypeByServiceName(ArrayList<MkSqlJsonData> control, String serviceName){

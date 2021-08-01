@@ -228,9 +228,6 @@ public class MkLogger{
 		}
 	}
 
-	public void testMessage(){
-		info("\n\n\n\ntestMEssage");
-	}
 	public void setLogConfig() {
 		if(defaultFile == null) {
 			System.err.println("[MkLogger] There is no file defined to set MkLogger.");
@@ -261,13 +258,7 @@ public class MkLogger{
 				for(int i = 0; i < config_key.length; i++) {
 					log_configs.put(config_key[i], logObject.get(config_key[i]).toString());
 				}
-			} catch (FileNotFoundException e) {
-				logMsg += ("[**ERROR**]" + e.getMessage());
-				e.printStackTrace();
-			} catch (IOException e) {
-				logMsg += ("[**ERROR**]" + e.getMessage());
-				e.printStackTrace();
-			} catch (ParseException e) {
+			} catch (IOException | ParseException e) {
 				logMsg += ("[**ERROR**]" + e.getMessage());
 				e.printStackTrace();
 			}
@@ -286,6 +277,5 @@ public class MkLogger{
 		
 		if(printStarter)
 			printStarter = false;
-		
 	}
 }

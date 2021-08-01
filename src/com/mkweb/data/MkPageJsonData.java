@@ -38,7 +38,7 @@ public class MkPageJsonData extends AbsJsonData {
 	public void setParameter(String param) {	this.parameter = param;	}
 	public void setObjectType(String objectType) {	this.objectType = objectType;	}
 	public void setMethod(String method) {	this.method = method;	}
-	public void setAuthorizedRequire(String auths) { this.authorizedRequire = (auths == "yes" ? 2 : ( auths.contentEquals("part") ? 1 : 0) ); }
+	public void setAuthorizedRequire(String auths) { this.authorizedRequire = (auths.contentEquals("yes") ? 2 : ( auths.contentEquals("part") ? 1 : 0) ); }
 	public void setPost(String post) {	this.post = (post == null || post.equals("no") ? false : ( post.equals("yes") ? true : false) );	}
 	public void setGet(String get) {	this.get = (get == null || get.equals("no") ? false : ( get.equals("yes") ? true : false) );	}
 	public void setPut(String put) {	this.put = (put == null || put.equals("no") ? false : ( put.equals("yes") ? true : false) );	}

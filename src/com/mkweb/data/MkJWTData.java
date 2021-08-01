@@ -44,7 +44,6 @@ public class MkJWTData {
         this.headerObject.put("type", "JWT");
 
         this.header = Base64.getUrlEncoder().encodeToString(this.headerObject.toString().getBytes());
-        mklogger.debug("header: " + header);
     }
     private void createPreparedPayloadObject(){
         MkAuthTokenData matd = MkAuthTokenConfigs.Me().getControl(MkConfigReader.Me().get("mkweb.auth.controller.name"));
@@ -65,7 +64,6 @@ public class MkJWTData {
         this.payloadObject = new JSONObject(tempObject);
         this.payloadObject.put("timestamp", this.timestamp);
         this.payload = Base64.getUrlEncoder().encodeToString(this.payloadObject.toString().getBytes());
-        mklogger.debug("prepayload: " + payload);
     }
     private void createPayloadObject(){
         MkAuthTokenData matd = MkAuthTokenConfigs.Me().getControl(MkConfigReader.Me().get("mkweb.auth.controller.name"));
@@ -87,7 +85,6 @@ public class MkJWTData {
         this.payloadObject = new JSONObject(tempObject);
         this.payloadObject.put("timestamp", this.timestamp);
         this.payload = Base64.getUrlEncoder().encodeToString(this.payloadObject.toString().getBytes());
-        mklogger.debug("payload: " + payload);
     }
 
     private void generateSignature(){
@@ -98,7 +95,6 @@ public class MkJWTData {
         String currentData = this.header + "." + this.payload;
         String secretKey = MkConfigReader.Me().get("mkweb.auth.secretkey");
         this.signature = MkCrypto.HS256(currentData, secretKey.getBytes());
-        mklogger.debug("signature: " + signature);
     }
 
     public String getToken() {
