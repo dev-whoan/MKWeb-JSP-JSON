@@ -402,9 +402,14 @@ public class MkRestApi extends HttpServlet {
 			if (mkPage.contains("/")) {
 				mkPage = mkPage.split("/")[0];
 			}
+			String ipAddress = request.getHeader("X-FORWARDED-FOR");
+			if (ipAddress == null) {
+				ipAddress = request.getRemoteAddr();
+			}
 
 			mklogger.temp("=====API Request Arrived=====", false);
-			mklogger.temp("=Data: " + mkPage + "\tMethod: " + REQUEST_METHOD + "=", false);
+			mklogger.temp("From: " + ipAddress, false);
+			mklogger.temp("Data: " + mkPage + "\tMethod: " + REQUEST_METHOD + "=", false);
 			mklogger.flush("info");
 
 			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
@@ -528,7 +533,7 @@ public class MkRestApi extends HttpServlet {
 			mklogger.debug(queryParameters.get(MKWEB_PRETTY_OPT));
 			prettyParam = queryParameters.get(MKWEB_PRETTY_OPT) != null ? queryParameters.get(MKWEB_PRETTY_OPT)[0].toString() : null;
 			pagingParam = queryParameters.get(MKWEB_PAGING_OPT) != null ? queryParameters.get(MKWEB_PAGING_OPT)[0].toString() : null;
-			mklogger.info("=Data: " + requestParameterJson);
+			mklogger.info("Data: " + requestParameterJson);
 			if (MKWEB_USE_KEY){
 				if(authToken != null){
 					userKey = authToken.toLowerCase().split("bearer ")[1];
@@ -685,8 +690,8 @@ public class MkRestApi extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("Result", "HTTP/1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus());
 	//	response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
-		mklogger.debug("=Result: " + resultObject);
-		mklogger.info("=Response Code: " + apiResponse.getCode());
+		mklogger.debug("Result: " + resultObject);
+		mklogger.info("Response Code: " + apiResponse.getCode());
 		mklogger.info("=====API Request    Ended====");
 
 		sendResponse(

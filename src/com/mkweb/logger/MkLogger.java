@@ -126,7 +126,7 @@ public class MkLogger{
 				logMsg += "\n" + msg.toString();
 		}else {
 			if(msg != null)
-				logMsg = " " + msg.toString();
+				logMsg = msg.toString();
 		}
 	}
 

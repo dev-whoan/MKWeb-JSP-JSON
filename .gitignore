@@ -1,8 +1,12 @@
 # IDE
-.project
-.classpath
+/.project
+/.classpath
+/build
+/config
+/.idea
+/.settings
 MKWeb.iml
-config
+
 common.properties
 UML_MKWeb.ucls
 

@@ -1,4 +1,15 @@
 
+# 08/12/2021 (KST) 0.1.0 Updated
+
+1. MkRestApi bug fixed
+
+
+2. MkAuthToken have added
+
+- Page, SQL, FTP now have auth for it
+
+3. MkFileTransfer bug fixed
+
 # 02/23/2021 (KST) 0.0.8a updated
 
 1. MkFileTransfer now supports remove mode.
