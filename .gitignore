@@ -1,2 +1,13 @@
-build.xml
-*/MKWeb.conf
+# IDE
+.project
+.classpath
+MKWeb.iml
+config
+common.properties
+UML_MKWeb.ucls
+
+#ant
+build*.xml
+
+#jsp
+*.jsp

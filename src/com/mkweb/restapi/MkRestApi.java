@@ -55,7 +55,7 @@ public class MkRestApi extends HttpServlet {
 	private static String MKWEB_SEARCH_KEY = MkConfigReader.Me().get("mkweb.restapi.search.keyexp");
 	private static boolean MKWEB_USE_KEY = MkConfigReader.Me().get("mkweb.restapi.search.usekey").contentEquals("yes");
 	private static String MKWEB_SEARCH_ALL = MkConfigReader.Me().get("mkweb.restapi.search.all");
-	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.refonly.host");
+	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.hostonly");
 	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.pretty.param");
 	private static String MKWEB_PAGING_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.paging.param");
 
@@ -206,32 +206,144 @@ public class MkRestApi extends HttpServlet {
 	
 	protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "head");
-		doTask(request, response);
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "head", "unkonwn", System.currentTimeMillis(), true);
+		}
 	}
 
 	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "options");
-		doTask(request, response);
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "options", "unkonwn", System.currentTimeMillis(), true);
+		}
 	}
 
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "put");
-		doTask(request, response);
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "put", "unkonwn", System.currentTimeMillis(), true);
+		}
 	}
 
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		request.setAttribute("api-method", "delete");		
-		doTask(request, response);
+		request.setAttribute("api-method", "delete");
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "delete", "unkonwn", System.currentTimeMillis(), true);
+		}
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "get");
-		doTask(request, response);
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "get", "unkonwn", System.currentTimeMillis(), true);
+		}
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setAttribute("api-method", "post");
-		doTask(request, response);
+		try{
+			doTask(request, response);
+		} catch (Exception e){
+			mklogger.error("Unknown error occured. You can trace it on catalina : " + e.getMessage());
+			e.printStackTrace();
+			JSONObject resultObject = new JSONObject();
+			resultObject.put("code", "500");
+			resultObject.put("message", "Internal Server Error Occured. If the error is , please contact the server admin.");
+			sendResponse(response, resultObject, null, "post", "unkonwn", System.currentTimeMillis(), true);
+		}
+	}
+
+	private void sendResponse(HttpServletResponse response, JSONObject resultObject, MkRestApiResponse apiResponse, String requestMethod, String mkPage, long START_MILLIS, boolean pretty) throws IOException {
+		PrintWriter out = response.getWriter();
+
+		if(apiResponse == null){
+			apiResponse = new MkRestApiResponse();
+			apiResponse.setCode(500);
+			apiResponse.setMessage(resultObject.get("message").toString());
+			apiResponse.setContentType("application/json;charset=UTF-8");
+		}
+
+		String result = null;
+
+		if(resultObject == null) {
+			String allowMethods = "";
+			if(apiResponse.getCode() < 400 && requestMethod.contentEquals("options")) {
+				if(pretty)
+					allowMethods = "  \"Allow\":\"";
+				else
+					allowMethods = "\"Allow\":\"";
+				ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
+				for(int i = 0; i < control.size(); i++) {
+
+					allowMethods += control.get(i).getMethod().toString().toUpperCase();
+
+					if( i < control.size()-1) {
+						allowMethods += ",";
+					}
+				}
+				allowMethods += "\"";
+			}
+			result = apiResponse.generateResult(apiResponse.getCode(), requestMethod, allowMethods, pretty, START_MILLIS);
+			out.print(result);
+		} else {
+			if(pretty)
+				result = MkJsonData.jsonToPretty(resultObject);
+			else
+				result = resultObject.toString();
+
+			result = result.substring(1, result.length()-1);
+			Object roPut = resultObject.get("PUT_UPDATE_DONE");
+			Object roPost = resultObject.get("PUT_INSERT_DONE");
+			Object roDelete = resultObject.get("DELETE_DONE");
+			if(roPut != null) {
+				result = "";
+			}else if(roPost != null) {
+				resultObject.remove("PUT_INSERT_DONE");
+			}else if(roDelete != null) {
+				resultObject.remove("DELETE_DONE");
+			}
+			apiResponse.setContentLength(resultObject.toString().length());
+
+			String temp = apiResponse.generateResult(apiResponse.getCode(), requestMethod, result, pretty, START_MILLIS);
+			out.print(temp);
+		}
+		out.flush();
+		out.close();
 	}
 
 	private void doTask(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -246,8 +358,7 @@ public class MkRestApi extends HttpServlet {
 			apiResponse.setCode(404);
 			apiResponse.setMessage("Not Found.");
 		}
-		
-		
+
 		final String REQUEST_METHOD = request.getAttribute("api-method").toString().toLowerCase();
 
 		if((!REQUEST_METHOD.contentEquals("get")) && (contentType == null || !contentType.contains("application/json"))) {
@@ -291,6 +402,10 @@ public class MkRestApi extends HttpServlet {
 			if (mkPage.contains("/")) {
 				mkPage = mkPage.split("/")[0];
 			}
+
+			mklogger.temp("=====API Request Arrived=====", false);
+			mklogger.temp("=Data: " + mkPage + "\tMethod: " + REQUEST_METHOD + "=", false);
+			mklogger.flush("info");
 
 			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 			if (control == null) {
@@ -413,7 +528,7 @@ public class MkRestApi extends HttpServlet {
 			mklogger.debug(queryParameters.get(MKWEB_PRETTY_OPT));
 			prettyParam = queryParameters.get(MKWEB_PRETTY_OPT) != null ? queryParameters.get(MKWEB_PRETTY_OPT)[0].toString() : null;
 			pagingParam = queryParameters.get(MKWEB_PAGING_OPT) != null ? queryParameters.get(MKWEB_PAGING_OPT)[0].toString() : null;
-			mklogger.debug("rpj: " + requestParameterJson);
+			mklogger.info("=Data: " + requestParameterJson);
 			if (MKWEB_USE_KEY){
 				if(authToken != null){
 					userKey = authToken.toLowerCase().split("bearer ")[1];
@@ -570,57 +685,69 @@ public class MkRestApi extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("Result", "HTTP/1.1 " + apiResponse.getCode() + " " + apiResponse.getStatus());
 	//	response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
+		mklogger.debug("=Result: " + resultObject);
+		mklogger.info("=Response Code: " + apiResponse.getCode());
+		mklogger.info("=====API Request    Ended====");
 
-		PrintWriter out = response.getWriter();
-
-		String result = null;
-		boolean pretty = false;
-		pretty = (prettyParam != null);
-
-		if(resultObject == null) {
-			String allowMethods = "";
-			if(apiResponse.getCode() < 400 && REQUEST_METHOD.contentEquals("options")) {
-				if(pretty)
-					allowMethods = "  \"Allow\":\"";
-				else
-					allowMethods = "\"Allow\":\"";
-				ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
-				for(int i = 0; i < control.size(); i++) {
-
-					allowMethods += control.get(i).getMethod().toString().toUpperCase();
-
-					if( i < control.size()-1) {
-						allowMethods += ",";
-					}
-				}
-				allowMethods += "\"";
-			}
-			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods, pretty, START_MILLIS);
-			out.print(result);
-		}else {
-			if(pretty)
-				result = MkJsonData.jsonToPretty(resultObject);
-			else
-				result = resultObject.toString();
-
-			result = result.substring(1, result.length()-1);
-			Object roPut = resultObject.get("PUT_UPDATE_DONE");
-			Object roPost = resultObject.get("PUT_INSERT_DONE");
-			Object roDelete = resultObject.get("DELETE_DONE");
-			if(roPut != null) {
-				result = "";
-			}else if(roPost != null) {
-				resultObject.remove("PUT_INSERT_DONE");
-			}else if(roDelete != null) {
-				resultObject.remove("DELETE_DONE");
-			}
-			apiResponse.setContentLength(resultObject.toString().length());
-
-			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result, pretty, START_MILLIS);
-			out.print(temp);
-		}
-		out.flush();
-		out.close();
+		sendResponse(
+				response,
+				resultObject,
+				apiResponse,
+				REQUEST_METHOD,
+				mkPage,
+				START_MILLIS,
+				(prettyParam != null)
+		);
+//		PrintWriter out = response.getWriter();
+//
+//		String result = null;
+//		boolean pretty = false;
+//		pretty = (prettyParam != null);
+//
+//		if(resultObject == null) {
+//			String allowMethods = "";
+//			if(apiResponse.getCode() < 400 && REQUEST_METHOD.contentEquals("options")) {
+//				if(pretty)
+//					allowMethods = "  \"Allow\":\"";
+//				else
+//					allowMethods = "\"Allow\":\"";
+//				ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
+//				for(int i = 0; i < control.size(); i++) {
+//
+//					allowMethods += control.get(i).getMethod().toString().toUpperCase();
+//
+//					if( i < control.size()-1) {
+//						allowMethods += ",";
+//					}
+//				}
+//				allowMethods += "\"";
+//			}
+//			result = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, allowMethods, pretty, START_MILLIS);
+//			out.print(result);
+//		}else {
+//			if(pretty)
+//				result = MkJsonData.jsonToPretty(resultObject);
+//			else
+//				result = resultObject.toString();
+//
+//			result = result.substring(1, result.length()-1);
+//			Object roPut = resultObject.get("PUT_UPDATE_DONE");
+//			Object roPost = resultObject.get("PUT_INSERT_DONE");
+//			Object roDelete = resultObject.get("DELETE_DONE");
+//			if(roPut != null) {
+//				result = "";
+//			}else if(roPost != null) {
+//				resultObject.remove("PUT_INSERT_DONE");
+//			}else if(roDelete != null) {
+//				resultObject.remove("DELETE_DONE");
+//			}
+//			apiResponse.setContentLength(resultObject.toString().length());
+//
+//			String temp = apiResponse.generateResult(apiResponse.getCode(), REQUEST_METHOD, result, pretty, START_MILLIS);
+//			out.print(temp);
+//		}
+//		out.flush();
+//		out.close();
 	}
 
 	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
@@ -782,7 +909,7 @@ public class MkRestApi extends HttpServlet {
 		query = createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()); //sqlData.getRawSql()[2]) :
 		DA.setRequestValue(inputValues);
 		query = ConnectionChecker.setQuery(befQuery);
-		mklogger.debug("�׷��� ������ : " + query);
+		mklogger.debug("post query : " + query);
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");
@@ -866,6 +993,8 @@ public class MkRestApi extends HttpServlet {
 			mklogger.error("Query is null. Please check API SQL configs");
 			return null;
 		}
+
+		mklogger.debug("put query: " + query);
 
 		DA.setPreparedStatement(query);
 

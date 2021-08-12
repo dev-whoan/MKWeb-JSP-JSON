@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.mkweb.auths.MkAuthToken;
 import com.mkweb.config.*;
-import com.mkweb.data.Device;
+import com.mkweb.data.MkDeviceData;
 import com.mkweb.data.MkFtpData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.data.MkSqlJsonData;
@@ -416,13 +416,13 @@ public class ConnectionChecker {
 			}	
 		}
 		
-		ArrayList<Device> devices = resultPageData.get(0).getAllDevices();
-		Device userDevice = null;
+		ArrayList<MkDeviceData> devices = resultPageData.get(0).getAllDevices();
+		MkDeviceData userDevice = null;
 		int desktopIndex = -1;
 		int deviceIndex = -1;
 		int gotcha = 0;
 		for(int i = 0; i < devices.size(); i++) {
-			Device currentDevice = devices.get(i);
+			MkDeviceData currentDevice = devices.get(i);
 			String currentName = currentDevice.getControlName();
 			
 			if(currentName.contentEquals("desktop")) {
@@ -438,7 +438,7 @@ public class ConnectionChecker {
 				break;
 		}
 		
-		Device currentDevice = null;
+		MkDeviceData currentDevice = null;
 		if(deviceIndex != -1) {
 			currentDevice = devices.get(deviceIndex);
 		} else {

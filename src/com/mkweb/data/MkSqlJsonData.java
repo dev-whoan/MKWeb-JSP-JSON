@@ -1,8 +1,6 @@
 package com.mkweb.data;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-
 
 public class MkSqlJsonData extends AbsJsonData {
 	private String db = null;
@@ -15,24 +13,9 @@ public class MkSqlJsonData extends AbsJsonData {
 
 	private String[] parameter = null;
 
-	/*
-	 *"query":{
-					"crud":"select",
-					"column":{
-						"1":"name",
-						"2":"u_class"
-					},
-					"table":"User",
-					"data":{
-						"1":""
-					},
-					"where":""
-				} 
-	 */
 	/* api */
 	private boolean isApi = false;
 	private String[] condition = null;
-
 
 	public String getDB() { return this.db; }
 	public boolean getAllowSingle() {	return this.allowSingle;	}

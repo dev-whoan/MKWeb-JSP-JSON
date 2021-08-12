@@ -12,5 +12,10 @@
         <entry path="file://$PROJECT_DIR$/../../Lib/commons-net-3.8.0.jar" />
       </additionalClassPath>
     </buildFile>
+    <buildFile url="file://$PROJECT_DIR$/build_tripdiary.xml">
+      <additionalClassPath>
+        <entry path="file://$PROJECT_DIR$/../../Lib/commons-net-3.8.0.jar" />
+      </additionalClassPath>
+    </buildFile>
   </component>
 </project>

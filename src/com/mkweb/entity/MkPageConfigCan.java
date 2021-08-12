@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
-import com.mkweb.data.Device;
+import com.mkweb.data.MkDeviceData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.logger.MkLogger;
 
@@ -43,7 +43,7 @@ public abstract class MkPageConfigCan extends MkPageJsonData {
 	
 	public abstract ArrayList<MkPageJsonData> getControl(String k);
 	public abstract void setPageConfigs(File[] pageConfigs);
-	protected abstract MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth);
+	protected abstract MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<MkDeviceData> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth);
 
 	public void printPageInfo(MkLogger mklogger, MkPageJsonData jsonData, String type) {
 		String[] VAL_INFO = jsonData.getData();
@@ -57,9 +57,9 @@ public abstract class MkPageConfigCan extends MkPageJsonData {
 		}
 		
 		String deviceMessage = "\n|==============================Device Control===============================";
-		ArrayList<Device> devices = jsonData.getAllDevices();
+		ArrayList<MkDeviceData> devices = jsonData.getAllDevices();
 		
-		for(Device d : devices) {
+		for(MkDeviceData d : devices) {
 			String deviceControl = d.getControlName();
 			HashMap<String, String[]> deviceLanguage = d.getDeviceInfo();
 			deviceMessage += "\n|Device Type:\t" + deviceControl;

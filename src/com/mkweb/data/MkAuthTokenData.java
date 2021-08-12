@@ -1,33 +1,9 @@
 package com.mkweb.data;
 
 import com.mkweb.entity.MkDefaultModelImpl;
-import com.mkweb.utils.MkUtils;
 import org.json.simple.JSONObject;
 
 public class MkAuthTokenData extends AbsJsonData implements MkDefaultModelImpl {
-/*
-{
-	"Controller":{
-		"level":"debug",
-		"algorithm":"HS256",
-		"secret":"mysecretkey",
-		"auths":{
-            "sql":{
-                "controller":"user",
-			    "service":"user_login"
-            },
-			"parameter":{
-                "1":"user_id",
-                "2":"user_pw"
-            }
-		},
-		"payload":{
-			"username":"name",
-			"userclass":"uclass"
-		}
-	}
-}
- */
     private String algorithm;
     private String secretKey;
     private JSONObject payload;

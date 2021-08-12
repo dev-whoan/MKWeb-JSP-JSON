@@ -16,7 +16,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.mkweb.data.Device;
+import com.mkweb.data.MkDeviceData;
 import com.mkweb.utils.MkJsonData;
 import com.mkweb.data.MkPageJsonData;
 import com.mkweb.entity.MkPageConfigCan;
@@ -89,7 +89,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 
 				JSONObject pageDevice = (JSONObject) pageObject.get("device");
 
-				ArrayList<Device> deviceConfig = new ArrayList<>();
+				ArrayList<MkDeviceData> deviceConfig = new ArrayList<>();
 				
 				Set<String> deviceConfigKey = pageDevice.keySet();
 
@@ -101,7 +101,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 					if(dO != null) {
 						JSONObject deviceObject = (JSONObject) dO;
 
-						Device tempDevice = new Device();
+						MkDeviceData tempDevice = new MkDeviceData();
 						HashMap<String, String[]> tempDeviceInfo = new HashMap<>();
 						
 						tempDevice.setControlName(deviceControlName);	// desktop, android, ios
@@ -243,7 +243,7 @@ public class MkRestApiPageConfigs extends MkPageConfigCan{
 	}
 	
 	@Override
-	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<Device> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth) {
+	protected MkPageJsonData setPageJsonData(boolean pageStatic, String controlName, String pageLastURI, String serviceName, String serviceType, String debugLevel, ArrayList<MkDeviceData> device, String objectType, String method, String PRM_NAME, String[] VAL_INFO, boolean isApi, String auth) {
 		MkPageJsonData result = new MkPageJsonData();
 		
 		result.setPageStatic(pageStatic);

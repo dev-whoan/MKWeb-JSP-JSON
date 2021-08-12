@@ -71,7 +71,8 @@ public class MkAuthTokenConfigs {
 				return;
 			}
 
-			String secretKey = tokenObject.get("secret").toString();
+			String secretKey = MkConfigReader.Me().get("mkweb.auth.secretkey");
+			if(secretKey == null)	secretKey = String.valueOf(System.currentTimeMillis());
 			//now payload and databases
 			JSONObject authObject = (JSONObject) tokenObject.get("auths");
 

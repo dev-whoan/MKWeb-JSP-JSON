@@ -1,17 +1,14 @@
 package com.mkweb.data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-
-import com.mkweb.logger.MkLogger;
 
 public class MkPageJsonData extends AbsJsonData {
 	/*
 	 * 0: Default device
 	 * 1~: additional device settings
 	 */
-	private ArrayList<Device> device = null;
+	private ArrayList<MkDeviceData> device = null;
 
 	private String debug = null;
 	/* Page Parameters */
@@ -51,8 +48,8 @@ public class MkPageJsonData extends AbsJsonData {
 	public void setLastURI(String pageLastURI) {	this.pageLastURI = pageLastURI;	}
 	public void setServiceURI(String serviceURI) {	this.serviceURI = serviceURI;	}
 	
-	public void setDevice(int index, Device device) {	if(this.device == null) {	this.device = new ArrayList<>();	}	this.device.set(index, device);	}
-	public void setDevice(ArrayList<Device> device) {	this.device = device;	}
+	public void setDevice(int index, MkDeviceData device) {	if(this.device == null) {	this.device = new ArrayList<>();	}	this.device.set(index, device);	}
+	public void setDevice(ArrayList<MkDeviceData> device) {	this.device = device;	}
 
 	public String getDebug() {	return this.debug;	}
 	public String getParameter() {	return this.parameter;	}
@@ -72,8 +69,8 @@ public class MkPageJsonData extends AbsJsonData {
 	public String getLastURI() {	return this.pageLastURI;	}
 	public String getServiceURI() {	return this.serviceURI;		}
 	
-	public ArrayList<Device> getAllDevices(){	return this.device;	}
-	public Device getDevice(int index) {	return this.device.get(index);	}
+	public ArrayList<MkDeviceData> getAllDevices(){	return this.device;	}
+	public MkDeviceData getDevice(int index) {	return this.device.get(index);	}
 	
 	public boolean getPageStatic() {	return this.isPageStatic;	}
 }
