@@ -130,13 +130,12 @@ public class MkCrypto {
 
 	public static String HS256(String data, byte[] secret){
 		try {
-			String message = "example";
 			Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
 			SecretKeySpec secret_key = new SecretKeySpec(secret, "HmacSHA256");
 			sha256_HMAC.init(secret_key);
 			byte[] result = sha256_HMAC.doFinal(data.getBytes());
 
-			return Base64.getUrlEncoder().encodeToString(result);
+			return Base64.getUrlEncoder().withoutPadding().encodeToString(result);
 		}
 		catch (Exception e){
 			e.printStackTrace();

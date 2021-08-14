@@ -1,8 +1,15 @@
 
+# 08/14/2021 (KST) 0.1.1 Updated
+
+1. MkAuthToken bug fixed
+
+- Now encode token without padding.
+
+- Use HS256 as default if no algorithm or invalid algorithm have set.
+
 # 08/12/2021 (KST) 0.1.0 Updated
 
 1. MkRestApi bug fixed
-
 
 2. MkAuthToken have added
 

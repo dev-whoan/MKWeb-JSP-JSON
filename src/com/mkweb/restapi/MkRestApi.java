@@ -58,6 +58,8 @@ public class MkRestApi extends HttpServlet {
 	private static String MKWEB_REFONLY_HOST = MkConfigReader.Me().get("mkweb.restapi.hostonly");
 	private static String MKWEB_PRETTY_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.pretty.param");
 	private static String MKWEB_PAGING_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.paging.param");
+	private static String MKWEB_SORTING_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.sorting.param");
+	private static String MKWEB_SRTMETHOD_OPT = MkConfigReader.Me().get("mkweb.restapi.search.opt.sorting.method.param");
 
 	public MkRestApi() {
 		super();
@@ -80,7 +82,7 @@ public class MkRestApi extends HttpServlet {
 		String remarkColumn = MkConfigReader.Me().get("mkweb.restapi.key.column.remark");
 		ArrayList<Object> apiKeyList = mra.GetKey();
 
-		mklogger.temp(" REST Api Key has searched : " + key + " Result: ", false);
+		mklogger.temp("API Key searching: " + key + " Result: ", false);
 
 		if (apiKeyList != null) {
 			for (Object o : apiKeyList) {
@@ -137,7 +139,7 @@ public class MkRestApi extends HttpServlet {
 		}
 	}
 
-	private void remvoeParameter(JSONObject jsonObject, String key) {
+	private void removeParameter(JSONObject jsonObject, String key) {
 		if(jsonObject != null) {
 			jsonObject.remove(MKWEB_SEARCH_KEY);
 
@@ -146,7 +148,7 @@ public class MkRestApi extends HttpServlet {
 		}
 	}
 
-	private void removeOptionsFromParameter(JSONObject jsonObject, String prettyParam, String pagingParam) {
+	private void removeOptionsFromParameter(JSONObject jsonObject, String prettyParam, String pagingParam, String sortingParam) {
 		if(jsonObject != null) {
 			jsonObject.remove(MKWEB_SEARCH_KEY);
 
@@ -155,6 +157,12 @@ public class MkRestApi extends HttpServlet {
 
 			if(pagingParam != null)
 				jsonObject.remove(MKWEB_PAGING_OPT);
+
+			if(sortingParam != null) {
+				jsonObject.remove(MKWEB_SORTING_OPT);
+				jsonObject.remove(MKWEB_SRTMETHOD_OPT);
+			}
+
 		}
 	}
 
@@ -369,6 +377,8 @@ public class MkRestApi extends HttpServlet {
 		//		String customTable = request.getParameter(MKWEB_CUSTOM_TABLE);
 		String prettyParam = null;
 		String pagingParam = null;
+		String sortingParam = null;
+		String sortingMethod = null;
 		
 		String requestURI = request.getRequestURI();
 		String[] reqPage = null;
@@ -407,10 +417,9 @@ public class MkRestApi extends HttpServlet {
 				ipAddress = request.getRemoteAddr();
 			}
 
-			mklogger.temp("=====API Request Arrived=====", false);
-			mklogger.temp("From: " + ipAddress, false);
-			mklogger.temp("Data: " + mkPage + "\tMethod: " + REQUEST_METHOD + "=", false);
-			mklogger.flush("info");
+			mklogger.info("=====API Request Arrived=====");
+			mklogger.info("From: " + ipAddress);
+			mklogger.info("Data: " + mkPage + "\tMethod: " + REQUEST_METHOD);
 
 			ArrayList<MkPageJsonData> control = MkRestApiPageConfigs.Me().getControl(mkPage);
 			if (control == null) {
@@ -526,13 +535,19 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 
-			remvoeParameter(requestParameterJson, "");
+			removeParameter(requestParameterJson, "");
 
 			//Step 3 : Read QueryString for Options
 			Map<String, Object[]> queryParameters = MkUtils.getQueryParameters(request.getQueryString());
 			mklogger.debug(queryParameters.get(MKWEB_PRETTY_OPT));
 			prettyParam = queryParameters.get(MKWEB_PRETTY_OPT) != null ? queryParameters.get(MKWEB_PRETTY_OPT)[0].toString() : null;
 			pagingParam = queryParameters.get(MKWEB_PAGING_OPT) != null ? queryParameters.get(MKWEB_PAGING_OPT)[0].toString() : null;
+			sortingParam = queryParameters.get(MKWEB_SORTING_OPT) != null ? queryParameters.get(MKWEB_SORTING_OPT)[0].toString() :  null;
+			sortingMethod = queryParameters.get(MKWEB_SRTMETHOD_OPT) != null ? queryParameters.get(MKWEB_SRTMETHOD_OPT)[0].toString() : "ASC";
+
+			if(sortingMethod != null && sortingParam == null)
+				mklogger.warn("Sort methods are provided, but sort criteria are not provided. Sort option will be skipped.");
+
 			mklogger.info("Data: " + requestParameterJson);
 			if (MKWEB_USE_KEY){
 				if(authToken != null){
@@ -555,8 +570,8 @@ public class MkRestApi extends HttpServlet {
 				}
 			}
 
-			removeOptionsFromParameter(requestParameterJson, prettyParam, pagingParam);
-			removeOptionsFromParameter(requestParameterJsonToModify, prettyParam, pagingParam);
+			removeOptionsFromParameter(requestParameterJson, prettyParam, pagingParam, sortingParam);
+			removeOptionsFromParameter(requestParameterJsonToModify, prettyParam, pagingParam, sortingParam);
 
 			MkPageJsonData pageService = null;
 			MkSqlJsonData sqlService = null;
@@ -659,10 +674,11 @@ public class MkRestApi extends HttpServlet {
 
 				int page = (pagingParam != null ? Integer.parseInt(pagingParam) : -1);
 
+
 				switch (REQUEST_METHOD) {
 				case "get": case "head": case "options":
 					//					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, customTable);
-					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, page);
+					resultObject = doTaskGet(pageService, sqlService, requestParameterJson, mkPage, MKWEB_SEARCH_ALL, apiResponse, page, sortingParam, sortingMethod);
 					break;
 				case "post":
 					//					resultObject = doTaskInput(pageService, sqlService, requestParameterJson, mkPage, REQUEST_METHOD, apiResponse, customTable);
@@ -692,7 +708,6 @@ public class MkRestApi extends HttpServlet {
 	//	response.addHeader("Life-Time", "" + apiResponse.getLifeTime());
 		mklogger.debug("Result: " + resultObject);
 		mklogger.info("Response Code: " + apiResponse.getCode());
-		mklogger.info("=====API Request    Ended====");
 
 		sendResponse(
 				response,
@@ -756,7 +771,7 @@ public class MkRestApi extends HttpServlet {
 	}
 
 	private JSONObject doTaskGet(MkPageJsonData pjData, MkSqlJsonData sqlData, JSONObject jsonObject, String mkPage,
-			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse, int page) {
+			String MKWEB_SEARCH_ALL, MkRestApiResponse mkResponse, int page, String sortingParam, String sortingMethod) {
 		JSONObject resultObject = null;
 
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
@@ -806,9 +821,11 @@ public class MkRestApi extends HttpServlet {
 		}
 		if (condition.toString().contains("?"))
 			query += condition;
-
+		if(sortingParam != null){
+			query += "ORDER BY " + sortingParam + " " + sortingMethod;
+		}
 		mklogger.debug("condition : " + query);
-		mklogger.debug("query : " + query);
+		mklogger.info("query: " + query);
 
 		if(page > 0){
 			String pageLimit = MkConfigReader.Me().get("mkweb.restapi.search.opt.paging.limit");
@@ -817,10 +834,6 @@ public class MkRestApi extends HttpServlet {
 			int curStart = (pl * (page-1));
 			if(curStart < 0 || page == 1)	curStart = 0;
 			StringBuilder limitQuery = new StringBuilder(" LIMIT " );
-			//2페이지면 앞에 100개 빼야함. (pl * page) - pl
-			//pl * page - pl = pl*(page-1)
-			//100 * 2 - 100
-			//3페이지면 100 * 3 - 100
 			limitQuery.append(String.valueOf(curStart)).append(", ").append(pl);
 
 			query += limitQuery;
@@ -914,7 +927,7 @@ public class MkRestApi extends HttpServlet {
 		query = createSQL("post", inputKey, null, inputValues, null, sqlData.getTableData().get("from").toString()); //sqlData.getRawSql()[2]) :
 		DA.setRequestValue(inputValues);
 		query = ConnectionChecker.setQuery(befQuery);
-		mklogger.debug("post query : " + query);
+		mklogger.info("query: " + query);
 		if(query == null) {
 			mkResponse.setCode(500);
 			mkResponse.setMessage("Server Error. Please contact Admin.");
@@ -955,7 +968,7 @@ public class MkRestApi extends HttpServlet {
 		String[] inputKey = pjData.getData();
 
 		//		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, customTable);
-		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, -1);
+		JSONObject getResult = doTaskGet(pjData, sqlData, jsonObject, mkPage, MKWEB_SEARCH_ALL, mkResponse, -1, null, null);
 		MkDbAccessor DA = new MkDbAccessor(sqlData.getDB());
 		String service = pjData.getServiceName();
 		String control = sqlData.getControlName();
@@ -999,7 +1012,7 @@ public class MkRestApi extends HttpServlet {
 			return null;
 		}
 
-		mklogger.debug("put query: " + query);
+		mklogger.info("query: " + query);
 
 		DA.setPreparedStatement(query);
 
@@ -1053,7 +1066,7 @@ public class MkRestApi extends HttpServlet {
 		 */
 		query = createSQL("delete", searchKeys, jsonObject, null, null, sqlData.getTableData().get("from").toString());  //sqlData.getRawSql()[2]) :
 
-		mklogger.debug("delete query: " + query);
+		mklogger.info("query: " + query);
 		DA.setPreparedStatement(query);
 
 		int result;

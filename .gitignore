@@ -5,6 +5,7 @@
 /config
 /.idea
 /.settings
+/WebContent
 MKWeb.iml
 
 common.properties

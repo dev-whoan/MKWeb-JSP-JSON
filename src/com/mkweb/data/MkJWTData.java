@@ -43,7 +43,7 @@ public class MkJWTData {
         this.headerObject.put("alg", matd.getAlgorithm());
         this.headerObject.put("type", "JWT");
 
-        this.header = Base64.getUrlEncoder().encodeToString(this.headerObject.toString().getBytes());
+        this.header = Base64.getUrlEncoder().withoutPadding().encodeToString(this.headerObject.toString().getBytes());
     }
     private void createPreparedPayloadObject(){
         MkAuthTokenData matd = MkAuthTokenConfigs.Me().getControl(MkConfigReader.Me().get("mkweb.auth.controller.name"));
@@ -63,7 +63,7 @@ public class MkJWTData {
 
         this.payloadObject = new JSONObject(tempObject);
         this.payloadObject.put("timestamp", this.timestamp);
-        this.payload = Base64.getUrlEncoder().encodeToString(this.payloadObject.toString().getBytes());
+        this.payload = Base64.getUrlEncoder().withoutPadding().encodeToString(this.payloadObject.toString().getBytes());
     }
     private void createPayloadObject(){
         MkAuthTokenData matd = MkAuthTokenConfigs.Me().getControl(MkConfigReader.Me().get("mkweb.auth.controller.name"));
@@ -84,7 +84,7 @@ public class MkJWTData {
 
         this.payloadObject = new JSONObject(tempObject);
         this.payloadObject.put("timestamp", this.timestamp);
-        this.payload = Base64.getUrlEncoder().encodeToString(this.payloadObject.toString().getBytes());
+        this.payload = Base64.getUrlEncoder().withoutPadding().encodeToString(this.payloadObject.toString().getBytes());
     }
 
     private void generateSignature(){

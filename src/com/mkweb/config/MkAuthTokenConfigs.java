@@ -31,7 +31,7 @@ public class MkAuthTokenConfigs {
 	}
 
 	private static void initializeAlgorithm(){
-		SUPPORT_ALGORITHM.put("HS256", "HMACSHA256");
+		SUPPORT_ALGORITHM.put("HMACSHA256", "HS256");
 	}
 
 	public void setAuthTokenConfigs(File authTokenConfigs) {
@@ -66,13 +66,17 @@ public class MkAuthTokenConfigs {
 
 			String algo = tokenObject.get("algorithm").toString();
 			String authAlgorithm = SUPPORT_ALGORITHM.get(algo);
+
 			if(authAlgorithm == null){
-				mklogger.error("NoSupportAlgorithmException: " + algo + " is not supported.");
-				return;
+				mklogger.warn("NoSupportAlgorithmException: " + algo + " is not supported. Default algorithm will be HS256");
+				authAlgorithm = "HS256";
 			}
 
 			String secretKey = MkConfigReader.Me().get("mkweb.auth.secretkey");
-			if(secretKey == null)	secretKey = String.valueOf(System.currentTimeMillis());
+			if(secretKey == null)	{
+				secretKey = String.valueOf(System.currentTimeMillis());
+				mklogger.warn("SecretKeyNullException: Secretkey is not set. Default secretkey will be current milli seconds: " + secretKey);
+			}
 			//now payload and databases
 			JSONObject authObject = (JSONObject) tokenObject.get("auths");
 
