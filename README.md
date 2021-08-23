@@ -4,5 +4,4 @@
 # MKweb
 Minwhoan - Kihyeon's JSP-Servlet Web Server Framework Repository
 
-Moved to [https://github.com/dev-whoan/MKWeb][1]
-[1]: MkWeb 
+Moved to https://github.com/dev-whoan/MKWeb
